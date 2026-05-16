@@ -1,0 +1,236 @@
+<!doctype html>
+<!--
+  report-to-html 脚手架模板
+  使用方法:复制此文件 → 改 <title> → 替换 TOC items → 按章节填充 <section> 内容
+  零构建,Tailwind/Alpine/Mermaid 全 CDN
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title><!-- 报告标题 --></title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: '"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif',
+      primaryColor: "#ecfdf5",
+      primaryTextColor: "#064e3b",
+      primaryBorderColor: "#10b981",
+      lineColor: "#475569",
+      secondaryColor: "#eff6ff",
+      tertiaryColor: "#fef3c7",
+    },
+    flowchart: { curve: "basis", padding: 16 },
+  });
+</script>
+<style>
+  :root {
+    --ink: #0f172a;
+    --ink-soft: #334155;
+    --line: #e2e8f0;
+    --bg: #fafaf9;
+    --accent: #047857;
+    --accent-soft: #ecfdf5;
+  }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    font-family: "PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.75;
+    font-feature-settings: "palt";
+  }
+  h1,h2,h3,h4 { font-weight: 700; letter-spacing: -0.01em; }
+  h2 { scroll-margin-top: 72px; }
+  code, pre, .mono { font-family: "JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .15s; }
+  a:hover { border-bottom-color: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th { background: #f1f5f9; text-align: left; font-weight: 600; color: var(--ink); }
+  th, td { border: 1px solid var(--line); padding: 0.55rem 0.75rem; vertical-align: top; }
+  tbody tr:hover { background: #f8fafc; }
+  .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+  .pill-ok { background: #d1fae5; color: #065f46; }
+  .pill-warn { background: #fef3c7; color: #92400e; }
+  .pill-info { background: #dbeafe; color: #1e40af; }
+  .pill-muted { background: #f1f5f9; color: #475569; }
+  blockquote { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 0.6rem 1rem; margin: 1rem 0; color: var(--ink-soft); border-radius: 0 6px 6px 0; }
+  pre.codeblk { background: #0f172a; color: #e2e8f0; padding: 1rem 1.2rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; }
+  .section-card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+  .anchor-link { color: #94a3b8; margin-left: 0.4rem; font-size: 0.85rem; opacity: 0; transition: opacity .15s; }
+  h2:hover .anchor-link, h3:hover .anchor-link { opacity: 1; }
+  details > summary { cursor: pointer; user-select: none; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; display: inline-block; margin-right: 0.5rem; transition: transform .15s; color: var(--accent); }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .tag { font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 4px; background: #f1f5f9; color: #475569; margin-left: 0.4rem; font-weight: 500; }
+  .nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .mermaid { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; text-align: center; }
+  .callout-warn { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; }
+  .timeline-row { display: grid; grid-template-columns: 110px 1fr; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px dashed var(--line); }
+  .timeline-row:last-child { border-bottom: none; }
+  .timeline-week { font-weight: 600; color: var(--accent); font-family: "JetBrains Mono",ui-monospace,monospace; }
+  @media print {
+    .no-print, nav, aside { display: none !important; }
+    main { max-width: none !important; padding: 0 !important; }
+    .section-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body x-data="{ activeSection: '#summary' }">
+
+<!-- ============ 顶部 Sticky Bar ============ -->
+<nav class="no-print sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
+    <div class="font-bold text-slate-900 text-sm md:text-base">
+      <!-- 报告短标题 -->
+      <span class="hidden md:inline text-slate-400 font-normal ml-2"><!-- 副标题 / 标语 --></span>
+    </div>
+    <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
+      <span class="hidden md:inline"><!-- 日期 --></span>
+      <span class="pill pill-ok"><!-- 关键状态 pill,如版本/verdict --></span>
+      <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-5 py-8 flex gap-8">
+
+  <!-- ============ 左侧 TOC ============ -->
+  <aside class="no-print hidden lg:block w-60 shrink-0">
+    <div class="sticky top-20">
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">目录</div>
+      <ul class="space-y-1 text-sm" x-data>
+        <!-- TODO: 替换为实际章节列表 -->
+        <template x-for="item in [
+          {h:'#summary',t:'摘要'},
+          {h:'#sec1',t:'1. 章节一'},
+          {h:'#sec2',t:'2. 章节二'},
+          {h:'#sec3',t:'3. 章节三'}
+        ]">
+          <li>
+            <a :href="item.h" :class="{'active': activeSection === item.h}"
+               @click="activeSection = item.h"
+               class="nav-link block px-3 py-1.5 rounded text-slate-600 hover:bg-slate-100"
+               x-text="item.t"></a>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+
+  <!-- ============ Hero / 摘要 ============ -->
+  <section id="summary" class="section-card">
+    <div class="flex flex-wrap items-center gap-2 mb-4 text-xs">
+      <span class="pill pill-info"><!-- tag 1 --></span>
+      <span class="pill pill-muted"><!-- tag 2 --></span>
+    </div>
+    <h1 class="text-2xl md:text-3xl text-slate-900 mb-3"><!-- 完整标题 --></h1>
+    <div class="text-sm text-slate-500 mb-5">
+      <!-- 元信息行:日期 / 调研方法 / 来源数等 -->
+    </div>
+    <blockquote class="!my-5">
+      <strong>一句话执行摘要 ——</strong>
+      <!-- 核心结论一段 -->
+    </blockquote>
+  </section>
+
+  <!-- ============ 内容章节(复制此 section 块) ============ -->
+  <section id="sec1" class="section-card">
+    <h2 class="text-xl mb-4">章节标题 <a href="#sec1" class="anchor-link">#</a></h2>
+
+    <!-- 段落 -->
+    <p class="text-slate-700 mb-4">正文段落。</p>
+
+    <!-- 表格示例 -->
+    <table>
+      <thead><tr><th>列1</th><th>列2</th></tr></thead>
+      <tbody>
+        <tr><td>内容</td><td><span class="pill pill-ok">现行</span></td></tr>
+        <tr class="bg-emerald-50/40"><td><strong>推荐行</strong></td><td>用浅色背景强调</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Mermaid 流程图示例 -->
+    <div class="mermaid">
+flowchart LR
+    A["节点1"] --> B["节点2"]
+    B --> C["节点3"]
+    classDef step fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    class A,B,C step
+    </div>
+
+    <!-- 引用块 -->
+    <blockquote>
+      <strong>关键认知:</strong>这里写要强调的洞察。
+    </blockquote>
+
+    <!-- Callout 警告 -->
+    <div class="callout-warn">
+      <strong>⚠ Caveat:</strong>这里写需要警示的内容,用左黄边框单独突出。
+    </div>
+
+    <!-- 列表 -->
+    <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+      <li>项目 1</li>
+      <li><a href="https://example.com" target="_blank">外链项</a></li>
+    </ul>
+
+    <!-- 可折叠附录 -->
+    <details class="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+      <summary class="font-semibold text-slate-800">点击展开附录</summary>
+      <p class="text-sm text-slate-700 mt-3">折叠的次要内容。</p>
+    </details>
+  </section>
+
+  <!-- ============ Timeline 示例(8 周路线图样式) ============ -->
+  <section id="sec-timeline" class="section-card">
+    <h2 class="text-xl mb-4">时间线示例 <a href="#sec-timeline" class="anchor-link">#</a></h2>
+    <div class="bg-slate-50 border border-slate-200 rounded-lg p-5">
+      <div class="timeline-row">
+        <div class="timeline-week">W1</div>
+        <div>
+          <div class="font-semibold text-slate-800 mb-1">阶段标题</div>
+          <ul class="text-sm text-slate-600 list-disc list-inside space-y-0.5">
+            <li>动作 1</li>
+            <li>动作 2</li>
+          </ul>
+        </div>
+      </div>
+      <!-- 复制 .timeline-row 添加更多 -->
+    </div>
+  </section>
+
+  <footer class="text-center text-xs text-slate-400 mt-8 mb-12">
+    生成自 <code><!-- 源 md 文件名 --></code> · 日期 · 单文件 HTML(Tailwind + Alpine + Mermaid CDN)
+  </footer>
+
+  </main>
+</div>
+
+<!-- ============ Scroll Spy(自动高亮当前章节) ============ -->
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = '#' + entry.target.id;
+        const root = document.querySelector('[x-data]');
+        if (root && root._x_dataStack) {
+          root._x_dataStack[0].activeSection = id;
+        }
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

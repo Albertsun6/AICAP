@@ -1,0 +1,26 @@
+# Research Brief
+
+## 研究问题
+<标准化陈述>
+
+## 评估维度
+<3-5 dim 列表，每维度一句说明>
+
+## 子问题清单（必须回答）
+- <Q1>
+- <Q2>
+...
+
+## 排除范围
+<明确 out of scope，例如"不评估具体性能 benchmark / 不深入实现代码细节"等>
+
+## 成功标准
+- 最少 source 数：<N>（默认 8）
+- 时效性：近 <X> 月 source 占比 ≥ <Y%>（默认 12 月 / 30%）
+- primary source 占比下限：<Z%>（默认 40%）
+
+## 信源约束（#7 Trusted Source Scope）
+- allowed_domains: <list 或 "any"，例如 ["openai.com", "anthropic.com", "*.edu", "arxiv.org"]>
+- blocked_domains: <list，默认含中文社区 baseline (CSDN/掘金/思否/简书/知乎技术专栏/微信公号/gitee/国产 SaaS)>
+- source_freshness: <最低发布日期，默认无硬限制>
+- source_connectors: <未来 MCP 占位；当前实施仅文档化，不实际调用>
