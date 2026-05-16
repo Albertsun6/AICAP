@@ -1,4 +1,4 @@
-# ai-capabilities — 跨 AI 编码工具能力的单一事实来源（SSOT）
+# AICAP — 跨 AI 编码工具能力的单一事实来源（SSOT）
 
 团队所有 AI 编码工具（Claude Code / Cursor / Codex / Copilot）的项目级指令、技能、子代理、命令、MCP，
 **只在 `.rulesync/` 里定义一次**，用 [`rulesync`](https://github.com/dyoshikawa/rulesync) 生成到各工具各自的目录/文件名。
@@ -55,6 +55,7 @@ git add -A && git commit     # 源 + 生成产物一起提交
 | 命名/小文件 | kebab-case；单文件单职责；根规则行数上限（建议加 lint/pre-commit 强制） |
 | 权限边界 | secrets 走 env 占位；Claude 侧可在 `.rulesync/` 经 hooks/settings 下发 `permissions.deny` 等组织级硬约束 |
 | 版本 pin | `package.json` 与 CI 均 pin `rulesync@8.18.0`，升级走 PR 并复核 diff |
+| SSOT 边界 | 能力只在本仓库 `.rulesync/` 维护。`survey` 原独立仓库 `Albertsun6/claude-skills` **已废弃**，不再回写——以本 SSOT 为唯一事实来源 |
 
 ## 目标工具
 

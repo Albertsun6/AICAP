@@ -1,5 +1,5 @@
 {
-  "name": "ai-capabilities",
+  "name": "aicap",
   "private": true,
   "version": "0.1.0",
   "description": "团队跨 AI 编码工具可复用能力的单一事实来源（SSOT）",

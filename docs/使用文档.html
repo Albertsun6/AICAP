@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ai-capabilities 使用文档 — 跨 AI 编码工具能力 SSOT 骨架</title>
+<title>AICAP 使用文档 — 跨 AI 编码工具能力 SSOT 骨架</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 <script type="module">
@@ -59,7 +59,7 @@
 <nav class="no-print sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
   <div class="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
     <div class="font-bold text-slate-900 text-sm md:text-base">
-      ai-capabilities 使用文档
+      AICAP 使用文档
       <span class="hidden md:inline text-slate-400 font-normal ml-2">跨 AI 编码工具能力 SSOT 骨架 · 操作手册</span>
     </div>
     <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
@@ -106,7 +106,7 @@
       <span class="pill pill-muted">SSOT 骨架</span>
       <span class="pill pill-muted">Claude Code · Cursor · Codex · Copilot</span>
     </div>
-    <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">ai-capabilities 使用文档</h1>
+    <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">AICAP 使用文档</h1>
     <div class="text-sm text-slate-500 mb-5">跨 AI 编码工具可复用能力的单一事实来源（SSOT）骨架仓库 · 完整介绍与操作手册 · rulesync@8.18.0 · 2026-05-16</div>
     <blockquote class="!my-5">
       <strong>一句话 ——</strong> 一个 git 仓库，让团队所有 AI 编码工具的项目级指令 / 技能 / 子代理 / 命令 / MCP <strong>只在一处（<code>.rulesync/</code>）手写一次</strong>，用 <code>rulesync</code> 自动生成到每个工具各自的目录和文件名，并用 CI 保证"生成产物永远 == 当前源"。
@@ -161,7 +161,7 @@ flowchart TD
 
   <section id="tree" class="section-card">
     <h2 class="text-xl mb-4">4 目录结构详解 <a href="#tree" class="anchor-link">#</a></h2>
-    <pre class="codeblk"><code>ai-capabilities/
+    <pre class="codeblk"><code>AICAP/
 ├── .rulesync/                  ← SSOT，唯一手写处
 │   ├── rules/
 │   │   ├── overview.md         root 规则（root:true，全程加载，&lt;200 行）
@@ -218,7 +218,7 @@ flowchart TD
 
   <section id="install" class="section-card">
     <h2 class="text-xl mb-4">6 安装与首次使用 <a href="#install" class="anchor-link">#</a></h2>
-    <pre class="codeblk"><code>cd ai-capabilities
+    <pre class="codeblk"><code>cd AICAP
 pnpm install                 # 装 pin 住的 rulesync@8.18.0
 pnpm run ai:generate         # 从 .rulesync/ 生成所有目标工具产物
 pnpm run ai:check            # = generate + git diff --exit-code，本地预演 CI 门禁</code></pre>
