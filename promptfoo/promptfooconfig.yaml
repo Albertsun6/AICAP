@@ -1,0 +1,52 @@
+# 高价值能力的回归门禁（stub）—— 只给少数关键 skill/prompt 写，不是每个都写。
+# 思路："golden trace"：固定输入 + 断言输出关键属性，能力退化时 CI 失败。
+# 跑：npx promptfoo@latest eval -c promptfoo/promptfooconfig.yaml
+# 文档：https://www.promptfoo.dev/docs/integrations/ci-cd/
+
+description: AI 能力回归（示例：conventional-commit skill）
+
+prompts:
+  # 把被测 skill 的指令作为 system prompt 注入；{{diff}} 为测试输入
+  - |
+    {{skillBody}}
+
+    ---
+    git diff --staged 输出如下：
+    {{diff}}
+
+    请只输出建议的 Conventional Commits 提交信息。
+
+providers:
+  # 按团队实际使用的模型替换；需要对应 API key 环境变量
+  - id: anthropic:messages:claude-sonnet-4-6
+    # - id: openai:chat:gpt-5.5   # 如果团队也用 OpenAI
+
+defaultTest:
+  vars:
+    skillBody: file://../.rulesync/skills/conventional-commit/SKILL.md
+
+tests:
+  - description: 单一 bugfix → fix(scope) 前缀，祈使句，无句号
+    vars:
+      diff: |
+        --- a/src/auth/token.ts
+        +++ b/src/auth/token.ts
+        @@
+        -  if (exp < now) return true
+        +  if (exp <= now) return true   // 边界：精确到期视为过期
+    assert:
+      - type: regex
+        value: '^(fix)(\([a-z0-9\-]+\))?: .{1,72}$'
+        # 第一行须是 fix 类型、<=72 字符
+      - type: llm-rubric
+        value: 提交信息准确描述"修复 token 到期边界判断"，未夸大，未包含无关内容
+
+  - description: 跨多个无关改动 → 应提示拆分而非硬塞一条
+    vars:
+      diff: |
+        修改了 src/auth/token.ts（修 bug）
+        同时修改了 README.md（加无关章节）
+        同时修改了 .github/workflows/ci.yml（调 timeout）
+    assert:
+      - type: llm-rubric
+        value: 输出明确建议把改动拆成多个提交，而不是生成一条混合提交信息

@@ -1,0 +1,57 @@
+name: AI Config Drift Gate
+
+# 治理核心：保证"生成产物 == 由当前 .rulesync/ SSOT 生成的结果"。
+# 有人直接改了生成出来的 CLAUDE.md / AGENTS.md / .cursor 而没改 SSOT，
+# 或改了 SSOT 但忘了重新 generate —— 这个 job 都会失败。
+
+on:
+  pull_request:
+    paths:
+      - ".rulesync/**"
+      - "rulesync.jsonc"
+      - "CLAUDE.md"
+      - "AGENTS.md"
+      - ".claude/**"
+      - ".cursor/**"
+      - ".codex/**"
+      - ".github/copilot-instructions.md"
+      - ".github/instructions/**"
+      - ".github/skills/**"
+  push:
+    branches: [main]
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # pin 版本：与本仓库约定的 rulesync 版本一致，避免不同版本生成差异造成假阳性
+      - name: Regenerate from SSOT
+        run: npx -y rulesync@8.18.0 generate
+
+      - name: Fail if generated output drifted from SSOT
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::生成产物与 .rulesync/ SSOT 不一致。"
+            echo "本地修复：npx rulesync@8.18.0 generate 后提交，"
+            echo "且不要手工编辑生成出来的 CLAUDE.md / AGENTS.md / .cursor 等文件。"
+            exit 1
+          fi
+          echo "OK: 生成产物与 SSOT 一致，无漂移。"
+
+  # 可选质量门禁：对高价值 skill/prompt 跑回归（按需启用，需在 promptfoo/ 配好用例）
+  prompt-eval:
+    if: ${{ false }} # 配好 promptfoo 用例后改成 true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: promptfoo regression
+        run: npx -y promptfoo@latest eval -c promptfoo/promptfooconfig.yaml --no-cache

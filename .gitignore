@@ -1,0 +1,11 @@
+# 依赖与缓存
+node_modules/
+.DS_Store
+*.log
+
+# promptfoo 本地缓存（eval 结果不入库，配置入库）
+.promptfoo/
+promptfoo/output/
+
+# 关键：生成产物【不要】ignore —— CI drift gate 依赖它们被提交后再比对
+# 即不要在这里写 CLAUDE.md / AGENTS.md / .cursor/ / .claude/ / .codex/ / .github/

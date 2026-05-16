@@ -1,0 +1,14 @@
+{
+  "name": "ai-capabilities",
+  "private": true,
+  "version": "0.1.0",
+  "description": "团队跨 AI 编码工具可复用能力的单一事实来源（SSOT）",
+  "scripts": {
+    "ai:generate": "rulesync generate",
+    "ai:check": "rulesync generate && git diff --exit-code",
+    "ai:eval": "promptfoo eval -c promptfoo/promptfooconfig.yaml --no-cache"
+  },
+  "devDependencies": {
+    "rulesync": "8.18.0"
+  }
+}
