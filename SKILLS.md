@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（10 个，跨工具同步）
+## SSOT 管理的 Skills（11 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -71,9 +71,9 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 ---
 
 ### `/install-skill`
-**用途**：从 anthropics/skills 等主流 skill market 安装新技能到 AICAP SSOT——fetch → 展示新增列表 → 用户选择保留 → 删除其余 → generate → symlink，全程引导。
+**用途**：从任意 skill market（anthropics/skills、openai/skills、vercel-labs/agent-skills、cloudflare/skills 或自定义 org/repo）发现并安装新技能到 AICAP SSOT。先用 GitHub API 无副作用地浏览市场、搜索关键词、查看详情，选好后再 fetch → 保留选中项 → generate → symlink，全程引导。
 
-触发："从 anthropics 安装 skill" / "install skill from market" / "拉取新 skill"
+触发："安装 skill" / "从市场安装" / "浏览 skill 市场" / "看看有哪些 skill" / "install skill from market"
 
 ---
 
@@ -81,6 +81,15 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：AICAP 专用提交流程——检测 `.rulesync/skills/` 变动 → 更新 SKILLS.md → 重新生成 SKILLS.html / README.html → `pnpm run ai:generate` → 规范提交。
 
 触发：`/aicap-commit` / "提交到 AICAP" / "帮我提交这次改动"（在 AICAP 目录内）
+
+---
+
+### `/xcuitest-skill`
+**用途**：为 iOS/iPadOS app 生成 XCUITest UI 测试代码（Swift）。Apple 原生测试框架，覆盖 element 查询、手势、断言、系统弹窗处理、Page Object 模式。默认跑本地模拟器（`xcodebuild test`），也支持 LambdaTest / TestMu 云端真机。
+
+触发："XCUITest" / "iOS UI test" / "Swift UI test" / "XCUIApplication" / "写 iOS 测试"
+
+> 来源：LambdaTest/agent-skills，MIT 许可。附带 `reference/playbook.md` 和 `reference/advanced-patterns.md`。
 
 ---
 

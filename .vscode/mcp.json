@@ -19,6 +19,34 @@
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
+    },
+    "figma": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/Users/yongqian/Desktop/AICAP/scripts/mcp-idle-wrapper.py",
+        "npx",
+        "-y",
+        "@figma/mcp"
+      ],
+      "env": {
+        "MCP_IDLE_TIMEOUT": "1800",
+        "FIGMA_API_KEY": "${FIGMA_API_KEY}"
+      }
+    },
+    "penpot": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "/Users/yongqian/Desktop/AICAP/scripts/mcp-idle-wrapper.py",
+        "npx",
+        "-y",
+        "@penpot/mcp"
+      ],
+      "env": {
+        "MCP_IDLE_TIMEOUT": "1800",
+        "PENPOT_API_TOKEN": "${PENPOT_API_TOKEN}"
+      }
     }
   }
 }

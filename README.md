@@ -64,7 +64,7 @@ pnpm run ai:generate
 pnpm run setup:skills
 ```
 
-让 10 个 Skills 在你本机所有项目里都能使用（不只是本仓库）。运行一次永久生效，可重复运行。
+让 11 个 Skills 在你本机所有项目里都能使用（不只是本仓库）。运行一次永久生效，可重复运行。
 
 ### 验证
 
@@ -137,7 +137,7 @@ Skills 全局化（跨任意项目使用）：额外运行一次 `pnpm run setup
 
 ## Skills
 
-当前共 **10 个跨工具 Skill**（Claude Code / Cursor / Codex / Copilot），完整说明见 [SKILLS.md](SKILLS.md)。
+当前共 **11 个跨工具 Skill**（Claude Code / Cursor / Codex / Copilot），完整说明见 [SKILLS.md](SKILLS.md)。
 
 ### 项目内用（零配置）
 

@@ -6,6 +6,11 @@
         "matcher": "Write|Edit",
         "command": ".rulesync/hooks/format.sh"
       }
+    ],
+    "Stop": [
+      {
+        "command": "pkill -f mcp-idle-wrapper.py 2>/dev/null; true"
+      }
     ]
   }
 }

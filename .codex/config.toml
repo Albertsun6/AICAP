@@ -11,5 +11,23 @@ args = [ "-y", "@modelcontextprotocol/server-github" ]
 [mcp_servers.github.env]
 GITHUB_PERSONAL_ACCESS_TOKEN = "${GITHUB_PERSONAL_ACCESS_TOKEN}"
 
+[mcp_servers.figma]
+type = "stdio"
+command = "python3"
+args = [ "/Users/yongqian/Desktop/AICAP/scripts/mcp-idle-wrapper.py", "npx", "-y", "@figma/mcp" ]
+
+[mcp_servers.figma.env]
+MCP_IDLE_TIMEOUT = "1800"
+FIGMA_API_KEY = "${FIGMA_API_KEY}"
+
+[mcp_servers.penpot]
+type = "stdio"
+command = "python3"
+args = [ "/Users/yongqian/Desktop/AICAP/scripts/mcp-idle-wrapper.py", "npx", "-y", "@penpot/mcp" ]
+
+[mcp_servers.penpot.env]
+MCP_IDLE_TIMEOUT = "1800"
+PENPOT_API_TOKEN = "${PENPOT_API_TOKEN}"
+
 [features]
 hooks = true
