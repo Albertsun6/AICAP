@@ -31,7 +31,8 @@ Phase 1 问题界定
   → Phase 6 cursor-agent 异构终审            [Read prompts/round1.txt]
   → 多轮辩论（最多 3 轮）                     [Read prompts/round{2,3}-rebuttal.txt]
   → 剩余分歧人类裁决
-  → Finalize: 写报告 + audio 到 cwd            [Write <cwd>/<主题>-完整报告.md]
+  → Finalize: 写报告 + HTML + audio 到 cwd      [Write <cwd>/<主题>-完整报告.md]
+  → HTML report (step 4.5, after .md)          [Write <cwd>/<主题>-完整报告.html（交互式单页）]
   → Audio summary (after finalize, once)       [bash generate-audio.sh -o <cwd>/<主题>-音频概要.m4a (脚本 -o 直写)]
 ```
 
@@ -130,10 +131,11 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 
 ## 输出文件位置（finalize 时强制）
 
-- **最终报告 + audio → cwd**（用户启动 Claude Code 时所在目录）
+- **最终报告 + HTML + audio → cwd**（用户启动 Claude Code 时所在目录）
   - 报告：`<主题>-完整报告.md`（主题由主 agent 从研究问题提取 8-15 字中文 / 英文短语）
+  - HTML：`<主题>-完整报告.html`（交互式单页，含粘性目录 / Mermaid 图 / 置信度 pill，双击即开）
   - Audio：`<主题>-音频概要.m4a`（macOS）或 `.mp3`（OpenAI TTS）
-  - 同名冲突：累加 `-2` `-3` 后缀（不覆盖旧文件、不询问）
+  - 同名冲突：`.md` / `.html` / `.m4a` 三者同步累加 `-2` `-3` 后缀（不覆盖旧文件、不询问）
 - **中间产物 → /tmp**：agent prompt 文件（`/tmp/survey-prompt-<ts>.txt`）、subagent 输出（`/tmp/survey-output-<ts>.md`）、Round 1/2/3 prompt 与输出、Citation health JSON 全部留 /tmp，不污染 cwd
 - 详细 finalize 流程见 `phases/04-synthesis.md` §Finalize 输出步骤
 

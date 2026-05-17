@@ -105,7 +105,7 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X（默认）或 A+B+C（cursor
 
 ## Finalize 输出步骤（Phase 6 收敛后、Audio 之前强制执行）
 
-> 原则：最终报告 + audio 默认落到 cwd（用户启动 Claude Code 时所在目录），不再只在对话里 markdown 输出。中间产物（prompt / subagent 输出 / citation JSON）继续留 /tmp。
+> 原则：最终报告 + HTML + audio 默认落到 cwd（用户启动 Claude Code 时所在目录），不再只在对话里 markdown 输出。中间产物（prompt / subagent 输出 / citation JSON）继续留 /tmp。
 
 ### 触发时机（**唯一触发点**）
 
@@ -123,14 +123,32 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X（默认）或 A+B+C（cursor
    - 例（英文）：`Comparison of Python async frameworks → python-async-frameworks-comparison`
    - **强制 slug 化**：替换路径敏感字符 → `_`：`/` `\` `:` `*` `?` `"` `<` `>` `|` 换行制表符
    - 保留：中文、英文字母、数字、`-` `_` `.`
-2. **拼装 cwd 路径**：从 Bash `pwd` 取 cwd，拼出 `<cwd>/<topic>-完整报告.md` 与 `<cwd>/<topic>-音频概要.m4a`
-3. **同名冲突处理**：用 Bash 检测目标文件是否存在
+2. **拼装 cwd 路径**：从 Bash `pwd` 取 cwd，拼出三个目标路径：
+   - `<cwd>/<topic>-完整报告.md`
+   - `<cwd>/<topic>-完整报告.html`
+   - `<cwd>/<topic>-音频概要.m4a`
+3. **同名冲突处理**：用 Bash 检测 `.md` 目标文件是否存在（`.html` 与 `.m4a` 沿用相同 topic + 后缀，自动跟随 `.md` 的最终编号）
    - 不存在 → 直接写；§metadata 写 `Filename collision: none`
    - 存在 → 尝试 `-2`、`-3`、`-4` 累加后缀直到不冲突；§metadata 写 `Filename collision: detected, saved as <final-path>`
    - **不覆盖、不询问**——保留旧调研产物
 4. **写报告 v1**：用 Write 工具落综合 markdown 到目标路径，§metadata 中：
    - `Output: <最终路径>`
+   - `HTML: pending`（占位，待步骤 4.5 替换）
    - `Audio: pending`（占位，待步骤 6 替换）
+4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，直接按 `report-to-html` skill 的规范内联生成（**不重新触发 `/report-to-html` skill**）：
+   - 读取步骤 4 写好的 `.md` 文件
+   - 生成包含以下特性的单文件 HTML：
+     - 顶部 sticky bar（标题 + 置信度 pill + 日期 + 打印按钮）
+     - 左侧粘性目录（提取所有 `##` 章节，滚动高亮）
+     - 对比表格（hover 高亮，overflow-x: auto）
+     - Mermaid 流程图（如报告有流程描述）
+     - Pill 状态徽章（高/中/低置信度 → pill-ok/pill-warn/pill-muted）
+     - `<details>` 折叠（调研 Metadata、辩论历史等次要内容）
+     - 零构建：Tailwind + Alpine + Mermaid CDN，双击即开
+   - 命名：`<cwd>/<topic>-完整报告.html`（与 `.md` 同 topic + 同编号后缀）
+   - 用 Write 工具落盘；用 `open "<html路径>"` 在浏览器打开验证
+   - 成功：用 Edit 工具把 §metadata 中的 `HTML: pending` 替换为 `HTML: <html路径>`
+   - 失败：Edit 为 `HTML: failed (<reason>)`；**不阻断主流程**，继续步骤 5
 5. **跑 audio**：调 `bash generate-audio.sh -o "<cwd>/<topic>-音频概要.m4a" "<cwd>/<topic>-完整报告.md"`，注意所有路径必须双引号
 6. **Edit 报告 v2**：用 Edit 工具把 §metadata 中的 `Audio: pending` 替换为最终状态：
    - 成功：`Audio: <音频文件路径>`
@@ -140,11 +158,11 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X（默认）或 A+B+C（cursor
 
 | 场景 | 行为 | metadata |
 |---|---|---|
-| 报告 Write 成功 + audio 成功 | 全流程跑通 | `Output: <path>; Audio: <audio-path>` |
-| 报告 Write 成功 + audio 失败 | 跳过 Edit audio 字段或 Edit 为 failed | `Output: <path>; Audio: failed (<reason>)` |
-| 报告 Write 成功 + audio skipped（如非 macOS / 无 OPENAI_API_KEY） | Edit 为 skipped | `Output: <path>; Audio: skipped (<reason>)` |
-| 报告 Write 失败（cwd 只读 / 路径无效） | **跳过 audio**（依赖关系：audio 朗读已落盘报告） | 对话里 inline 输出报告 + `Output: write failed (<reason>); inline only; Audio: skipped (report not written)` |
-| 报告 Write 成功 + audio 跑完但 Edit metadata 失败（极少） | 保留 v1 的 `Audio: pending`，对话补一句"audio metadata 未更新，实际状态 <X>" | `Output: <path>; Audio: pending`（已知不一致） |
+| 报告 Write 成功 + HTML 成功 + audio 成功 | 全流程跑通 | `Output: <path>; HTML: <html-path>; Audio: <audio-path>` |
+| 报告 Write 成功 + HTML 失败 + audio 成功 | HTML 不阻断流程，继续 audio | `Output: <path>; HTML: failed (<reason>); Audio: <audio-path>` |
+| 报告 Write 成功 + HTML 成功 + audio 失败 | Edit audio 为 failed | `Output: <path>; HTML: <html-path>; Audio: failed (<reason>)` |
+| 报告 Write 成功 + HTML 成功 + audio skipped | Edit audio 为 skipped | `Output: <path>; HTML: <html-path>; Audio: skipped (<reason>)` |
+| 报告 Write 失败（cwd 只读 / 路径无效） | **跳过 HTML 和 audio** | 对话里 inline 输出报告 + `Output: write failed (<reason>); inline only; HTML: skipped (report not written); Audio: skipped (report not written)` |
 
 **绝不**因 finalize 写文件失败让主流程失败——降级是设计目标，不是异常。
 
