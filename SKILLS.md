@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（9 个，跨工具同步）
+## SSOT 管理的 Skills（10 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -81,6 +81,13 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：AICAP 专用提交流程——检测 `.rulesync/skills/` 变动 → 更新 SKILLS.md → 重新生成 SKILLS.html / README.html → `pnpm run ai:generate` → 规范提交。
 
 触发：`/aicap-commit` / "提交到 AICAP" / "帮我提交这次改动"（在 AICAP 目录内）
+
+---
+
+### `/sync-aicap`
+**用途**：同步 AICAP skills 到最新版本——`git pull` → 检测变动 → `pnpm run ai:generate` → `pnpm run setup:skills` → 展示新增/删除/更新的 skill 列表。若本地有新 skill，还可自动提交并创建 PR 推给团队。
+
+触发："同步 AICAP" / "sync aicap" / "更新 AICAP" / "拉取最新 skills" / "AICAP 有更新"
 
 ---
 

@@ -84,7 +84,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（9个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（10个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -94,6 +94,7 @@
           {h:'#webapp-testing',t:'/webapp-testing',sub:true},
           {h:'#install-skill',t:'/install-skill',sub:true},
           {h:'#aicap-commit',t:'/aicap-commit',sub:true},
+          {h:'#sync-aicap',t:'/sync-aicap',sub:true},
           {h:'#local',t:'本地专用（3个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
@@ -123,7 +124,7 @@
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
     <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-17</div>
     <blockquote class="!my-5">
-      <strong>12 个 Skill，一个路径。</strong>9 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      <strong>13 个 Skill，一个路径。</strong>10 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -138,7 +139,8 @@
           <tr><td><code><a href="#skill-creator">/skill-creator</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>创建/改进/评测 skill</td><td>"创建新 skill"</td></tr>
           <tr><td><code><a href="#webapp-testing">/webapp-testing</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>Playwright 测试本地 Web 应用</td><td>"测一下这个网页"</td></tr>
           <tr><td><code><a href="#install-skill">/install-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>从 skill market fetch + 选择 + 部署</td><td>"从 anthropics 安装 skill"</td></tr>
-          <tr class="bg-emerald-50/40"><td><code><a href="#aicap-commit">/aicap-commit</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>AICAP 专用提交：更新文档 + 生成 HTML + generate + commit</td><td>"提交到 AICAP"</td></tr>
+          <tr><td><code><a href="#aicap-commit">/aicap-commit</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>AICAP 专用提交：更新文档 + 生成 HTML + generate + commit</td><td>"提交到 AICAP"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#sync-aicap">/sync-aicap</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>双向同步：拉最新 / 把本地新 skill 推 PR 给团队</td><td>"同步 AICAP"</td></tr>
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
@@ -149,8 +151,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（9 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 9 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（10 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 10 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -269,6 +271,37 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">/aicap-commit</span><span class="trigger-tag">提交到 AICAP</span><span class="trigger-tag">帮我提交这次改动</span></div>
   </section>
 
+  <!-- sync-aicap -->
+  <section id="sync-aicap" class="section-card">
+    <h2 class="text-xl mb-1">/sync-aicap <a href="#sync-aicap" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">双向同步：拉取最新远端 skills，或把本地新 skill 推给团队（PR）</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">自动判断模式：若无本地改动则拉取远端最新（<code>git pull → ai:generate → setup:skills</code>）并展示新增/删除/更新 skill diff；若有本地新 skill，则更新文档、创建 feature branch 并开 PR 推给团队。</p></div>
+    <p class="text-sm text-slate-600 mt-3 mb-2 font-semibold">两种模式：</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="border border-emerald-200 rounded-lg p-3 bg-emerald-50/30">
+        <div class="font-semibold text-sm text-emerald-800 mb-1">模式 A：拉取同步</div>
+        <ol class="list-decimal list-inside text-xs space-y-1 text-slate-600">
+          <li>记录当前 skill 快照</li>
+          <li><code>git pull</code></li>
+          <li><code>pnpm run ai:generate</code></li>
+          <li><code>pnpm run setup:skills</code></li>
+          <li>展示新增 / 删除 / 更新 diff</li>
+        </ol>
+      </div>
+      <div class="border border-blue-200 rounded-lg p-3 bg-blue-50/30">
+        <div class="font-semibold text-sm text-blue-800 mb-1">模式 B：推送 PR</div>
+        <ol class="list-decimal list-inside text-xs space-y-1 text-slate-600">
+          <li>确认本地新 skill 列表</li>
+          <li>更新 SKILLS.md / HTML</li>
+          <li><code>pnpm run ai:generate</code></li>
+          <li>提交到 feature branch</li>
+          <li><code>gh pr create</code> 并返回 PR URL</li>
+        </ol>
+      </div>
+    </div>
+    <div class="mt-3"><span class="trigger-tag">同步 AICAP</span><span class="trigger-tag">sync aicap</span><span class="trigger-tag">更新 AICAP</span><span class="trigger-tag">把本地 skill 提交 PR</span></div>
+  </section>
+
   <!-- 本地专用 -->
   <section id="local" class="section-card">
     <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
@@ -318,9 +351,9 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>9 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>9 个目录</td><td>rulesync 生成产物</td></tr>
-          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>9 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>10 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>10 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>10 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>
     </div>
