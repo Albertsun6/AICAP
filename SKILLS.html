@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Skills 说明文档 — AICAP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: '"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif',
+      primaryColor: "#ecfdf5",
+      primaryTextColor: "#064e3b",
+      primaryBorderColor: "#10b981",
+      lineColor: "#475569",
+      secondaryColor: "#eff6ff",
+      tertiaryColor: "#fef3c7",
+    },
+    flowchart: { curve: "basis", padding: 16 },
+  });
+</script>
+<style>
+  :root {
+    --ink: #0f172a;
+    --ink-soft: #334155;
+    --line: #e2e8f0;
+    --bg: #fafaf9;
+    --accent: #047857;
+    --accent-soft: #ecfdf5;
+  }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    font-family: "PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.75;
+    font-feature-settings: "palt";
+  }
+  h1,h2,h3,h4 { font-weight: 700; letter-spacing: -0.01em; }
+  h2 { scroll-margin-top: 72px; }
+  h3 { scroll-margin-top: 72px; }
+  code, pre, .mono { font-family: "JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .15s; }
+  a:hover { border-bottom-color: var(--accent); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th { background: #f1f5f9; text-align: left; font-weight: 600; color: var(--ink); }
+  th, td { border: 1px solid var(--line); padding: 0.55rem 0.75rem; vertical-align: top; }
+  tbody tr:hover { background: #f8fafc; }
+  .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+  .pill-ok { background: #d1fae5; color: #065f46; }
+  .pill-warn { background: #fef3c7; color: #92400e; }
+  .pill-info { background: #dbeafe; color: #1e40af; }
+  .pill-muted { background: #f1f5f9; color: #475569; }
+  blockquote { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 0.6rem 1rem; margin: 1rem 0; color: var(--ink-soft); border-radius: 0 6px 6px 0; }
+  pre.codeblk { background: #0f172a; color: #e2e8f0; padding: 1rem 1.2rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.6; }
+  .section-card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+  .anchor-link { color: #94a3b8; margin-left: 0.4rem; font-size: 0.85rem; opacity: 0; transition: opacity .15s; }
+  h2:hover .anchor-link, h3:hover .anchor-link { opacity: 1; }
+  details > summary { cursor: pointer; user-select: none; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; display: inline-block; margin-right: 0.5rem; transition: transform .15s; color: var(--accent); }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .nav-link-sub { padding-left: 1.25rem !important; font-size: 0.8rem; }
+  .mermaid { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; text-align: center; overflow-x: auto; }
+  .callout-warn { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; margin: 0.75rem 0; }
+  .skill-block { border-left: 3px solid var(--accent); padding: 1rem 1.25rem; background: #f8fffe; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; }
+  .skill-block h3 { font-size: 1.05rem; color: var(--accent); margin-bottom: 0.4rem; }
+  .trigger-tag { display: inline-block; background: #f1f5f9; color: #475569; border-radius: 4px; font-size: 0.73rem; padding: 0.1rem 0.4rem; margin: 0.15rem 0.15rem 0 0; font-family: "JetBrains Mono",ui-monospace,monospace; }
+  @media print {
+    .no-print, nav, aside { display: none !important; }
+    main { max-width: none !important; padding: 0 !important; }
+    .section-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body x-data="{ activeSection: '#summary' }">
+
+<!-- 顶部 Sticky Bar -->
+<nav class="no-print sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
+    <div class="font-bold text-slate-900 text-sm md:text-base">
+      Skills 说明文档
+      <span class="hidden md:inline text-slate-400 font-normal ml-2">AICAP 跨工具 Skill 目录</span>
+    </div>
+    <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
+      <span class="hidden md:inline">2026-05-17</span>
+      <span class="pill pill-ok">7 SSOT</span>
+      <span class="pill pill-muted">3 本地</span>
+      <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-5 py-8 flex gap-8">
+
+  <!-- 左侧 TOC -->
+  <aside class="no-print hidden lg:block w-56 shrink-0">
+    <div class="sticky top-20">
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">目录</div>
+      <ul class="space-y-0.5 text-sm" x-data>
+        <template x-for="item in [
+          {h:'#summary',t:'概览',sub:false},
+          {h:'#ssot',t:'SSOT Skills（7个）',sub:false},
+          {h:'#survey',t:'/survey',sub:true},
+          {h:'#debate-review',t:'/debate-review',sub:true},
+          {h:'#report-to-html',t:'/report-to-html',sub:true},
+          {h:'#conventional-commit',t:'/conventional-commit',sub:true},
+          {h:'#project-context',t:'/project-context',sub:true},
+          {h:'#skill-creator',t:'/skill-creator',sub:true},
+          {h:'#webapp-testing',t:'/webapp-testing',sub:true},
+          {h:'#local',t:'本地专用（3个）',sub:false},
+          {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
+          {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
+          {h:'#fedex-tracker',t:'/fedex-tracker',sub:true},
+          {h:'#maintenance',t:'维护规则',sub:false}
+        ]">
+          <li>
+            <a :href="item.h"
+               :class="{'active': activeSection === item.h, 'nav-link-sub': item.sub}"
+               @click="activeSection = item.h"
+               class="nav-link block px-3 py-1.5 rounded text-slate-600 hover:bg-slate-100"
+               x-text="item.t"></a>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+
+  <!-- Hero / 摘要 -->
+  <section id="summary" class="section-card">
+    <div class="flex flex-wrap items-center gap-2 mb-4 text-xs">
+      <span class="pill pill-ok">10 个 Skills</span>
+      <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
+      <span class="pill pill-muted">AICAP SSOT</span>
+    </div>
+    <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
+    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 更新于 2026-05-17</div>
+    <blockquote class="!my-5">
+      <strong>10 个 Skill，一个路径。</strong>7 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
+    </blockquote>
+
+    <div class="overflow-x-auto">
+      <table>
+        <thead>
+          <tr><th>Skill</th><th>类型</th><th>一句话用途</th><th>触发</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code><a href="#survey">/survey</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>多阶段异构调研，产出结构化报告 + 音频</td><td>"调研X" / "比较X和Y"</td></tr>
+          <tr><td><code><a href="#debate-review">/debate-review</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>对外部 AI 评审逐条裁决，接受/部分接受/反驳</td><td>粘贴 AI 评审 + "裁决"</td></tr>
+          <tr><td><code><a href="#report-to-html">/report-to-html</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>Markdown 长报告 → 交互式单页 HTML</td><td>"转成 HTML" / "/report-to-html xxx.md"</td></tr>
+          <tr><td><code><a href="#conventional-commit">/conventional-commit</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>基于 git diff 生成规范提交信息</td><td>"写提交信息" / "commit 这个"</td></tr>
+          <tr><td><code><a href="#project-context">/project-context</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>输出项目目标/架构/约束/验证方式速览</td><td>"介绍项目" / 新接手任务时</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#skill-creator">/skill-creator</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">Tier1 新增</span></td><td>创建/改进/评测 skill，支持定量 eval</td><td>"创建新 skill" / "优化这个 skill"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#webapp-testing">/webapp-testing</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">Tier1 新增</span></td><td>Playwright 测试本地 Web 应用，截图 + console 日志</td><td>"测一下这个网页" / "验证前端"</td></tr>
+          <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施（backend + iOS + 验证 + 真机）</td><td>"全做" / "ship 这个功能"</td></tr>
+          <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 全链路测试</td><td>"跑 e2e 测试" / "装到手机"</td></tr>
+          <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV，绕 Akamai</td><td>有 FedEx 追踪号批次时</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- SSOT Skills 概览 + 流程图 -->
+  <section id="ssot" class="section-card">
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（7 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 7 个 skill 从 AICAP 单一事实来源（<code>.rulesync/skills/</code>）经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot 四个工具，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+
+    <div class="mermaid">
+flowchart LR
+    A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync generate"]
+    B --> C[".claude/skills/"]
+    B --> D[".cursor/skills/"]
+    B --> E[".codex/skills/"]
+    C -->|"symlink"| F["~/.claude/skills/"]
+    F --> G["Claude Code"]
+    F --> H["Cursor"]
+    F --> I["Codex"]
+    classDef src fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef gen fill:#eff6ff,stroke:#3b82f6,stroke-width:1px,color:#1e40af
+    classDef tool fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#334155
+    class A src
+    class B,C,D,E gen
+    class F,G,H,I tool
+    </div>
+
+    <blockquote>
+      <strong>Cursor 原生兼容</strong>：Cursor 直接读取 <code>~/.claude/skills/</code>（无需额外配置）。symlink 是 SSOT 和全局发现之间的唯一桥梁。
+    </blockquote>
+  </section>
+
+  <!-- survey -->
+  <section id="survey" class="section-card">
+    <h2 class="text-xl mb-1">/survey <a href="#survey" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">针对任意话题的系统性调研，多阶段异构搜索 + 辩论终审</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。产出结构化 Markdown 报告（含来源评分、置信度标注）+ 音频概要（.m4a）。</p>
+    </div>
+
+    <h3 class="font-semibold mb-2 mt-4">Pipeline</h3>
+    <div class="mermaid">
+flowchart LR
+    P1["Phase 1 问题界定"] --> P15["Phase 1.5 Brief"]
+    P15 --> P2["Phase 2 异构搜索"]
+    P2 --> P25["Phase 2.5 Reflection"]
+    P25 --> P35["Phase 3-5 综合报告"]
+    P35 --> P55["Phase 5.5 引用核查"]
+    P55 --> P6["Phase 6 终审辩论"]
+    P6 --> OUT["报告 md + 音频 m4a"]
+    classDef phase fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef out fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#92400e
+    class P1,P15,P2,P25,P35,P55,P6 phase
+    class OUT out
+    </div>
+
+    <p class="text-sm text-slate-600 mt-2 mb-4">Phase 2：2 个 Claude agent + 1 个 cursor-agent（GPT）并行异构搜索，对抗 Claude 训练集体盲区。cursor-agent 不可用时自动降级并 banner 提示。</p>
+
+    <div class="callout-warn">
+      <strong>无 flag</strong>：/survey 只有一条高质量路径，每个阶段都是质量门禁，不可跳过。需要快速概览请直接问 Claude，不要用 /survey。
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">/survey X</span>
+      <span class="trigger-tag">调研X方案</span>
+      <span class="trigger-tag">比较X和Y</span>
+      <span class="trigger-tag">X的最佳实践</span>
+      <span class="trigger-tag">网上有哪些做X的方式</span>
+      <span class="trigger-tag">别人怎么解决X</span>
+    </div>
+  </section>
+
+  <!-- debate-review -->
+  <section id="debate-review" class="section-card">
+    <h2 class="text-xl mb-1">/debate-review <a href="#debate-review" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">对外部 AI 评审反馈做结构化辩论裁决</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">收到外部 AI 的评审反馈后，逐条裁决——接受 / 部分接受 / 反驳，形成判断矩阵，并把改动落到原文件。适用于架构 plan 评审、PR review、设计 spec 批注。</p>
+    </div>
+
+    <div class="callout-warn mt-4">
+      <strong>输入约束</strong>：仅负责 phase 3 裁决。启动前需要 4 份 phase 1/2 文件（arch-verdict、cross-verdict、arch-react、cross-react）全部存在，缺任一则拒绝执行。
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">粘贴 AI 评审内容 + "帮我裁决"</span>
+      <span class="trigger-tag">debate this review</span>
+      <span class="trigger-tag">评估这条评审意见</span>
+    </div>
+  </section>
+
+  <!-- report-to-html -->
+  <section id="report-to-html" class="section-card">
+    <h2 class="text-xl mb-1">/report-to-html <a href="#report-to-html" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">Markdown 长报告 → 交互式单页 HTML</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">把 200+ 行 Markdown 报告（含表格/流程图/引用链接）转成零构建单文件 HTML——粘性目录、Mermaid 图、Accordion 折叠、Pill 状态徽章、打印友好。Tailwind + Alpine + Mermaid 全 CDN，双击即开，邮件可发。</p>
+    </div>
+
+    <table class="mt-4">
+      <thead><tr><th>适用</th><th>不适用</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>调研报告、架构文档、方案对比、研究 brief</td>
+          <td>多文档站（Docusaurus）、PPT 演示（用 pptx skill）、需要后端的应用</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">/report-to-html xxx.md</span>
+      <span class="trigger-tag">把这个报告转成 HTML</span>
+      <span class="trigger-tag">做成交互式网页</span>
+      <span class="trigger-tag">生成一个能浏览的 HTML 版本</span>
+    </div>
+  </section>
+
+  <!-- conventional-commit -->
+  <section id="conventional-commit" class="section-card">
+    <h2 class="text-xl mb-1">/conventional-commit <a href="#conventional-commit" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">基于 git diff 生成规范 Conventional Commits 提交信息</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">先看实际 <code>git diff --staged</code>，基于真实 diff 写提交信息，不臆测。只输出建议，<strong>不自动执行 git commit</strong>（除非明确要求）。发现 diff 跨多个无关变更时提示拆分。</p>
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">输出格式</h3>
+    <pre class="codeblk">&lt;type&gt;(&lt;scope&gt;): &lt;简洁祈使句，≤72字符，不加句号&gt;
+
+&lt;body：为什么这样改、影响范围、权衡。每行≤100字符；琐碎改动可省略&gt;
+
+&lt;footer：BREAKING CHANGE: ... / Closes #123，可选&gt;</pre>
+    <p class="text-xs text-slate-500 mt-2">type ∈ feat | fix | refactor | perf | docs | test | build | ci | chore</p>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">写提交信息</span>
+      <span class="trigger-tag">commit 这个</span>
+      <span class="trigger-tag">生成 commit message</span>
+    </div>
+  </section>
+
+  <!-- project-context -->
+  <section id="project-context" class="section-card">
+    <h2 class="text-xl mb-1">/project-context <a href="#project-context" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">项目上下文快速速览，供新任务开始时拉齐上下文</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">快速输出当前项目的目标、架构概览、关键约束、共享约定、验证方式。约 300 字，信息来源优先仓库内文档，推断部分明确标注。</p>
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">输出结构</h3>
+    <ol class="list-decimal list-inside text-sm space-y-1 text-slate-700">
+      <li>项目目标 — 解决什么问题，当前阶段/里程碑</li>
+      <li>架构概览 — 核心模块、数据流、关键边界</li>
+      <li>关键约束 — 性能/兼容/合规/不可改动的部分</li>
+      <li>共享约定 — 命名、错误处理、提交规范</li>
+      <li>验证方式 — 怎么本地验证一个改动是对的</li>
+    </ol>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">介绍一下这个项目</span>
+      <span class="trigger-tag">会话开始帮我了解项目</span>
+      <span class="trigger-tag">新接手任务时</span>
+      <span class="trigger-tag">/project-context</span>
+    </div>
+  </section>
+
+  <!-- skill-creator -->
+  <section id="skill-creator" class="section-card">
+    <h2 class="text-xl mb-1">/skill-creator <a href="#skill-creator" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+      <span class="pill pill-info ml-1">Tier1 新增</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">创建 / 改进 / 评测 skill，支持定量 eval 和触发准确度优化</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">标准化的 skill 生命周期管理：草稿 → 测试 → 定量评估 → 迭代改进。主要服务于 AICAP SSOT 自身维护——新增 skill 或改进现有 skill 的触发准确度。</p>
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">能力</h3>
+    <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+      <li>从零创建符合 SKILL.md 规范的新 skill</li>
+      <li>修改/优化现有 skill 的描述和触发词</li>
+      <li>运行 eval 测量 skill 性能（含方差分析）</li>
+      <li>Benchmark 多版本 skill，给出改进建议</li>
+    </ul>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">创建一个新 skill</span>
+      <span class="trigger-tag">优化这个 skill 的描述</span>
+      <span class="trigger-tag">跑 eval 测一下</span>
+      <span class="trigger-tag">benchmark skill performance</span>
+    </div>
+  </section>
+
+  <!-- webapp-testing -->
+  <section id="webapp-testing" class="section-card">
+    <h2 class="text-xl mb-1">/webapp-testing <a href="#webapp-testing" class="anchor-link">#</a>
+      <span class="pill pill-ok ml-2">SSOT</span>
+      <span class="pill pill-info ml-1">Tier1 新增</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">Playwright 测试本地 Web 应用，截图 + console 日志</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">用 Playwright 测试本地 Web 应用——验证前端功能、调试 UI 行为、截图存档、查看浏览器 console 日志。提供 <code>scripts/with_server.py</code> 管理服务器生命周期。</p>
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">核心脚本</h3>
+    <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+      <li><code>scripts/with_server.py</code> — 管理服务器生命周期，支持多 server</li>
+      <li>先 <code>--help</code> 了解用法，再按需调用；不要把源码加载到上下文</li>
+    </ul>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">测一下这个网页功能</span>
+      <span class="trigger-tag">帮我验证前端</span>
+      <span class="trigger-tag">截图看看现在 UI 状态</span>
+      <span class="trigger-tag">查 browser console 日志</span>
+    </div>
+  </section>
+
+  <!-- 本地专用 -->
+  <section id="local" class="section-card">
+    <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">这 3 个 skill 直接存放在 <code>~/.claude/skills/</code> 作为真实目录，不经 rulesync 同步。Seaidea 项目专属，Cursor 已能读取。</p>
+    <div class="callout-warn">
+      若将来要跨工具同步这三个，走 AICAP SSOT 路径：加到 <code>.rulesync/skills/</code> → <code>pnpm run ai:generate</code> → 创建 symlink。
+    </div>
+  </section>
+
+  <!-- feature-fullstack -->
+  <section id="feature-fullstack" class="section-card">
+    <h2 class="text-xl mb-1">/feature-fullstack <a href="#feature-fullstack" class="anchor-link">#</a>
+      <span class="pill pill-muted ml-2">本地 · Seaidea</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">端到端实施 Seaidea 全栈 feature，一次搞定</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">覆盖 backend + iOS + 验证 + 真机部署的完整实施流程，不留任何环节空缺。从 M0.5 实施经验蒸馏（约 1100 行新代码、4 个 feature、一次 sitting 验证到位）。</p>
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">适用条件</h3>
+    <ul class="list-disc list-inside text-sm space-y-1 text-slate-700">
+      <li>请求涉及 2+ 个区域，且同时触及 backend 和 iOS</li>
+      <li>用户说"全做" / "ship 这个功能" / "测完装手机"</li>
+    </ul>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">全做</span>
+      <span class="trigger-tag">ship 这个功能</span>
+      <span class="trigger-tag">实施 M0.X</span>
+      <span class="trigger-tag">feature 全栈</span>
+      <span class="trigger-tag">把 X 做完装手机</span>
+    </div>
+  </section>
+
+  <!-- ios-e2e-test -->
+  <section id="ios-e2e-test" class="section-card">
+    <h2 class="text-xl mb-1">/ios-e2e-test <a href="#ios-e2e-test" class="anchor-link">#</a>
+      <span class="pill pill-muted ml-2">本地 · Seaidea</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">Seaidea iOS 模拟器全链路 E2E 测试</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">全自动 Seaidea iOS app 端到端测试——验证 backend 健康、启动模拟器、WebSocket 探针确认完整通知链（backend → ServerChan），截图存档，测试通过后可选真机部署。</p>
+    </div>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">在模拟器跑 iOS 测试</span>
+      <span class="trigger-tag">验证 iOS 端到端</span>
+      <span class="trigger-tag">跑 e2e 测试</span>
+      <span class="trigger-tag">装到手机</span>
+      <span class="trigger-tag">test the iOS app</span>
+    </div>
+  </section>
+
+  <!-- fedex-tracker -->
+  <section id="fedex-tracker" class="section-card">
+    <h2 class="text-xl mb-1">/fedex-tracker <a href="#fedex-tracker" class="anchor-link">#</a>
+      <span class="pill pill-muted ml-2">本地</span>
+    </h2>
+    <p class="text-slate-500 text-sm mb-4">批量查 FedEx 发货日期，输出 CSV，绕过 Akamai 反爬</p>
+
+    <div class="skill-block">
+      <h3>用途</h3>
+      <p class="text-sm text-slate-700">用真实 Chrome（CDP 驱动）模拟点击 FedEx 官网追踪流程，提取发货日期（Picked-up date），批量输出 CSV。随机延迟 8-15s 绕过 Akamai Bot Manager。</p>
+    </div>
+
+    <details class="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+      <summary class="font-semibold text-slate-800">工作流程（展开查看）</summary>
+      <ol class="list-decimal list-inside text-sm space-y-1 text-slate-700 mt-3">
+        <li>打开 FedEx Tracking 导航下拉（真实点击，不走 URL 跳转）</li>
+        <li>在可见输入框键入追踪号</li>
+        <li>点击橙色 TRACK 按钮，等待结果页渲染</li>
+        <li>点击 "View more details" 展开 Shipment Facts</li>
+        <li>读取 SHIP DATE（或 Picked up 事件日期作 fallback）</li>
+      </ol>
+    </details>
+
+    <h3 class="font-semibold mt-4 mb-2">触发词</h3>
+    <div>
+      <span class="trigger-tag">有一批 FedEx 追踪号需要发货日期</span>
+      <span class="trigger-tag">批量查 FedEx 物流</span>
+    </div>
+  </section>
+
+  <!-- 维护规则 -->
+  <section id="maintenance" class="section-card">
+    <h2 class="text-xl mb-4">维护规则 <a href="#maintenance" class="anchor-link">#</a></h2>
+
+    <h3 class="font-semibold mb-3">新增 SSOT Skill 标准流程</h3>
+    <pre class="codeblk"># 1. 在 SSOT 源里创建 skill
+mkdir AICAP/.rulesync/skills/&lt;name&gt;
+vim AICAP/.rulesync/skills/&lt;name&gt;/SKILL.md
+
+# 2. 生成三工具产物
+cd AICAP && pnpm run ai:generate
+
+# 3. 创建全局 symlink
+ln -s /Users/yongqian/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;</pre>
+
+    <div class="callout-warn mt-4">
+      不要直接在 <code>~/.claude/skills/</code> 建真实目录，除非明确只用于本地单机且不打算跨工具同步。
+    </div>
+
+    <h3 class="font-semibold mt-5 mb-3">当前目录状态</h3>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>7 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>7 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr><td><code>AICAP/.cursor/skills/</code></td><td>7 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr><td><code>AICAP/.codex/skills/</code></td><td>7 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>7 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor/Claude Code/Codex 均读</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="font-semibold mt-5 mb-3">从 anthropics/skills 拉取新 Tier1</h3>
+    <pre class="codeblk">cd AICAP
+GITHUB_TOKEN=$(gh auth token) npx rulesync fetch anthropics/skills --features skills
+# fetch 完成后，只保留需要的目录，删掉其余
+# 再跑 pnpm run ai:generate + 创建 symlink</pre>
+  </section>
+
+  <footer class="text-center text-xs text-slate-400 mt-8 mb-12">
+    生成自 <code>SKILLS.md</code> · 2026-05-17 · 单文件 HTML（Tailwind + Alpine + Mermaid CDN）
+  </footer>
+
+  </main>
+</div>
+
+<!-- Scroll Spy -->
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = '#' + entry.target.id;
+        const root = document.querySelector('[x-data]');
+        if (root && root._x_dataStack) {
+          root._x_dataStack[0].activeSection = id;
+        }
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

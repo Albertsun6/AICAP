@@ -6,7 +6,8 @@
   "scripts": {
     "ai:generate": "rulesync generate",
     "ai:check": "rulesync generate && git diff --exit-code",
-    "ai:eval": "promptfoo eval -c promptfoo/promptfooconfig.yaml --no-cache"
+    "ai:eval": "promptfoo eval -c promptfoo/promptfooconfig.yaml --no-cache",
+    "setup:skills": "bash scripts/setup-global-skills.sh"
   },
   "devDependencies": {
     "rulesync": "8.18.0"

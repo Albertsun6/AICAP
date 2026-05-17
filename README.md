@@ -43,7 +43,46 @@ pnpm run ai:check            # = generate + git diff --exit-code，本地预演 
 git add -A && git commit     # 源 + 生成产物一起提交
 ```
 
-新成员 onboard：`git clone` → `pnpm install` → `pnpm run ai:generate` → 各工具即拥有全套团队能力。
+新成员 onboard：`git clone` → `pnpm install` → `pnpm run ai:generate` → 各工具即拥有全套团队能力。  
+Skills 全局化（跨任意项目使用）：额外运行一次 `pnpm run setup:skills`（见下方 §Skills）。
+
+## Skills
+
+当前共 **8 个跨工具 Skill**（Claude Code / Cursor / Codex / Copilot），完整说明见 [SKILLS.md](SKILLS.md)。
+
+### 项目内用（零配置）
+
+Skills 已提交到 `.claude/skills/`、`.cursor/skills/`、`.codex/skills/`。`git clone` 后在项目目录打开任意 AI 工具，Skills 自动加载，**无需任何额外步骤**。
+
+### 全局用（在任意项目里都能调用）
+
+克隆仓库后运行一次即可，之后永久生效：
+
+```bash
+pnpm run setup:skills
+```
+
+脚本自动把所有 SSOT Skills 链接到 `~/.claude/skills/`（Cursor / Claude Code / Codex 均从此路径发现 Skills）。可重复运行，已有的链接自动跳过。
+
+**AICAP 更新 Skills 后**，成员执行：
+
+```bash
+git pull && pnpm run ai:generate && pnpm run setup:skills
+```
+
+### 安装社区 Skills
+
+在 Claude Code / Cursor 中直接触发：
+
+> "从 anthropics 安装 skill" / "install skill from market"
+
+会激活 `/install-skill`，引导你 fetch → 选择保留 → 自动 generate + symlink。
+
+### 新增 SSOT Skill
+
+直接告诉 Claude Code / Cursor："创建新 skill" 或 "我想写个新 skill"，激活 `/skill-creator` 完成草稿 → eval → 优化触发词 → AICAP 部署全流程。
+
+---
 
 ## 治理
 

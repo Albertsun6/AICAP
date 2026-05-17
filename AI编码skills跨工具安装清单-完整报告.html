@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>常用 AI 编码 agent skills 调研与跨工具安装清单</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      fontFamily: '"PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif',
+      primaryColor: "#ecfdf5",
+      primaryTextColor: "#064e3b",
+      primaryBorderColor: "#10b981",
+      lineColor: "#475569",
+      secondaryColor: "#eff6ff",
+      tertiaryColor: "#fef3c7",
+    },
+    flowchart: { curve: "basis", padding: 16 },
+  });
+</script>
+<style>
+  :root {
+    --ink: #0f172a; --ink-soft: #334155; --line: #e2e8f0;
+    --bg: #fafaf9; --accent: #047857; --accent-soft: #ecfdf5;
+  }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    font-family: "PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    color: var(--ink); background: var(--bg); line-height: 1.75; font-feature-settings: "palt";
+  }
+  h1,h2,h3,h4 { font-weight: 700; letter-spacing: -0.01em; }
+  h2 { scroll-margin-top: 72px; }
+  h3 { margin-top: 1.4rem; margin-bottom: 0.6rem; font-size: 1.02rem; color: var(--ink); }
+  code, pre, .mono { font-family: "JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace; }
+  code:not(.codeblk code) { background:#f1f5f9; padding:0.05rem 0.35rem; border-radius:4px; font-size:0.85em; color:#0f766e; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .15s; }
+  a:hover { border-bottom-color: var(--accent); }
+  .tablewrap { overflow-x: auto; margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+  th { background: #f1f5f9; text-align: left; font-weight: 600; color: var(--ink); }
+  th, td { border: 1px solid var(--line); padding: 0.55rem 0.75rem; vertical-align: top; }
+  tbody tr:hover { background: #f8fafc; }
+  .pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+  .pill-ok { background: #d1fae5; color: #065f46; }
+  .pill-warn { background: #fef3c7; color: #92400e; }
+  .pill-info { background: #dbeafe; color: #1e40af; }
+  .pill-muted { background: #f1f5f9; color: #475569; }
+  blockquote { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 0.6rem 1rem; margin: 1rem 0; color: var(--ink-soft); border-radius: 0 6px 6px 0; }
+  pre.codeblk { background: #0f172a; color: #e2e8f0; padding: 1rem 1.2rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; line-height: 1.65; margin: 1rem 0; }
+  pre.codeblk .cmt { color: #64748b; }
+  .section-card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+  .anchor-link { color: #94a3b8; margin-left: 0.4rem; font-size: 0.85rem; opacity: 0; transition: opacity .15s; }
+  h2:hover .anchor-link { opacity: 1; }
+  details > summary { cursor: pointer; user-select: none; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::before { content: "▸"; display: inline-block; margin-right: 0.5rem; transition: transform .15s; color: var(--accent); }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .nav-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .mermaid { background: white; border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; text-align: center; }
+  .callout-warn { border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.75rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; }
+  .tier-card { border:1px solid var(--line); border-radius:8px; padding:1rem 1.25rem; margin:0.85rem 0; }
+  .tier-1 { border-left:4px solid #10b981; background:#f0fdf4; }
+  .tier-2 { border-left:4px solid #3b82f6; background:#eff6ff; }
+  .tier-3 { border-left:4px solid #94a3b8; background:#f8fafc; }
+  ul.bul { list-style: disc; padding-left: 1.4rem; }
+  ul.bul li { margin: 0.3rem 0; }
+  .chk { list-style:none; padding-left:0; }
+  .chk li { padding:0.3rem 0 0.3rem 1.7rem; position:relative; }
+  .chk li::before { content:"☐"; position:absolute; left:0; color:var(--accent); font-weight:700; }
+  @media print {
+    .no-print, nav, aside { display: none !important; }
+    main { max-width: none !important; padding: 0 !important; }
+    .section-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body x-data="{ activeSection: '#summary' }">
+
+<nav class="no-print sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-5 py-3 flex items-center gap-4">
+    <div class="font-bold text-slate-900 text-sm md:text-base">
+      AI 编码 skills 跨工具安装清单
+      <span class="hidden md:inline text-slate-400 font-normal ml-2">/survey 全流程产物 · AICAP SSOT</span>
+    </div>
+    <div class="ml-auto flex items-center gap-2 text-xs text-slate-500">
+      <span class="hidden md:inline">2026-05-17</span>
+      <span class="pill pill-ok">Citation PASS</span>
+      <span class="pill pill-info">终审 Refine→收敛</span>
+      <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-5 py-8 flex gap-8">
+
+  <aside class="no-print hidden lg:block w-60 shrink-0">
+    <div class="sticky top-20">
+      <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">目录</div>
+      <ul class="space-y-1 text-sm" x-data>
+        <template x-for="item in [
+          {h:'#summary',t:'摘要'},
+          {h:'#sec-question',t:'1. 研究问题'},
+          {h:'#sec-dimensions',t:'2. 评估维度'},
+          {h:'#sec-background',t:'3. 关键背景'},
+          {h:'#sec-matrix',t:'4. 方案对比'},
+          {h:'#sec-sources',t:'5. 主要来源'},
+          {h:'#sec-reco',t:'6. 分层安装清单'},
+          {h:'#sec-risks',t:'7. 待验证风险'},
+          {h:'#sec-meta',t:'8. 调研 Metadata'}
+        ]">
+          <li>
+            <a :href="item.h" :class="{'active': activeSection === item.h}"
+               @click="activeSection = item.h"
+               class="nav-link block px-3 py-1.5 rounded text-slate-600 hover:bg-slate-100"
+               x-text="item.t"></a>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+
+  <section id="summary" class="section-card">
+    <div class="flex flex-wrap items-center gap-2 mb-4 text-xs">
+      <span class="pill pill-info">跨工具 SSOT</span>
+      <span class="pill pill-muted">10+ primary 源</span>
+      <span class="pill pill-muted">2 Claude + 1 cursor-agent 异构</span>
+    </div>
+    <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">常用 AI 编码 agent skills 调研与跨工具安装清单</h1>
+    <div class="text-sm text-slate-500 mb-5">
+      调研日期 2026-05-17 · /survey 全流程（Phase 1→6 + 异构终审收敛）· Citation Health Layer A/B 双 PASS
+    </div>
+    <blockquote class="!my-5">
+      <strong>一句话执行摘要 ——</strong>
+      不要批装 awesome 清单。从 <code>anthropics/skills</code>（官方、最高信任）精选
+      <strong>skill-creator + webapp-testing</strong> 作为必装，按技术栈/需求触发可选层，统一经
+      <code>rulesync fetch</code> 纳入 AICAP SSOT。可移植性的硬边界是
+      <strong>hooks / MCP / Claude 专有 fork</strong>——纯 prompt body 才能干净跨 Claude Code / Cursor / Codex。
+    </blockquote>
+
+    <h3>这份清单是怎么产出的</h3>
+    <div class="mermaid">
+flowchart LR
+    P1["Phase 1 问题界定 冻结 Brief"] --> P2["Phase 2 三方异构搜索 A B X"]
+    P2 --> P25["Phase 2.5 Reflection 追搜 No"]
+    P25 --> P35["Phase 3-5 综合 对比矩阵"]
+    P35 --> P55["Phase 5.5 Citation Health 双 PASS"]
+    P55 --> P6["Phase 6 异构终审 Refine"]
+    P6 --> CV["Round 1 三条全 accept 收敛"]
+    CV --> OUT["分层安装清单 报告 HTML"]
+    classDef step fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef done fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+    class P1,P2,P25,P35,P55,P6 step
+    class CV,OUT done
+    </div>
+  </section>
+
+  <section id="sec-question" class="section-card">
+    <h2 class="text-xl mb-4">1. 研究问题 <a href="#sec-question" class="anchor-link">#</a></h2>
+    <p class="text-slate-700">
+      在「<strong>跨工具可复用</strong>（Claude Code / Cursor / Codex，可经 rulesync 纳入 AICAP SSOT）+
+      <strong>质量与维护活跃度优先</strong> + <strong>不与现有
+      survey / debate-review / report-to-html / conventional-commit / project-context 冗余</strong>」
+      三约束下，当前社区高频且值得长期依赖的 AI 编码 agent skills 有哪些，应如何分层（必装 / 可选 / 观望）推荐安装？
+    </p>
+  </section>
+
+  <section id="sec-dimensions" class="section-card">
+    <h2 class="text-xl mb-4">2. 评估维度 <a href="#sec-dimensions" class="anchor-link">#</a></h2>
+    <ul class="bul text-slate-700 text-sm">
+      <li><strong>跨工具可复用性</strong> — tool-agnostic 或可经 rulesync 在三工具复用，而非锁死 Claude 专有 hook/MCP/fork</li>
+      <li><strong>维护活跃度</strong> — 近 6 月提交、发布节奏</li>
+      <li><strong>作者可信度</strong> — Anthropic/OpenAI/Vercel 等官方背书 vs 个人弃坑</li>
+      <li><strong>用途价值与非冗余</strong> — 填补真实缺口，不与已有 5 个 skill 重复</li>
+      <li><strong>集成成本</strong> — 安装简易度、依赖、纳入 SSOT 摩擦</li>
+    </ul>
+  </section>
+
+  <section id="sec-background" class="section-card">
+    <h2 class="text-xl mb-4">3. 关键背景 <a href="#sec-background" class="anchor-link">#</a>
+      <span class="pill pill-ok align-middle">多源交叉 · high 置信</span></h2>
+    <ul class="bul text-slate-700 text-sm space-y-2">
+      <li><strong>Agent Skills 已是开放跨工具标准</strong>：Anthropic 2025-12 将 SKILL.md 释为开放标准（agentskills.io），
+        Claude Code / Codex / Cursor / Copilot / Gemini CLI / Cline 等 30+ 工具采纳。SKILL.md = YAML frontmatter + markdown body，body 可移植。
+        证据：<a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank">anthropic.com 工程博客</a>；
+        <a href="https://agentskills.io" target="_blank">agentskills.io</a>；
+        <a href="https://code.claude.com/docs/en/skills" target="_blank">code.claude.com/docs/en/skills</a></li>
+      <li><strong>可移植边界 = hooks / MCP / Claude 专有 <code>context: fork</code> / <code>.claude/agents</code> 自动派发 / 动态 <code>!`cmd`</code> 注入</strong>。
+        纯 prompt body 经 rulesync 干净跨三工具；依赖上述任一者跨 Cursor/Codex 退化。
+        证据：<a href="https://code.claude.com/docs/en/skills" target="_blank">code.claude.com/docs/en/skills</a>（原文 “Claude Code extends the standard”）</li>
+      <li><strong>Cursor 兼容读 <code>~/.claude/skills/</code> 与 <code>~/.codex/skills/</code></strong>
+        （<a href="https://cursor.com/docs/context/skills" target="_blank">cursor.com/docs/context/skills</a>）——对 AICAP SSOT 是利好：
+        Cursor 端可能无需额外 symlink，已有 Claude 目录即被读取（直接关联此前的 symlink 讨论）。</li>
+    </ul>
+  </section>
+
+  <section id="sec-matrix" class="section-card">
+    <h2 class="text-xl mb-4">4. 方案对比 <a href="#sec-matrix" class="anchor-link">#</a>
+      <span class="text-sm font-normal text-slate-500">（安装源 = 真实决策对象，评分 1-5，✓ = 该维度最优）</span></h2>
+    <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>源</th><th>跨工具复用</th><th>维护活跃</th><th>作者可信</th><th>用途价值/非冗余</th><th>集成成本</th><th>综合</th>
+      </tr></thead>
+      <tbody>
+        <tr class="bg-emerald-50/50"><td><strong>anthropics/skills</strong></td><td>4</td><td>5 ✓</td><td>5 ✓</td><td>4</td><td>5 ✓</td><td><strong>4.6</strong></td></tr>
+        <tr class="bg-emerald-50/50"><td><strong>wshobson/agents</strong></td><td>4 <span class="text-xs text-slate-500">（纯 md 可移植，但打包为 Claude Code 插件，跨工具需抽 SKILL.md）</span></td><td>5 ✓</td><td>4</td><td>5 ✓</td><td>4</td><td><strong>4.4</strong></td></tr>
+        <tr><td>openai/skills</td><td>5 ✓</td><td>4</td><td>5 ✓</td><td>3</td><td>4</td><td>4.2</td></tr>
+        <tr><td>vercel-labs/agent-skills</td><td>5 ✓</td><td>4</td><td>5 ✓</td><td>3（仅 Web/Next）</td><td>4</td><td>4.2</td></tr>
+        <tr><td>cloudflare/skills</td><td>5 ✓</td><td>4</td><td>4</td><td>2（仅 CF）</td><td>4</td><td>3.8</td></tr>
+        <tr><td>VoltAgent/awesome-claude-code-subagents</td><td>4</td><td>4</td><td>4</td><td>4</td><td>3</td><td>3.8</td></tr>
+        <tr><td>VoltAgent/awesome-agent-skills（索引）</td><td>3</td><td>4</td><td>3</td><td>3</td><td>2</td><td>3.0</td></tr>
+        <tr><td>hesreallyhim/awesome-claude-code（索引）</td><td>2</td><td>4</td><td>4</td><td>3</td><td>2</td><td>3.0</td></tr>
+        <tr><td>davila7/claude-code-templates</td><td>2（hooks/MCP 锁定）</td><td>3</td><td>4</td><td>3</td><td>3</td><td>3.0</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <blockquote><strong>注：</strong>wshobson 综合分经 Phase 5.5 由 4.6 下调至 4.4（插件打包注记——纯 markdown body 可移植，但打包形态偏 Claude Code 插件，跨工具需抽 SKILL.md）。</blockquote>
+  </section>
+
+  <section id="sec-sources" class="section-card">
+    <h2 class="text-xl mb-4">5. 主要来源 <a href="#sec-sources" class="anchor-link">#</a></h2>
+    <ul class="bul text-slate-700 text-sm space-y-1">
+      <li><a href="https://github.com/anthropics/skills" target="_blank">anthropics/skills</a> — 高置信，官方目录，136k★（Phase 5.5 实证）</li>
+      <li><a href="https://code.claude.com/docs/en/skills" target="_blank">Claude Code Skills 文档</a> — 高置信，开放标准 + 专有扩展边界（Phase 5.5 实证）</li>
+      <li><a href="https://cursor.com/docs/context/skills" target="_blank">Cursor Skills 文档</a> — 高置信，原生支持 + 兼容读 Claude/Codex 目录（Phase 5.5 实证）</li>
+      <li><a href="https://github.com/wshobson/agents" target="_blank">wshobson/agents</a> — 高置信，35.5k★、纯 md、活跃（Phase 5.5 实证，附插件打包 caveat）</li>
+      <li><a href="https://github.com/dyoshikawa/rulesync" target="_blank">dyoshikawa/rulesync</a> — 高置信，v8.18.0、<code>fetch --features skills</code>（Phase 5.5 实证）</li>
+      <li><a href="https://agentskills.io" target="_blank">agentskills.io</a> / <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills" target="_blank">Anthropic 工程博客</a> — 开放标准 primary</li>
+      <li><a href="https://github.com/openai/skills" target="_blank">openai/skills</a>、<a href="https://developers.openai.com/codex/skills" target="_blank">developers.openai.com/codex/skills</a>、<a href="https://github.com/vercel-labs/agent-skills" target="_blank">vercel-labs/agent-skills</a>（~26k★）、<a href="https://github.com/cloudflare/skills" target="_blank">cloudflare/skills</a> — 中置信（Agent X 单源 primary，URL 存活）</li>
+    </ul>
+  </section>
+
+  <section id="sec-reco" class="section-card">
+    <h2 class="text-xl mb-4">6. 推荐 — 分层安装清单 <a href="#sec-reco" class="anchor-link">#</a></h2>
+    <blockquote><strong>结论 ——</strong> 不要批装 awesome 清单；从 <code>anthropics/skills</code>（官方、最高信任）精选 + 按栈从 <code>wshobson/agents</code> 抽 SKILL.md body，统一经 rulesync 纳入 AICAP SSOT。</blockquote>
+
+    <div class="tier-card tier-1">
+      <div class="mb-2"><span class="pill pill-ok">Tier 1 必装</span> <span class="text-sm text-slate-600">官方、可移植、补真实缺口、不与现有 5 skill 冗余</span></div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>skill</th><th>源</th><th>为什么</th></tr></thead>
+        <tbody>
+          <tr><td><code>skill-creator</code></td><td>anthropics/skills</td><td>元技能：规范地创作/维护 skill——直接服务 AICAP SSOT 自身维护；纯 prompt 可移植</td></tr>
+          <tr><td><code>webapp-testing</code></td><td>anthropics/skills</td><td>浏览器/E2E 测试通用能力；ios-e2e-test 是 Seaidea 专属且未入 SSOT，此为通用补位；纯 prompt 可移植</td></tr>
+        </tbody>
+      </table></div>
+      <p class="text-sm text-slate-700 mt-3"><strong>Tier1 为何是 Anthropic（证据化 tie-breaker，回应异构终审）：</strong>
+        并非“Anthropic 默认优先”。<code>skill-creator</code>/<code>webapp-testing</code> 是<strong>与栈无关的通用能力缺口</strong>，直接服务 SSOT 自身；
+        而 <a href="https://developers.openai.com/codex/skills" target="_blank">openai/skills</a>（官方 Codex Skills Catalog，“build on the open agent skills standard”）与 anthropics/skills <strong>功能重叠</strong>——同一能力的 Codex 镜像，且 AICAP 经 rulesync 已生成 Codex 产物，无需重复引入；
+        <a href="https://github.com/vercel-labs/agent-skills" target="_blank">vercel-labs/agent-skills</a>（~26k★ 官方）、cloudflare/skills 是<strong>平台栈专属</strong>（React/Next、Cloudflare），按“用途价值/适用条件”维度归 Tier2。即 Tier1 由“通用性 + 非冗余”两维度筛出，非作者身份。</p>
+    </div>
+
+    <div class="tier-card tier-2">
+      <div class="mb-2"><span class="pill pill-info">Tier 2 可选</span> <span class="text-sm text-slate-600">按技术栈/工具/需求触发，不默认装</span></div>
+      <ul class="bul text-sm text-slate-700">
+        <li><code>mcp-builder</code>（anthropics/skills）— <strong>条件必装</strong>：仅当 AICAP 实际开发 MCP server 时。现状：AICAP 有 <code>.mcp.json</code>（消费 MCP）但无自建 server 证据，故归 Tier2 而非 Tier1（经异构终审修正）</li>
+        <li><code>frontend-design</code> / <code>web-artifacts-builder</code>（anthropics/skills）— 仅做 Web UI 时</li>
+        <li><code>vercel-labs/agent-skills</code> — React/Next/Vercel 栈项目</li>
+        <li><code>cloudflare/skills</code> — Cloudflare 平台项目</li>
+        <li>document skills <code>docx/pdf/pptx/xlsx</code>（anthropics/skills）— 生成 Office/PDF 时；<strong>注意 source-available 许可 + 绑脚本</strong>（Tier 2 可移植性）</li>
+        <li>从 <code>wshobson/agents</code> cherry-pick code-review / test-fix 类 workflow skill 的 SKILL.md body（不消费其插件打包）</li>
+      </ul>
+    </div>
+
+    <div class="tier-card tier-3">
+      <div class="mb-2"><span class="pill pill-muted">Tier 3 观望</span> <span class="text-sm text-slate-600">先审计，勿批装</span></div>
+      <ul class="bul text-sm text-slate-700">
+        <li><code>VoltAgent/awesome-agent-skills</code>、<code>hesreallyhim/awesome-claude-code</code> — 仅作发现索引，非信任边界</li>
+        <li><code>davila7/claude-code-templates</code> — hooks/MCP 锁定，跨工具退化，发布节奏慢</li>
+        <li>2026 新出的安全/三方 skill 包 — 采纳前过下方审计 checklist</li>
+      </ul>
+    </div>
+
+    <h3>第三方 skill 安装前审计 checklist <span class="pill pill-info">回应异构终审</span></h3>
+    <p class="text-sm text-slate-500 mb-1">替代笼统“生态变动快”——装任何非官方 skill 进 SSOT 前逐项核：</p>
+    <ul class="chk text-sm text-slate-700">
+      <li><strong>维护者</strong>：组织 vs 个人；近 6 月有无提交；issue 是否有人响应（防弃坑）</li>
+      <li><strong>许可</strong>：repo license 是否允许再分发；SKILL.md frontmatter 是否声明 <code>license</code>（<a href="https://agentskills.io/specification" target="_blank">agentskills.io/specification</a> 为可选字段，可能缺失或后改）</li>
+      <li><strong>spec 兼容</strong>：是否用了 <code>compatibility</code> / <code>allowed-tools</code> / <code>context: fork</code> 等工具实现支持度不一的字段——跨 Cursor/Codex 会静默退化</li>
+      <li><strong>脚本/权限</strong>：bundled scripts 是否被审过；<code>allowed-tools</code> 是否过度授权</li>
+      <li><strong>冗余</strong>：是否与现有 survey/debate-review/report-to-html/conventional-commit/project-context + Tier1 重叠</li>
+    </ul>
+
+    <h3>安装机制 <span class="pill pill-ok">Phase 5.5 实证语法</span></h3>
+    <div class="mermaid">
+flowchart LR
+    D["发现候选 awesome 索引 仅参考"] --> F["可移植性过滤 排除 hooks MCP fork 锁定"]
+    F --> T["分层 Tier1 必装 Tier2 条件 Tier3 观望"]
+    T --> FE["rulesync fetch owner repo features skills"]
+    FE --> PR["只留 Tier1 目录到 rulesync skills"]
+    PR --> GEN["pnpm run ai generate 三工具产物"]
+    classDef step fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef warn fill:#fffbeb,stroke:#f59e0b,stroke-width:2px,color:#92400e
+    class D,F,T,FE,PR,GEN step
+    </div>
+    <pre class="codeblk"><span class="cmt"># 把官方 skill 拉进 SSOT 源（rulesync fetch 语法已实证）</span>
+rulesync fetch anthropics/skills --features skills
+<span class="cmt"># 仅保留 Tier 1（skill-creator / webapp-testing）目录到 .rulesync/skills/，删掉不需要的</span>
+<span class="cmt"># 然后按 AICAP 既有流程生成三工具产物</span>
+pnpm run ai:generate   <span class="cmt"># = rulesync generate --targets "*" --features "*"</span></pre>
+    <div class="callout-warn"><strong>⚠ Caveat：</strong><code>rulesync install</code> 子命令存在性 <strong>待验证</strong>（见下节）。AICAP 既有 <code>pnpm run ai:generate</code> 是确定可用路径。</div>
+
+    <p class="text-sm text-slate-700"><strong>理由：</strong>anthropics/skills 与 rulesync 在质量+维护两维度均 ✓（136k★ / v8.18.0 均 Phase 5.5 实证）；Tier1 两项纯 prompt、补 SSOT 真实缺口且与现有 5 skill 不重叠；反证搜索表明批装 awesome 清单会引入大量 hook/MCP 绑定项跨工具退化，故走 cherry-pick。</p>
+    <p class="text-sm text-slate-700 mt-2"><strong>适用条件：</strong>适用于“以 rulesync 为 SSOT、要三工具一致”的 AICAP 场景。若只用单一工具，或需要 Claude 专有 hook 编排，则 Tier 3 锁定项的排序需重估。做 MCP server 开发则 <code>mcp-builder</code> 升 Tier1。</p>
+    <p class="text-sm text-slate-700 mt-2"><strong>置信度：</strong><span class="pill pill-ok">中高</span> 基于 10+ primary 源 + Phase 5.5 五抽样 4 supported / 1 partial + 异构终审 Refine 收敛。</p>
+  </section>
+
+  <section id="sec-risks" class="section-card">
+    <h2 class="text-xl mb-4">7. 待验证风险 <a href="#sec-risks" class="anchor-link">#</a></h2>
+    <ul class="chk text-sm text-slate-700">
+      <li><code>rulesync install</code> 子命令是否存在 — Agent X 单源 CLI 声明；验证 <code>rulesync --help</code>（fetch/generate 已实证，install 未证）</li>
+      <li>wshobson/agents 最近提交确切新鲜度 — “2026-05-17” 未证实；当前仅能确认“383 commits、持续活跃”</li>
+      <li>vercel-labs/agent-skills、cloudflare/skills、openai/skills 的具体 skill 列表与质量 — Agent X 单源，URL 存活但未深审内容</li>
+      <li>wshobson 中 code-review/test-fix 的确切 skill slug — 类别已确认，具体名需进仓库核对再装</li>
+      <li>anthropics document-skills 为 source-available（非 OSS）— 纳入 SSOT 再分发前需核许可</li>
+      <li>skill 生态变动快（标准 2025-12 才开放）— &gt;18 月的清单文章排名不可信，装前核仓库现状</li>
+    </ul>
+  </section>
+
+  <section id="sec-meta" class="section-card">
+    <h2 class="text-xl mb-4">8. 调研 Metadata <a href="#sec-meta" class="anchor-link">#</a></h2>
+    <div class="flex flex-wrap gap-2 mb-3 text-xs">
+      <span class="pill pill-ok">Phase 2.5 追搜 No</span>
+      <span class="pill pill-ok">Citation Layer A PASS 2% dead</span>
+      <span class="pill pill-ok">Citation Layer B PASS 0% not-supported</span>
+      <span class="pill pill-info">Phase 6 Refine → Round 1 全 accept 收敛</span>
+      <span class="pill pill-muted">人类介入：无</span>
+    </div>
+    <ul class="bul text-sm text-slate-700">
+      <li><strong>Phase 2.5 Reflection</strong>：子问题 5/5 覆盖；核心 claim 多源；无 vendor-only 关键 claim；质量分布 High≫30%/Low≪30%；追搜决策 = No</li>
+      <li><strong>Phase 5.5 Citation Health</strong>：Layer A 41 URL / 39 ok / 1 blocked / 1 dead(2%) → PASS；Layer B 5 抽样 → 4 supported / 1 partial(wshobson 插件打包+日期) / 0 not-supported → PASS</li>
+      <li><strong>Phase 6 异构终审 verdict</strong>：Refine（reviewer 同意主结论，提 3 点补充）</li>
+      <li><strong>辩论收敛</strong>：Round 1 主 agent 判断矩阵 3 条全 accept → 自动收敛，跳过 Round 2/3</li>
+      <li><strong>产物</strong>：<code>AI编码skills跨工具安装清单-完整报告.md</code> + <code>-音频概要.m4a</code>（13.4s）+ 本 HTML</li>
+    </ul>
+
+    <details class="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+      <summary class="font-semibold text-slate-800">展开 Phase 6 辩论历史（Round 1，verdict = Refine）</summary>
+      <div class="tablewrap mt-3"><table>
+        <thead><tr><th>reviewer 建议</th><th>立场</th><th>论据 / 证据</th></tr></thead>
+        <tbody>
+          <tr><td>Tier1 全 Anthropic，需补证据化 tie-breaker</td><td><span class="pill pill-ok">accept</span></td><td>已加“Tier1 为何是 Anthropic”段：通用能力缺口 vs openai/skills 功能重叠（rulesync 已生成 Codex 产物）vs vercel/cloudflare 平台栈专属。证据 developers.openai.com/codex/skills; github.com/vercel-labs/agent-skills</td></tr>
+          <tr><td>mcp-builder Tier1 证据弱 → 条件必装</td><td><span class="pill pill-ok">accept</span></td><td>核查 AICAP 仅有 .mcp.json（消费），无自建 server 证据 → mcp-builder 移 Tier2 条件必装；Tier1 收紧为 skill-creator + webapp-testing</td></tr>
+          <tr><td>风险段补维护者/许可/spec 漂移审计 checklist</td><td><span class="pill pill-ok">accept</span></td><td>已加“第三方 skill 安装前审计 checklist”5 项；引 agentskills.io/specification 可选字段工具支持度不一</td></tr>
+        </tbody>
+      </table></div>
+    </details>
+  </section>
+
+  <footer class="text-center text-xs text-slate-400 mt-8 mb-12">
+    生成自 <code>AI编码skills跨工具安装清单-完整报告.md</code> · 2026-05-17 · 单文件 HTML（Tailwind + Alpine + Mermaid CDN）· /survey → /report-to-html
+  </footer>
+
+  </main>
+</div>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = '#' + entry.target.id;
+        const root = document.querySelector('[x-data]');
+        if (root && root._x_dataStack) {
+          root._x_dataStack[0].activeSection = id;
+        }
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
