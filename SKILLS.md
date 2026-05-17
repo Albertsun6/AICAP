@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（7 个，跨工具同步）
+## SSOT 管理的 Skills（9 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -67,6 +67,20 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：用 Playwright 测试本地 Web 应用——验证前端功能、调试 UI 行为、截图、查看浏览器 console 日志。提供 `scripts/with_server.py` 管理服务器生命周期。
 
 触发："测一下这个网页功能" / "帮我验证前端" / "截图看看现在 UI 状态"
+
+---
+
+### `/install-skill`
+**用途**：从 anthropics/skills 等主流 skill market 安装新技能到 AICAP SSOT——fetch → 展示新增列表 → 用户选择保留 → 删除其余 → generate → symlink，全程引导。
+
+触发："从 anthropics 安装 skill" / "install skill from market" / "拉取新 skill"
+
+---
+
+### `/aicap-commit`
+**用途**：AICAP 专用提交流程——检测 `.rulesync/skills/` 变动 → 更新 SKILLS.md → 重新生成 SKILLS.html / README.html → `pnpm run ai:generate` → 规范提交。
+
+触发：`/aicap-commit` / "提交到 AICAP" / "帮我提交这次改动"（在 AICAP 目录内）
 
 ---
 

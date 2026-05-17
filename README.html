@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AICAP — 跨 AI 编码工具能力 SSOT</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --brand: #059669;
+    --brand-light: #d1fae5;
+    --text-main: #1c1917;
+    --text-muted: #78716c;
+    --bg-page: #fafaf9;
+    --bg-card: #ffffff;
+    --border: #e7e5e4;
+    --sidebar-w: 220px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "PingFang SC", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    background: var(--bg-page);
+    color: var(--text-main);
+    margin: 0;
+  }
+  code, pre {
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, monospace;
+    font-size: 13px;
+  }
+  /* ── top nav ── */
+  .top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .top-nav .logo { font-weight: 700; font-size: 16px; color: var(--text-main); letter-spacing: -.3px; }
+  .top-nav .spacer { flex: 1; }
+  .pill {
+    display: inline-flex; align-items: center;
+    padding: 2px 10px; border-radius: 9999px;
+    font-size: 11px; font-weight: 600; letter-spacing: .3px;
+  }
+  .pill-ok   { background: #d1fae5; color: #065f46; }
+  .pill-info { background: #dbeafe; color: #1e40af; }
+  .pill-warn { background: #fef3c7; color: #92400e; }
+  .pill-muted{ background: #f3f4f6; color: #374151; }
+  .print-btn {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    background: white;
+    color: var(--text-muted);
+  }
+  .print-btn:hover { background: #f5f5f4; }
+  /* ── layout ── */
+  .layout { display: flex; min-height: calc(100vh - 47px); }
+  /* ── sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    position: sticky;
+    top: 47px;
+    height: calc(100vh - 47px);
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: white;
+    padding: 20px 0;
+  }
+  .sidebar-title {
+    padding: 0 16px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .sidebar a {
+    display: block;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: all .15s;
+    line-height: 1.4;
+  }
+  .sidebar a:hover { color: var(--text-main); background: #f5f5f4; }
+  .sidebar a.active { color: var(--brand); border-left-color: var(--brand); background: var(--brand-light); font-weight: 500; }
+  /* ── main content ── */
+  .main { flex: 1; padding: 32px 48px 80px; max-width: 900px; min-width: 0; }
+  /* ── hero ── */
+  .hero {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 32px;
+  }
+  .hero h1 { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: #064e3b; }
+  .hero p { color: #065f46; margin: 0 0 16px; font-size: 14px; }
+  .hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* ── section card ── */
+  .section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+  }
+  .section-card h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+  }
+  .section-card h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; color: var(--text-main); }
+  .section-card p { margin: 0 0 12px; }
+  /* ── install highlight ── */
+  .install-card {
+    border-left: 4px solid var(--brand);
+    background: #f0fdf4;
+    border-top: 1px solid #a7f3d0;
+    border-right: 1px solid #a7f3d0;
+    border-bottom: 1px solid #a7f3d0;
+    border-radius: 0 10px 10px 0;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .install-card h2 { font-size: 18px; font-weight: 700; margin: 0 0 6px; color: #064e3b; }
+  .install-card .sub { font-size: 13px; color: #047857; margin-bottom: 16px; }
+  /* ── AI prompt box ── */
+  .ai-prompt-box {
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    position: relative;
+  }
+  .ai-prompt-box pre {
+    color: #d4d4d4;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .ai-prompt-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  /* ── code block ── */
+  .code-block {
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    overflow-x: auto;
+  }
+  .code-block pre { color: #d4d4d4; margin: 0; line-height: 1.6; }
+  .code-block .comment { color: #6a9955; }
+  /* ── inline code ── */
+  p code, li code, td code {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 12px;
+    color: #1f2937;
+  }
+  /* ── table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th {
+    background: #f5f5f4;
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+  tbody tr:hover { background: #fafaf9; }
+  /* ── step numbers ── */
+  .step { display: flex; gap: 14px; margin-bottom: 20px; align-items: flex-start; }
+  .step-num {
+    min-width: 28px; height: 28px;
+    background: var(--brand); color: white;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+  .step-body { flex: 1; }
+  .step-body h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .step-body p { margin: 0 0 8px; font-size: 13px; color: #374151; }
+  /* ── iron rules ── */
+  .iron-rule { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+  .iron-rule:last-child { border-bottom: none; }
+  .rule-num { font-weight: 700; color: var(--brand); min-width: 24px; flex-shrink: 0; }
+  /* ── mermaid ── */
+  .mermaid-wrap { margin: 16px 0; overflow-x: auto; text-align: center; }
+  /* ── mental model ascii ── */
+  .ascii-box {
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .ascii-box pre { color: #9cdcfe; margin: 0; font-size: 12px; line-height: 1.7; }
+  /* ── blockquote ── */
+  blockquote {
+    border-left: 4px solid #d1d5db;
+    margin: 12px 0;
+    padding: 8px 16px;
+    background: #f9fafb;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  /* ── list ── */
+  ul, ol { padding-left: 20px; margin: 8px 0; }
+  li { margin-bottom: 4px; font-size: 14px; }
+  /* ── footer ── */
+  .footer {
+    margin-top: 40px;
+    padding: 20px 0 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  /* ── print ── */
+  @media print {
+    .top-nav, .sidebar, .print-btn { display: none !important; }
+    .main { padding: 20px; max-width: 100%; }
+    .layout { display: block; }
+    .section-card, .install-card, .hero { break-inside: avoid; }
+  }
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { padding: 20px; }
+  }
+</style>
+</head>
+<body x-data="{
+  activeSection: 'install',
+  init() {
+    const sections = document.querySelectorAll('[data-section]');
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if(e.isIntersecting) this.activeSection = e.target.dataset.section; });
+    }, { rootMargin: '-30% 0px -60% 0px' });
+    sections.forEach(s => obs.observe(s));
+  }
+}">
+
+<!-- top nav -->
+<nav class="top-nav">
+  <span class="logo">AICAP</span>
+  <span class="pill pill-ok">SSOT</span>
+  <span class="pill pill-info">rulesync v8.18.0</span>
+  <span class="pill pill-muted">9 Skills</span>
+  <span class="spacer"></span>
+  <a href="SKILLS.html" style="font-size:12px;color:var(--text-muted);text-decoration:none;margin-right:8px;">📋 Skills 文档</a>
+  <button class="print-btn" onclick="window.print()">打印 / PDF</button>
+</nav>
+
+<div class="layout">
+
+<!-- sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-title">目录</div>
+  <a href="#install"    :class="activeSection==='install'    ? 'active' : ''">安装指南</a>
+  <a href="#method-a"   :class="activeSection==='method-a'   ? 'active' : ''">方式 A：AI 辅助</a>
+  <a href="#method-b"   :class="activeSection==='method-b'   ? 'active' : ''">方式 B：手动</a>
+  <a href="#update"     :class="activeSection==='update'     ? 'active' : ''">日后更新</a>
+  <a href="#mental"     :class="activeSection==='mental'     ? 'active' : ''">心智模型</a>
+  <a href="#iron-rules" :class="activeSection==='iron-rules' ? 'active' : ''">铁律</a>
+  <a href="#workflow"   :class="activeSection==='workflow'   ? 'active' : ''">日常工作流</a>
+  <a href="#skills"     :class="activeSection==='skills'     ? 'active' : ''">Skills</a>
+  <a href="#governance" :class="activeSection==='governance' ? 'active' : ''">治理</a>
+  <a href="#targets"    :class="activeSection==='targets'    ? 'active' : ''">目标工具</a>
+  <a href="#risks"      :class="activeSection==='risks'      ? 'active' : ''">风险与逃生口</a>
+  <a href="#verified"   :class="activeSection==='verified'   ? 'active' : ''">已验证</a>
+</aside>
+
+<!-- main -->
+<main class="main">
+
+  <!-- hero -->
+  <div class="hero">
+    <h1>AICAP — 跨 AI 编码工具能力的单一事实来源（SSOT）</h1>
+    <p>团队所有 AI 编码工具的项目级指令、技能、子代理、命令、MCP，<strong>只在 <code>.rulesync/</code> 里定义一次</strong>，用 rulesync 生成到各工具各自的目录。</p>
+    <div class="hero-pills">
+      <span class="pill pill-ok">9 个跨工具 Skill</span>
+      <span class="pill pill-info">Claude Code / Cursor / Codex / Copilot</span>
+      <span class="pill pill-muted">rulesync v8.18.0 pin</span>
+      <span class="pill pill-muted">MIT</span>
+    </div>
+  </div>
+
+  <!-- install guide -->
+  <div class="install-card" id="install" data-section="install">
+    <h2>安装指南</h2>
+    <div class="sub">第一次接触这个仓库？从这里开始。5 分钟内完成配置。</div>
+
+    <h3>前提条件</h3>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>工具</th><th>版本</th><th>安装</th></tr></thead>
+      <tbody>
+        <tr><td>Git</td><td>任意</td><td><a href="https://git-scm.com" target="_blank">git-scm.com</a></td></tr>
+        <tr><td>Node.js</td><td>≥ 18</td><td><a href="https://nodejs.org" target="_blank">nodejs.org</a>（推荐用 <a href="https://github.com/nvm-sh/nvm" target="_blank">nvm</a>）</td></tr>
+        <tr><td>pnpm</td><td>≥ 8</td><td><code>npm install -g pnpm</code></td></tr>
+        <tr><td>AI 工具</td><td>—</td><td>Claude Code / Cursor / Codex 任选其一即可</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <!-- method A -->
+    <div id="method-a" data-section="method-a" style="margin-top:24px">
+      <h3 style="display:flex;align-items:center;gap:8px;">
+        方式 A：让 AI 帮你安装
+        <span class="pill pill-ok" style="font-size:10px;">推荐</span>
+      </h3>
+      <p style="font-size:13px;color:#065f46;">打开 Claude Code 或 Cursor，直接发送以下提示词，AI 会自动完成全部步骤：</p>
+      <div class="ai-prompt-box">
+        <div class="ai-prompt-label">复制以下提示词发给 AI</div>
+        <pre>帮我安装 AICAP：
+1. 克隆 https://github.com/Albertsun6/AICAP.git
+2. 进入目录，运行 pnpm install
+3. 运行 pnpm run ai:generate 生成工具配置
+4. 运行 pnpm run setup:skills 激活全局 Skills
+完成后告诉我哪些 Skills 现在可以用了。</pre>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #a7f3d0;margin:24px 0;">
+
+    <!-- method B -->
+    <div id="method-b" data-section="method-b">
+      <h3>方式 B：手动安装</h3>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>克隆仓库</h3>
+          <div class="code-block"><pre>git clone https://github.com/Albertsun6/AICAP.git
+cd AICAP</pre></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>安装依赖</h3>
+          <div class="code-block"><pre>pnpm install</pre></div>
+          <p>只安装一个工具：<code>rulesync</code>（版本已 pin，确保团队一致）。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>生成各工具配置</h3>
+          <div class="code-block"><pre>pnpm run ai:generate</pre></div>
+          <p>把 <code>.rulesync/</code> 里的源文件生成到各工具读取的目录（<code>.claude/</code>、<code>.cursor/</code>、<code>.codex/</code>、<code>.github/</code>）。已在仓库里提交了生成产物，正常情况跳过此步即可；拉取新改动后需重跑。</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>激活全局 Skills <span style="font-weight:400;font-size:12px;color:#6b7280;">（可选，推荐）</span></h3>
+          <div class="code-block"><pre>pnpm run setup:skills</pre></div>
+          <p>让 9 个 Skills 在你本机所有项目里都能使用（不只是本仓库）。运行一次永久生效，可重复运行。</p>
+        </div>
+      </div>
+
+      <div style="background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:14px 18px;margin-top:8px;">
+        <strong style="color:#065f46;">验证</strong>：打开 Claude Code 或 Cursor，输入 <code>/survey</code> 或 <code>/project-context</code>，能触发对应 skill 说明配置成功。
+      </div>
+
+      <h3 style="margin-top:20px;">密钥配置（如需使用 MCP）</h3>
+      <p>仓库内 <code>.mcp.json</code> 只存占位符，密钥不入库。把真实密钥加到你的 shell 环境：</p>
+      <div class="code-block"><pre><span class="comment"># 加到 ~/.zshrc 或 ~/.bashrc</span>
+export ANTHROPIC_API_KEY="sk-ant-..."
+export GITHUB_TOKEN="ghp_..."</pre></div>
+    </div>
+  </div>
+
+  <!-- update -->
+  <div class="section-card" id="update" data-section="update">
+    <h2>日后更新</h2>
+    <p>团队更新了 AICAP 后，执行以下命令同步：</p>
+    <div class="code-block"><pre>git pull
+pnpm run ai:generate
+pnpm run setup:skills</pre></div>
+  </div>
+
+  <!-- mental model -->
+  <div class="section-card" id="mental" data-section="mental">
+    <h2>心智模型</h2>
+    <p>分层定位：<code>rules = 配置/约定(WHAT/WHERE)</code> · <code>skills = 流程能力(HOW)</code> · <code>mcp = 工具访问(TOOLS)</code>，三者正交不混。</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart TD
+  classDef ssot fill:#d1fae5,stroke:#059669,color:#064e3b,font-weight:bold
+  classDef gen fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+  classDef tool fill:#f3f4f6,stroke:#9ca3af,color:#374151
+
+  SSOT["SSOT 唯一手写处\n.rulesync/"]
+  RULES[".rulesync/rules/\nAGENTS.md / CLAUDE.md 内容"]
+  SKILLS[".rulesync/skills/\n可复用能力包 SKILL.md"]
+  SUBAGENTS[".rulesync/subagents/\n子代理定义"]
+  COMMANDS[".rulesync/commands/\nslash command"]
+  MCP[".rulesync/mcp.json\nMCP server 清单"]
+
+  GEN["pnpm run ai:generate\nrulesync generate"]
+
+  CLAUDE["CLAUDE.md + .claude/\nClaude Code"]
+  AGENTS["AGENTS.md + .codex/ + .cursor/\nCodex / Cursor"]
+  GITHUB[".github/\nCopilot"]
+
+  SSOT --> RULES
+  SSOT --> SKILLS
+  SSOT --> SUBAGENTS
+  SSOT --> COMMANDS
+  SSOT --> MCP
+  SSOT --> GEN
+  GEN --> CLAUDE
+  GEN --> AGENTS
+  GEN --> GITHUB
+
+  class SSOT,RULES,SKILLS,SUBAGENTS,COMMANDS,MCP ssot
+  class GEN gen
+  class CLAUDE,AGENTS,GITHUB tool
+      </div>
+    </div>
+  </div>
+
+  <!-- iron rules -->
+  <div class="section-card" id="iron-rules" data-section="iron-rules">
+    <h2>铁律</h2>
+    <div class="iron-rule">
+      <div class="rule-num">1</div>
+      <div><strong>只改 <code>.rulesync/</code></strong>。<code>CLAUDE.md</code> / <code>AGENTS.md</code> / <code>.cursor/</code> / <code>.claude/</code> / <code>.codex/</code> / <code>.github/</code> 全是<strong>生成产物</strong>——手改会被 CI drift gate 拦截，也会被下次 <code>generate</code> 覆盖。</div>
+    </div>
+    <div class="iron-rule">
+      <div class="rule-num">2</div>
+      <div><strong>生成产物随源一起提交</strong>（已特意不 gitignore 它们）。CI 靠"重新生成后 <code>git diff</code> 为空"判断无漂移。</div>
+    </div>
+    <div class="iron-rule">
+      <div class="rule-num">3</div>
+      <div><strong>保持 SSOT 小且手写</strong>。根规则 <code>.rulesync/rules/overview.md</code> 控制在 ~200 行内；领域专属约定拆成路径作用域的小文件。不要让 LLM 自动灌大段配置。</div>
+    </div>
+    <div class="iron-rule">
+      <div class="rule-num">4</div>
+      <div><strong>密钥不入库</strong>。<code>mcp.json</code> 只写 <code>${ENV_VAR}</code> 占位；真实密钥放各人 shell 环境 / user-scope 配置。</div>
+    </div>
+  </div>
+
+  <!-- workflow -->
+  <div class="section-card" id="workflow" data-section="workflow">
+    <h2>日常工作流</h2>
+    <div class="code-block"><pre>pnpm install                 <span class="comment"># 安装 pin 住的 rulesync@8.18.0</span>
+<span class="comment"># 改 .rulesync/ 下的源文件 …</span>
+pnpm run ai:generate         <span class="comment"># 重新生成各工具产物</span>
+pnpm run ai:check            <span class="comment"># = generate + git diff --exit-code，本地预演 CI drift gate</span>
+git add -A && git commit     <span class="comment"># 源 + 生成产物一起提交</span></pre></div>
+    <p style="font-size:13px;color:var(--text-muted);margin-top:12px;">
+      新成员 onboard：<code>git clone</code> → <code>pnpm install</code> → <code>pnpm run ai:generate</code> → 各工具即拥有全套团队能力。<br>
+      Skills 全局化（跨任意项目使用）：额外运行一次 <code>pnpm run setup:skills</code>。
+    </p>
+  </div>
+
+  <!-- skills -->
+  <div class="section-card" id="skills" data-section="skills">
+    <h2>Skills</h2>
+    <p>当前共 <strong>9 个跨工具 Skill</strong>（Claude Code / Cursor / Codex / Copilot），完整说明见 <a href="SKILLS.html">SKILLS.md</a>。</p>
+
+    <h3>项目内用（零配置）</h3>
+    <p>Skills 已提交到 <code>.claude/skills/</code>、<code>.cursor/skills/</code>、<code>.codex/skills/</code>。<code>git clone</code> 后在项目目录打开任意 AI 工具，Skills 自动加载，<strong>无需任何额外步骤</strong>。</p>
+
+    <h3>全局用（在任意项目里都能调用）</h3>
+    <p>克隆仓库后运行一次即可，之后永久生效：</p>
+    <div class="code-block"><pre>pnpm run setup:skills</pre></div>
+    <p>脚本自动把所有 SSOT Skills 链接到 <code>~/.claude/skills/</code>（Cursor / Claude Code / Codex 均从此路径发现 Skills）。可重复运行，已有的链接自动跳过。</p>
+
+    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 16px;font-size:13px;margin:12px 0;">
+      <strong>AICAP 更新 Skills 后</strong>，成员执行：
+      <div class="code-block" style="margin-top:8px;"><pre>git pull && pnpm run ai:generate && pnpm run setup:skills</pre></div>
+    </div>
+
+    <h3>安装社区 Skills</h3>
+    <p>在 Claude Code / Cursor 中直接触发：</p>
+    <blockquote>"从 anthropics 安装 skill" / "install skill from market"</blockquote>
+    <p>会激活 <code>/install-skill</code>，引导你 fetch → 选择保留 → 自动 generate + symlink。</p>
+
+    <h3>新增 SSOT Skill</h3>
+    <p>直接告诉 Claude Code / Cursor："创建新 skill" 或 "我想写个新 skill"，激活 <code>/skill-creator</code> 完成草稿 → eval → 优化触发词 → AICAP 部署全流程。</p>
+  </div>
+
+  <!-- governance -->
+  <div class="section-card" id="governance" data-section="governance">
+    <h2>治理</h2>
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>机制</th><th>实现</th></tr></thead>
+      <tbody>
+        <tr><td>评审</td><td>PR 只评审 <code>.rulesync/</code>；生成产物 diff 仅用于核对</td></tr>
+        <tr><td>漂移门禁</td><td><code>.github/workflows/ai-config-drift.yml</code>：CI 重生成 + <code>git diff --exit-code</code></td></tr>
+        <tr><td>质量回归</td><td><code>promptfoo/promptfooconfig.yaml</code>：高价值 skill 的 golden-trace 回归</td></tr>
+        <tr><td>命名/小文件</td><td>kebab-case；单文件单职责；根规则行数上限（建议加 lint/pre-commit 强制）</td></tr>
+        <tr><td>权限边界</td><td>secrets 走 env 占位；Claude 侧可在 <code>.rulesync/</code> 经 hooks/settings 下发 <code>permissions.deny</code></td></tr>
+        <tr><td>版本 pin</td><td><code>package.json</code> 与 CI 均 pin <code>rulesync@8.18.0</code>，升级走 PR 并复核 diff</td></tr>
+        <tr><td>SSOT 边界</td><td>能力只在本仓库 <code>.rulesync/</code> 维护。<code>survey</code> 原独立仓库 <code>Albertsun6/claude-skills</code> <strong>已废弃</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- targets -->
+  <div class="section-card" id="targets" data-section="targets">
+    <h2>目标工具</h2>
+    <p><code>rulesync.jsonc</code> 的 <code>targets</code> 控制生成哪些工具，当前：<code>copilot, cursor, claudecode, codexcli</code>。增删工具改这里再 <code>generate</code>。完整支持列表见 rulesync 文档。</p>
+  </div>
+
+  <!-- risks -->
+  <div class="section-card" id="risks" data-section="risks">
+    <h2>风险与逃生口</h2>
+    <ul>
+      <li>rulesync 是社区项目（单一主 maintainer，MIT）。已 pin 版本；每季度复审 maintainer/release/license。</li>
+      <li>极端情况可弃用工具、退回纯约定：把 <code>.rulesync/rules/overview.md</code> 内容直接作为 <code>AGENTS.md</code>，并在 <code>CLAUDE.md</code> 写 <code>@AGENTS.md</code> import。</li>
+      <li>MCP 官方 Registry 仍处 preview，可能 breaking change——不要在关键路径硬依赖其稳定性。</li>
+      <li><code>rulesync</code> 对 Claude Code 的 MCP 输出以实际 <code>generate</code> 结果为准（本骨架已验证生成 <code>.mcp.json</code>）。</li>
+    </ul>
+  </div>
+
+  <!-- verified -->
+  <div class="section-card" id="verified" data-section="verified">
+    <h2>这个骨架已验证</h2>
+    <p><code>rulesync@8.18.0 init → 填充 SSOT → generate</code> 跑通：</p>
+    <ul>
+      <li>Claude Code（<code>CLAUDE.md</code>）、Codex/Cursor（<code>AGENTS.md</code>）、Cursor（<code>.cursor/rules/*.mdc</code>）、<code>.mcp.json</code> 均正确生成</li>
+      <li><code>pnpm run ai:check</code> 幂等（无漂移）</li>
+      <li><code>.rulesync/</code> 内 <code>rules/overview.md</code>、<code>skills/project-context</code>、<code>skills/conventional-commit</code>、<code>subagents/planner.md</code>、<code>commands/review-pr.md</code>、<code>mcp.json</code>、<code>hooks.json</code> 均为可直接替换的真实模板</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <span>生成自 README.md · AICAP SSOT</span>
+    <span>2026-05-17</span>
+    <span><a href="SKILLS.html" style="color:var(--text-muted)">→ Skills 完整文档</a></span>
+  </div>
+
+</main>
+</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#d1fae5',
+    primaryTextColor: '#064e3b',
+    primaryBorderColor: '#059669',
+    lineColor: '#6b7280',
+    secondaryColor: '#dbeafe',
+    tertiaryColor: '#f3f4f6',
+    fontFamily: '"PingFang SC", "Noto Sans SC", system-ui, sans-serif',
+    fontSize: '13px'
+  }
+});
+</script>
+</body>
+</html>

@@ -18,6 +18,23 @@
 | pnpm | ≥ 8 | `npm install -g pnpm` |
 | AI 工具 | — | Claude Code / Cursor / Codex 任选其一即可 |
 
+### 方式 A：让 AI 帮你安装（推荐）
+
+打开 Claude Code 或 Cursor，直接发送以下提示词，AI 会自动完成全部步骤：
+
+```
+帮我安装 AICAP：
+1. 克隆 https://github.com/Albertsun6/AICAP.git
+2. 进入目录，运行 pnpm install
+3. 运行 pnpm run ai:generate 生成工具配置
+4. 运行 pnpm run setup:skills 激活全局 Skills
+完成后告诉我哪些 Skills 现在可以用了。
+```
+
+---
+
+### 方式 B：手动安装
+
 ### 第一步：克隆仓库
 
 ```bash
@@ -120,7 +137,7 @@ Skills 全局化（跨任意项目使用）：额外运行一次 `pnpm run setup
 
 ## Skills
 
-当前共 **8 个跨工具 Skill**（Claude Code / Cursor / Codex / Copilot），完整说明见 [SKILLS.md](SKILLS.md)。
+当前共 **9 个跨工具 Skill**（Claude Code / Cursor / Codex / Copilot），完整说明见 [SKILLS.md](SKILLS.md)。
 
 ### 项目内用（零配置）
 
