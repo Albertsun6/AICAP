@@ -5,6 +5,78 @@
 
 > 设计依据见同目录上层的调研报告《跨AI编码工具能力体系化管理-完整报告》。本仓库是该报告"落地最小 7 步"的骨架实现。
 
+## 安装指南
+
+> 第一次接触这个仓库？从这里开始。5 分钟内完成配置。
+
+### 前提条件
+
+| 工具 | 版本 | 安装 |
+|---|---|---|
+| Git | 任意 | [git-scm.com](https://git-scm.com) |
+| Node.js | ≥ 18 | [nodejs.org](https://nodejs.org)（推荐用 [nvm](https://github.com/nvm-sh/nvm)） |
+| pnpm | ≥ 8 | `npm install -g pnpm` |
+| AI 工具 | — | Claude Code / Cursor / Codex 任选其一即可 |
+
+### 第一步：克隆仓库
+
+```bash
+git clone <仓库地址>
+cd AICAP
+```
+
+### 第二步：安装依赖
+
+```bash
+pnpm install
+```
+
+> 只安装一个工具：`rulesync`（版本已 pin，确保团队一致）。
+
+### 第三步：生成各工具配置
+
+```bash
+pnpm run ai:generate
+```
+
+这一步把 `.rulesync/` 里的源文件生成到各工具读取的目录（`.claude/`、`.cursor/`、`.codex/`、`.github/`）。**已在仓库里提交了生成产物，正常情况跳过此步即可**；拉取新改动后需重跑。
+
+### 第四步：激活全局 Skills（可选，推荐）
+
+```bash
+pnpm run setup:skills
+```
+
+让 8 个 Skills 在你本机所有项目里都能使用（不只是本仓库）。运行一次永久生效，可重复运行。
+
+### 验证
+
+打开 Claude Code 或 Cursor，输入 `/survey` 或 `/project-context`，能触发对应 skill 说明配置成功。
+
+### 密钥配置（如需使用 MCP）
+
+仓库内 `.mcp.json` 只存占位符，密钥不入库。把真实密钥加到你的 shell 环境：
+
+```bash
+# 加到 ~/.zshrc 或 ~/.bashrc
+export ANTHROPIC_API_KEY="sk-ant-..."
+export GITHUB_TOKEN="ghp_..."
+```
+
+---
+
+### 日后更新
+
+团队更新了 AICAP 后，执行以下命令同步：
+
+```bash
+git pull
+pnpm run ai:generate
+pnpm run setup:skills
+```
+
+---
+
 ## 心智模型
 
 ```
