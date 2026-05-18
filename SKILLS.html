@@ -68,8 +68,8 @@
       <span class="hidden md:inline text-slate-400 font-normal ml-2">AICAP 跨工具 Skill 目录</span>
     </div>
     <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
-      <span class="hidden md:inline">2026-05-17</span>
-      <span class="pill pill-ok">11 SSOT</span>
+      <span class="hidden md:inline">2026-05-18</span>
+      <span class="pill pill-ok">13 SSOT</span>
       <span class="pill pill-muted">3 本地</span>
       <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
     </div>
@@ -84,7 +84,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（11个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（13个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -96,6 +96,8 @@
           {h:'#aicap-commit',t:'/aicap-commit',sub:true},
           {h:'#xcuitest-skill',t:'/xcuitest-skill',sub:true},
           {h:'#sync-aicap',t:'/sync-aicap',sub:true},
+          {h:'#req-discovery',t:'/req-discovery',sub:true},
+          {h:'#video-hyperframes',t:'/video-hyperframes',sub:true},
           {h:'#local',t:'本地专用（3个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
@@ -118,14 +120,14 @@
   <!-- 概览 -->
   <section id="summary" class="section-card">
     <div class="flex flex-wrap gap-2 mb-4 text-xs">
-      <span class="pill pill-ok">14 个 Skills</span>
+      <span class="pill pill-ok">16 个 Skills</span>
       <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
-    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-17</div>
+    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-18</div>
     <blockquote class="!my-5">
-      <strong>14 个 Skill，一个路径。</strong>11 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      <strong>16 个 Skill，一个路径。</strong>13 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -141,8 +143,10 @@
           <tr><td><code><a href="#webapp-testing">/webapp-testing</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>Playwright 测试本地 Web 应用</td><td>"测一下这个网页"</td></tr>
           <tr><td><code><a href="#install-skill">/install-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>从 skill market fetch + 选择 + 部署</td><td>"从 anthropics 安装 skill"</td></tr>
           <tr><td><code><a href="#aicap-commit">/aicap-commit</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>AICAP 专用提交：更新文档 + 生成 HTML + generate + commit</td><td>"提交到 AICAP"</td></tr>
-          <tr class="bg-emerald-50/40"><td><code><a href="#xcuitest-skill">/xcuitest-skill</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>生成 XCUITest Swift 测试代码，支持本地模拟器 + 云端真机</td><td>"XCUITest" / "iOS UI test"</td></tr>
-          <tr class="bg-emerald-50/40"><td><code><a href="#sync-aicap">/sync-aicap</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>双向同步：拉最新 / 把本地新 skill 推 PR 给团队</td><td>"同步 AICAP"</td></tr>
+          <tr><td><code><a href="#xcuitest-skill">/xcuitest-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>生成 XCUITest Swift 测试代码，支持本地模拟器 + 云端真机</td><td>"XCUITest" / "iOS UI test"</td></tr>
+          <tr><td><code><a href="#sync-aicap">/sync-aicap</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>双向同步：拉最新 / 把本地新 skill 推 PR 给团队</td><td>"同步 AICAP"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#req-discovery">/req-discovery</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>多轮访谈将模糊想法转为含验收标准和优先级的 User Story 列表</td><td>"发掘需求" / "帮我写 user story"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#video-hyperframes">/video-hyperframes</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>生成 Hyperframes / Remotion 兼容的连续帧动画脚本</td><td>"做一个 hyperframes 视频"</td></tr>
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
@@ -153,8 +157,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（11 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 11 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（13 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 13 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -256,7 +260,7 @@ flowchart LR
 
   <!-- aicap-commit -->
   <section id="aicap-commit" class="section-card">
-    <h2 class="text-xl mb-1">/aicap-commit <a href="#aicap-commit" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <h2 class="text-xl mb-1">/aicap-commit <a href="#aicap-commit" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span></h2>
     <p class="text-slate-500 text-sm mb-4">AICAP 专用提交流程，自动更新文档并生成 HTML</p>
     <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">检测 <code>.rulesync/skills/</code> 变动 → 更新 SKILLS.md → 重新生成 SKILLS.html / README.html → <code>pnpm run ai:generate</code> → 规范 commit。提交后询问是否 push，不自动推送。</p></div>
     <p class="text-sm text-slate-600 mt-3 mb-2 font-semibold">自动执行步骤：</p>
@@ -275,7 +279,7 @@ flowchart LR
 
   <!-- xcuitest-skill -->
   <section id="xcuitest-skill" class="section-card">
-    <h2 class="text-xl mb-1">/xcuitest-skill <a href="#xcuitest-skill" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <h2 class="text-xl mb-1">/xcuitest-skill <a href="#xcuitest-skill" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span></h2>
     <p class="text-slate-500 text-sm mb-4">Apple 原生 XCUITest UI 测试代码生成器，Swift / Objective-C</p>
     <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">为 iOS/iPadOS app 生成 XCUITest UI 测试代码（Swift）。覆盖 element 查询（by ID / label / predicate）、手势（tap / swipe / pinch）、断言（waitForExistence）、系统弹窗自动处理、Page Object 模式模板。默认跑本地模拟器（<code>xcodebuild test</code>），也支持 LambdaTest / TestMu 云端真机。</p></div>
     <table class="mt-3 text-sm"><thead><tr><th>模式</th><th>说明</th></tr></thead><tbody>
@@ -289,7 +293,7 @@ flowchart LR
 
   <!-- sync-aicap -->
   <section id="sync-aicap" class="section-card">
-    <h2 class="text-xl mb-1">/sync-aicap <a href="#sync-aicap" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <h2 class="text-xl mb-1">/sync-aicap <a href="#sync-aicap" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span></h2>
     <p class="text-slate-500 text-sm mb-4">双向同步：拉取最新远端 skills，或把本地新 skill 推给团队（PR）</p>
     <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">自动判断模式：若无本地改动则拉取远端最新（<code>git pull → ai:generate → setup:skills</code>）并展示新增/删除/更新 skill diff；若有本地新 skill，则更新文档、创建 feature branch 并开 PR 推给团队。</p></div>
     <p class="text-sm text-slate-600 mt-3 mb-2 font-semibold">两种模式：</p>
@@ -316,6 +320,23 @@ flowchart LR
       </div>
     </div>
     <div class="mt-3"><span class="trigger-tag">同步 AICAP</span><span class="trigger-tag">sync aicap</span><span class="trigger-tag">更新 AICAP</span><span class="trigger-tag">把本地 skill 提交 PR</span></div>
+  </section>
+
+  <!-- req-discovery -->
+  <section id="req-discovery" class="section-card">
+    <h2 class="text-xl mb-1">/req-discovery <a href="#req-discovery" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">需求发掘与 User Story 生成，多轮结构化访谈将模糊想法变为可实施需求</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，可选择直接衔接 <code>/feature-fullstack</code> 进入实施。</p></div>
+    <div class="mt-3"><span class="trigger-tag">发掘需求</span><span class="trigger-tag">需求访谈</span><span class="trigger-tag">帮我写 user story</span><span class="trigger-tag">整理需求</span><span class="trigger-tag">我有个功能想法</span></div>
+  </section>
+
+  <!-- video-hyperframes -->
+  <section id="video-hyperframes" class="section-card">
+    <h2 class="text-xl mb-1">/video-hyperframes <a href="#video-hyperframes" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">Hyperframes / Remotion 兼容的连续帧动画脚本生成</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">生成 N 个连续 <code>&lt;section class="frame"&gt;</code> 帧（1920×1080），每帧表达一个镜头/概念，自带 JavaScript 自动播放（3 秒切换）+ 进度条 + 键盘控制，并输出 <code>HYPERFRAMES_META</code> JSON 元数据供 Remotion 渲染成 mp4。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：nexu-io/open-design <code>skills/video-hyperframes</code></p>
+    <div class="mt-3"><span class="trigger-tag">做一个 hyperframes 视频</span><span class="trigger-tag">用 hyperframes 做视频</span><span class="trigger-tag">生成帧动画脚本</span><span class="trigger-tag">remotion 脚本</span></div>
   </section>
 
   <!-- 本地专用 -->
@@ -367,16 +388,16 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>11 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>11 个目录</td><td>rulesync 生成产物</td></tr>
-          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>11 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>13 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>13 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>13 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <footer class="text-center text-xs text-slate-400 mt-8 mb-12">
-    生成自 <code>SKILLS.md</code> · 2026-05-17 · 单文件 HTML（Tailwind + Alpine + Mermaid CDN）
+    生成自 <code>SKILLS.md</code> · 2026-05-18 · 单文件 HTML（Tailwind + Alpine + Mermaid CDN）
   </footer>
   </main>
 </div>

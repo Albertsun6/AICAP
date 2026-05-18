@@ -1,0 +1,45 @@
+{
+  "skill_name": "req-discovery",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我想给 app 加一个收藏功能，帮我发掘需求然后生成 user story",
+      "expected_output": "Claude 扮演需求分析师，先问 3-5 个 meta-questions 锚定上下文（用户角色、场景、痛点），然后进行至少 1 轮结构化访谈，最终输出至少 2 条格式完整的 User Story（含 As a/I want/So that + Given/When/Then AC + MoSCoW 优先级）",
+      "files": [],
+      "expectations": [
+        "Phase 1 中 Claude 主动提问了产品背景或用户角色相关问题（至少 2 个）",
+        "Claude 没有跳过访谈直接输出 User Story",
+        "最终输出包含至少 2 条 User Story",
+        "每条 User Story 包含 As a/I want/So that 格式",
+        "每条 User Story 包含至少 1 条 Given/When/Then 格式的验收标准",
+        "每条 User Story 标注了 MoSCoW 优先级（Must Have / Should Have / Could Have）"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我们产品要做一个团队协作的评论功能，类似 Figma 的 comment，用户可以在设计稿上标注评论。但我们不想支持实时协作，也不想做 @mention，先做基础版本就好。帮我整理成 user story。",
+      "expected_output": "Claude 识别到用户已给出边界约束（不做实时协作、不做@mention），Phase 2 轮 2 的边界追问应简化或跳过已明确的部分。最终输出 3-6 条 User Story，边界说明里体现'不包含实时协作'和'不包含@mention'",
+      "files": [],
+      "expectations": [
+        "Claude 在访谈中识别并利用了用户已给出的边界约束，没有重复追问已明确的内容",
+        "至少有 1 条 User Story 的边界说明中提到不包含实时协作或@mention",
+        "输出至少 3 条 User Story",
+        "每条 User Story 包含 Given/When/Then 验收标准",
+        "Phase 4 结束后询问了是否需要写入文件或衔接 feature-fullstack"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我整理需求：用户登录之后应该能看到自己的历史订单，可以按时间排序，也可以搜索。订单详情里要有物流状态。这是个电商 app。",
+      "expected_output": "Claude 基于已有信息进行 Reflection Gate 评估，判断部分信息已足够但仍有盲区（例如分页、订单状态筛选、搜索范围等），进行针对性追问而非全量访谈。最终生成 3-5 条 User Story。",
+      "files": [],
+      "expectations": [
+        "Claude 没有忽略用户已提供的信息（历史订单、排序、搜索、物流状态）",
+        "Claude 追问了至少 1 个用户信息中未覆盖的盲区（如分页逻辑、搜索范围、订单状态类型等）",
+        "输出至少 3 条 User Story，覆盖订单列表和订单详情",
+        "每条 User Story 格式完整（Story + 优先级 + 验收标准）",
+        "输出结果被写入了 .md 文件，或 Claude 明确提出了写入文件的计划"
+      ]
+    }
+  ]
+}

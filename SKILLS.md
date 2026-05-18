@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（11 个，跨工具同步）
+## SSOT 管理的 Skills（13 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -97,6 +97,22 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：同步 AICAP skills 到最新版本——`git pull` → 检测变动 → `pnpm run ai:generate` → `pnpm run setup:skills` → 展示新增/删除/更新的 skill 列表。若本地有新 skill，还可自动提交并创建 PR 推给团队。
 
 触发："同步 AICAP" / "sync aicap" / "更新 AICAP" / "拉取最新 skills" / "AICAP 有更新"
+
+---
+
+### `/req-discovery`
+**用途**：需求发掘与 User Story 生成——通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，可选择直接衔接 `/feature-fullstack` 进入实施。
+
+触发："发掘需求" / "需求访谈" / "帮我写 user story" / "整理需求" / "我有个功能想法"
+
+---
+
+### `/video-hyperframes`
+**用途**：生成 Hyperframes / Remotion 兼容的连续帧动画脚本——N 个连续 `<section class="frame">` 帧（1920×1080），每帧表达一个镜头/概念，自带 JavaScript 自动播放（3 秒切换）+ 进度条 + 键盘控制，并输出 `HYPERFRAMES_META` JSON 元数据供 Remotion 渲染成 mp4。
+
+> 来源：nexu-io/open-design `skills/video-hyperframes`。
+
+触发："做一个 hyperframes 视频" / "用 hyperframes 做视频" / "生成帧动画脚本" / "remotion 脚本"
 
 ---
 
