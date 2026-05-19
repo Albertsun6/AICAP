@@ -93,6 +93,7 @@
           {h:'#skill-creator',t:'/skill-creator',sub:true},
           {h:'#webapp-testing',t:'/webapp-testing',sub:true},
           {h:'#install-skill',t:'/install-skill',sub:true},
+          {h:'#find-skills',t:'/find-skills',sub:true},
           {h:'#aicap-commit',t:'/aicap-commit',sub:true},
           {h:'#xcuitest-skill',t:'/xcuitest-skill',sub:true},
           {h:'#sync-aicap',t:'/sync-aicap',sub:true},
@@ -142,6 +143,7 @@
           <tr><td><code><a href="#skill-creator">/skill-creator</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>创建/改进/评测 skill</td><td>"创建新 skill"</td></tr>
           <tr><td><code><a href="#webapp-testing">/webapp-testing</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>Playwright 测试本地 Web 应用</td><td>"测一下这个网页"</td></tr>
           <tr><td><code><a href="#install-skill">/install-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>从 skill market fetch + 选择 + 部署</td><td>"从 anthropics 安装 skill"</td></tr>
+          <tr><td><code><a href="#find-skills">/find-skills</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>对话内即时发现并安装 skill（npx skills）</td><td>"有没有能做 X 的 skill"</td></tr>
           <tr><td><code><a href="#aicap-commit">/aicap-commit</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>AICAP 专用提交：更新文档 + 生成 HTML + generate + commit</td><td>"提交到 AICAP"</td></tr>
           <tr><td><code><a href="#xcuitest-skill">/xcuitest-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>生成 XCUITest Swift 测试代码，支持本地模拟器 + 云端真机</td><td>"XCUITest" / "iOS UI test"</td></tr>
           <tr><td><code><a href="#sync-aicap">/sync-aicap</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>双向同步：拉最新 / 把本地新 skill 推 PR 给团队</td><td>"同步 AICAP"</td></tr>
@@ -256,6 +258,16 @@ flowchart LR
       <tr><td><code>&lt;org&gt;/&lt;repo&gt;</code></td><td>任意符合 SKILL.md 规范的仓库</td></tr>
     </tbody></table>
     <div class="mt-3"><span class="trigger-tag">从 anthropics 安装 skill</span><span class="trigger-tag">install skill from market</span><span class="trigger-tag">拉取新 skill</span></div>
+  </section>
+
+  <!-- find-skills -->
+  <section id="find-skills" class="section-card">
+    <h2 class="text-xl mb-1">/find-skills <a href="#find-skills" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span></h2>
+    <p class="text-slate-500 text-sm mb-4">对话内即时发现并安装 agent skill</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">用户问 "how do I do X" / "有没有能做 X 的 skill" / "find a skill for X" 时自动激活，内部通过 Skills CLI（<code>npx skills find</code> / <code>npx skills add</code>）从开放 skill 生态搜索并安装。</p></div>
+    <div class="skill-block"><h3>与 /install-skill 的分工</h3><p class="text-sm text-slate-700"><code>find-skills</code> 偏对话内即时发现；<code>install-skill</code> 偏团队级 SSOT 固化（GitHub API → 选源 → generate → symlink，纳入版本控制）。</p></div>
+    <p class="text-sm text-slate-600 mt-3">来源：<code>vercel-labs/skills</code> · 纯 prompt，无 license/hook 约束，跨工具完全可移植。</p>
+    <div class="mt-3"><span class="trigger-tag">find a skill for X</span><span class="trigger-tag">有没有能做 X 的 skill</span><span class="trigger-tag">how do I do X</span></div>
   </section>
 
   <!-- aicap-commit -->

@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（13 个，跨工具同步）
+## SSOT 管理的 Skills（14 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -74,6 +74,17 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：从任意 skill market（anthropics/skills、openai/skills、vercel-labs/agent-skills、cloudflare/skills 或自定义 org/repo）发现并安装新技能到 AICAP SSOT。先用 GitHub API 无副作用地浏览市场、搜索关键词、查看详情，选好后再 fetch → 保留选中项 → generate → symlink，全程引导。
 
 触发："安装 skill" / "从市场安装" / "浏览 skill 市场" / "看看有哪些 skill" / "install skill from market"
+
+---
+
+### `/find-skills`
+**用途**：在对话中即时发现并安装 agent skill。当用户问 "how do I do X" / "有没有能做 X 的 skill" / "find a skill for X" 时自动激活，内部通过 Skills CLI（`npx skills find` / `npx skills add`）从开放 skill 生态搜索并安装。
+
+与 `/install-skill` 互补：`find-skills` 偏对话内即时发现，`install-skill` 偏团队级 SSOT 固化（GitHub API → 选源 → generate → symlink，纳入版本控制）。
+
+> 来源：vercel-labs/skills `skills/find-skills`。纯 prompt，无 license/hook 约束，跨工具完全可移植。
+
+触发："find a skill for X" / "有没有能做 X 的 skill" / "how do I do X"（X 可能存在现成 skill 时）
 
 ---
 
