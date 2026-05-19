@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（14 个，跨工具同步）
+## SSOT 管理的 Skills（17 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -124,6 +124,35 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 > 来源：nexu-io/open-design `skills/video-hyperframes`。
 
 触发："做一个 hyperframes 视频" / "用 hyperframes 做视频" / "生成帧动画脚本" / "remotion 脚本"
+
+---
+
+### `/plan-eng-review`
+**用途**：工程经理视角的方案评审——动手写代码前锁定执行方案：架构、数据流、图示、边界 case、测试覆盖、性能。交互式逐条走查，给出有立场的取舍建议并等你确认方向。
+
+适用：架构/技术方案在实施前的把关，与 `/debate-review`（评审别人的反馈）互补——这个是主动发起评审。
+
+触发：`/plan-eng-review` / "评审这份方案" / "架构评审" / "技术方案评审"
+
+> 来源：zhao-lei007/skills。用 `allowed-tools` + `AskUserQuestion`（Claude 专有），Cursor/Codex 下退化为普通 prompt。
+
+---
+
+### `/plan-ceo-review`
+**用途**：创始人视角的方案评审——重想问题、挑战前提、寻找 10 星产品。四种模式：SCOPE EXPANSION（放大梦想）/ SELECTIVE EXPANSION（守住 scope + 精选扩张）/ HOLD SCOPE（最大严谨度）/ SCOPE REDUCTION（砍到本质）。
+
+触发：`/plan-ceo-review` / "从产品/战略层评审这个 plan" / "这个方向对不对"
+
+> 来源：zhao-lei007/skills。
+
+---
+
+### `/pre-land-review`
+**用途**：PR 落地前的结构性评审——对比 base 分支 diff，查 SQL 安全、LLM 信任边界越界、条件副作用等测试覆盖不到的结构问题。附带 `checklist.md` / `design-checklist.md` / `greptile-triage.md` 参考文件。
+
+触发：`/pre-land-review` / "合并前帮我评审 diff" / "PR 落地前检查"
+
+> 来源：zhao-lei007/skills，原名 `review`，为避开与 Claude Code 内置 `/review` 命名冲突而重命名为 `pre-land-review`。
 
 ---
 

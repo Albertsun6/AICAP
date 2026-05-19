@@ -69,7 +69,7 @@
     </div>
     <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
       <span class="hidden md:inline">2026-05-18</span>
-      <span class="pill pill-ok">13 SSOT</span>
+      <span class="pill pill-ok">17 SSOT</span>
       <span class="pill pill-muted">3 本地</span>
       <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
     </div>
@@ -84,7 +84,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（13个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（17个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -99,6 +99,9 @@
           {h:'#sync-aicap',t:'/sync-aicap',sub:true},
           {h:'#req-discovery',t:'/req-discovery',sub:true},
           {h:'#video-hyperframes',t:'/video-hyperframes',sub:true},
+          {h:'#plan-eng-review',t:'/plan-eng-review',sub:true},
+          {h:'#plan-ceo-review',t:'/plan-ceo-review',sub:true},
+          {h:'#pre-land-review',t:'/pre-land-review',sub:true},
           {h:'#local',t:'本地专用（3个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
@@ -121,14 +124,14 @@
   <!-- 概览 -->
   <section id="summary" class="section-card">
     <div class="flex flex-wrap gap-2 mb-4 text-xs">
-      <span class="pill pill-ok">16 个 Skills</span>
+      <span class="pill pill-ok">20 个 Skills</span>
       <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
-    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-18</div>
+    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-19</div>
     <blockquote class="!my-5">
-      <strong>16 个 Skill，一个路径。</strong>13 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      <strong>20 个 Skill，一个路径。</strong>17 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -149,6 +152,9 @@
           <tr><td><code><a href="#sync-aicap">/sync-aicap</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>双向同步：拉最新 / 把本地新 skill 推 PR 给团队</td><td>"同步 AICAP"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#req-discovery">/req-discovery</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>多轮访谈将模糊想法转为含验收标准和优先级的 User Story 列表</td><td>"发掘需求" / "帮我写 user story"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#video-hyperframes">/video-hyperframes</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>生成 Hyperframes / Remotion 兼容的连续帧动画脚本</td><td>"做一个 hyperframes 视频"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#plan-eng-review">/plan-eng-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>工程经理视角锁定执行方案：架构/数据流/边界/测试/性能</td><td>"评审这份方案" / "架构评审"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#plan-ceo-review">/plan-ceo-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>创始人视角挑战前提，4 种 scope 模式重想问题</td><td>"从战略层评审 plan"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#pre-land-review">/pre-land-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>PR 落地前结构性评审：SQL 安全 / LLM 信任边界 / 副作用</td><td>"合并前评审 diff"</td></tr>
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
@@ -159,8 +165,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（13 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 13 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（17 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 17 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -351,6 +357,33 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">做一个 hyperframes 视频</span><span class="trigger-tag">用 hyperframes 做视频</span><span class="trigger-tag">生成帧动画脚本</span><span class="trigger-tag">remotion 脚本</span></div>
   </section>
 
+  <!-- plan-eng-review -->
+  <section id="plan-eng-review" class="section-card">
+    <h2 class="text-xl mb-1">/plan-eng-review <a href="#plan-eng-review" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">工程经理视角的方案评审，动手写代码前锁定执行方案</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">动手写代码前锁定执行方案：架构、数据流、图示、边界 case、测试覆盖、性能。交互式逐条走查，给出有立场的取舍建议并等你确认方向。与 <code>/debate-review</code>（评审别人给的反馈）互补——这个主动发起评审。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：zhao-lei007/skills · <code>allowed-tools</code> + <code>AskUserQuestion</code>（Claude 专有），Cursor/Codex 下退化为普通 prompt</p>
+    <div class="mt-3"><span class="trigger-tag">评审这份方案</span><span class="trigger-tag">架构评审</span><span class="trigger-tag">技术方案评审</span><span class="trigger-tag">/plan-eng-review</span></div>
+  </section>
+
+  <!-- plan-ceo-review -->
+  <section id="plan-ceo-review" class="section-card">
+    <h2 class="text-xl mb-1">/plan-ceo-review <a href="#plan-ceo-review" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">创始人视角的方案评审，挑战前提、重想问题</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">重想问题、挑战前提、寻找 10 星产品。四种模式：SCOPE EXPANSION（放大梦想）/ SELECTIVE EXPANSION（守住 scope + 精选扩张）/ HOLD SCOPE（最大严谨度）/ SCOPE REDUCTION（砍到本质）。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：zhao-lei007/skills</p>
+    <div class="mt-3"><span class="trigger-tag">从产品/战略层评审 plan</span><span class="trigger-tag">这个方向对不对</span><span class="trigger-tag">/plan-ceo-review</span></div>
+  </section>
+
+  <!-- pre-land-review -->
+  <section id="pre-land-review" class="section-card">
+    <h2 class="text-xl mb-1">/pre-land-review <a href="#pre-land-review" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">PR 落地前的结构性评审，查测试覆盖不到的问题</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">对比 base 分支 diff，查 SQL 安全、LLM 信任边界越界、条件副作用等测试覆盖不到的结构问题。附带 <code>checklist.md</code> / <code>design-checklist.md</code> / <code>greptile-triage.md</code> 参考文件。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：zhao-lei007/skills，原名 <code>review</code>，为避开与 Claude Code 内置 <code>/review</code> 命名冲突而重命名</p>
+    <div class="mt-3"><span class="trigger-tag">合并前帮我评审 diff</span><span class="trigger-tag">PR 落地前检查</span><span class="trigger-tag">/pre-land-review</span></div>
+  </section>
+
   <!-- 本地专用 -->
   <section id="local" class="section-card">
     <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
@@ -400,8 +433,8 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>13 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>13 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>17 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>17 个目录</td><td>rulesync 生成产物</td></tr>
           <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>13 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>
