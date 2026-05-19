@@ -19,7 +19,7 @@
 
     "figma": {
       "type": "stdio",
-      "command": "python3",
+      "command": "/opt/homebrew/bin/python3",
       "args": [
         "/Users/yongqian/Desktop/AICAP/scripts/mcp-idle-wrapper.py",
         "npx", "-y", "@figma/mcp"
@@ -32,7 +32,7 @@
 
     "penpot": {
       "type": "stdio",
-      "command": "python3",
+      "command": "/opt/homebrew/bin/python3",
       "args": [
         "/Users/yongqian/Desktop/AICAP/scripts/mcp-idle-wrapper.py",
         "npx", "-y", "@penpot/mcp"

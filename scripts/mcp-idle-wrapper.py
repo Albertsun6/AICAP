@@ -10,9 +10,10 @@ Usage (in mcp.json):
   "args": ["~/Desktop/AICAP/scripts/mcp-idle-wrapper.py", "npx", "-y", "some-mcp-pkg"],
   "env": { "MCP_IDLE_TIMEOUT": "1800" }
 """
-import sys
 import os
+import sys
 import time
+import signal
 import threading
 import subprocess
 
@@ -25,6 +26,8 @@ if not cmd:
 
 last_activity = time.time()
 lock = threading.Lock()
+stop = threading.Event()
+proc = None
 
 
 def touch():
@@ -32,6 +35,35 @@ def touch():
     with lock:
         last_activity = time.time()
 
+
+def shutdown(exit_code: int = 0) -> None:
+    """Stop child process and I/O threads without running Py_FinalizeEx."""
+    stop.set()
+    if proc is not None and proc.poll() is None:
+        try:
+            proc.terminate()
+            proc.wait(timeout=3)
+        except Exception:
+            try:
+                proc.kill()
+                proc.wait(timeout=2)
+            except Exception:
+                pass
+    for stream in (getattr(proc, "stdin", None), getattr(proc, "stdout", None)):
+        if stream is not None:
+            try:
+                stream.close()
+            except Exception:
+                pass
+    os._exit(exit_code)
+
+
+def on_signal(signum, _frame):
+    shutdown(128 + signum)
+
+
+signal.signal(signal.SIGTERM, on_signal)
+signal.signal(signal.SIGINT, on_signal)
 
 proc = subprocess.Popen(
     cmd,
@@ -43,21 +75,21 @@ proc = subprocess.Popen(
 
 def watchdog():
     """Check every 60s; terminate if idle longer than TIMEOUT."""
-    while proc.poll() is None:
-        time.sleep(60)
+    while not stop.is_set() and proc.poll() is None:
+        if stop.wait(60):
+            return
         with lock:
             idle = time.time() - last_activity
         if idle >= TIMEOUT:
             sys.stderr.write(
                 f"mcp-idle-wrapper: idle {idle:.0f}s >= {TIMEOUT}s, shutting down {cmd[0]}\n"
             )
-            proc.terminate()
-            return
+            shutdown(0)
 
 
 def pipe_stdin():
     try:
-        while True:
+        while not stop.is_set():
             chunk = sys.stdin.buffer.read1(4096)
             if not chunk:
                 break
@@ -75,7 +107,7 @@ def pipe_stdin():
 
 def pipe_stdout():
     try:
-        while True:
+        while not stop.is_set():
             chunk = proc.stdout.read1(4096)
             if not chunk:
                 break
@@ -86,13 +118,16 @@ def pipe_stdout():
         pass
 
 
-threading.Thread(target=watchdog, daemon=True).start()
-t_in = threading.Thread(target=pipe_stdin, daemon=True)
-t_out = threading.Thread(target=pipe_stdout, daemon=True)
+t_in = threading.Thread(target=pipe_stdin, name="mcp-stdin", daemon=True)
+t_out = threading.Thread(target=pipe_stdout, name="mcp-stdout", daemon=True)
+t_watch = threading.Thread(target=watchdog, name="mcp-watchdog", daemon=True)
 t_in.start()
 t_out.start()
+t_watch.start()
 
-proc.wait()
+exit_code = proc.wait()
+stop.set()
 t_in.join(timeout=2)
 t_out.join(timeout=2)
-sys.exit(proc.returncode or 0)
+# Avoid Py_FinalizeEx with live daemon threads (crashes Apple Python 3.9 on macOS).
+os._exit(exit_code or 0)
