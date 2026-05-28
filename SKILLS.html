@@ -84,7 +84,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（17个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（19个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -102,6 +102,8 @@
           {h:'#plan-eng-review',t:'/plan-eng-review',sub:true},
           {h:'#plan-ceo-review',t:'/plan-ceo-review',sub:true},
           {h:'#pre-land-review',t:'/pre-land-review',sub:true},
+          {h:'#diagnose',t:'/diagnose',sub:true},
+          {h:'#canvas-design',t:'/canvas-design',sub:true},
           {h:'#local',t:'本地专用（3个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
@@ -124,14 +126,14 @@
   <!-- 概览 -->
   <section id="summary" class="section-card">
     <div class="flex flex-wrap gap-2 mb-4 text-xs">
-      <span class="pill pill-ok">20 个 Skills</span>
+      <span class="pill pill-ok">22 个 Skills</span>
       <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
     <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-19</div>
     <blockquote class="!my-5">
-      <strong>20 个 Skill，一个路径。</strong>17 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      <strong>22 个 Skill，一个路径。</strong>19 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -155,6 +157,8 @@
           <tr class="bg-emerald-50/40"><td><code><a href="#plan-eng-review">/plan-eng-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>工程经理视角锁定执行方案：架构/数据流/边界/测试/性能</td><td>"评审这份方案" / "架构评审"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#plan-ceo-review">/plan-ceo-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>创始人视角挑战前提，4 种 scope 模式重想问题</td><td>"从战略层评审 plan"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#pre-land-review">/pre-land-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>PR 落地前结构性评审：SQL 安全 / LLM 信任边界 / 副作用</td><td>"合并前评审 diff"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#diagnose">/diagnose</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>结构化调试：先建 pass/fail 反馈回路，再用可证伪假设逐一排查</td><td>"调试这个 bug" / "查根因"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#canvas-design">/canvas-design</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>用设计哲学驱动创作 .png / .pdf 视觉作品（海报/艺术图）</td><td>"做一张海报" / "设计一个 X"</td></tr>
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
@@ -165,8 +169,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（17 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 17 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（19 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 19 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -384,6 +388,24 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">合并前帮我评审 diff</span><span class="trigger-tag">PR 落地前检查</span><span class="trigger-tag">/pre-land-review</span></div>
   </section>
 
+  <!-- diagnose -->
+  <section id="diagnose" class="section-card">
+    <h2 class="text-xl mb-1">/diagnose <a href="#diagnose" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">结构化调试难缠的 bug 与性能回归</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">先建一个 agent 能跑的 pass/fail 反馈回路，再用可证伪假设逐一排查，先写回归测试再改，最后清理 + 复盘。锚定"只有可执行的验证才真正约束调试"。明显笔误/编译错直接改，不套流程。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">借鉴 mattpocock/skills <code>diagnose</code>，按 AICAP 中文风格本地重写，锚定全局 CLAUDE.md ④（可执行验证）</p>
+    <div class="mt-3"><span class="trigger-tag">调试这个 bug</span><span class="trigger-tag">这个 bug 复现不了</span><span class="trigger-tag">性能回归变慢了</span><span class="trigger-tag">查根因</span><span class="trigger-tag">/diagnose</span></div>
+  </section>
+
+  <!-- canvas-design -->
+  <section id="canvas-design" class="section-card">
+    <h2 class="text-xl mb-1">/canvas-design <a href="#canvas-design" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">用设计哲学驱动创作 .png / .pdf 视觉作品</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">海报、艺术图、静态设计稿。先确立美学运动 / 设计语言，再视觉化表达，只输出 <code>.md</code> / <code>.pdf</code> / <code>.png</code>。原创设计，绝不抄袭既有艺术家作品（规避版权）。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：Anthropic skills（含 <code>LICENSE.txt</code>）</p>
+    <div class="mt-3"><span class="trigger-tag">做一张海报</span><span class="trigger-tag">设计一个 X</span><span class="trigger-tag">create a poster / art / design</span></div>
+  </section>
+
   <!-- 本地专用 -->
   <section id="local" class="section-card">
     <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
@@ -433,8 +455,8 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>17 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>17 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>19 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>19 个目录</td><td>rulesync 生成产物</td></tr>
           <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>13 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>

@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（17 个，跨工具同步）
+## SSOT 管理的 Skills（19 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -153,6 +153,26 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 触发：`/pre-land-review` / "合并前帮我评审 diff" / "PR 落地前检查"
 
 > 来源：zhao-lei007/skills，原名 `review`，为避开与 Claude Code 内置 `/review` 命名冲突而重命名为 `pre-land-review`。
+
+---
+
+### `/diagnose`
+**用途**：结构化调试难缠的 bug 与性能回归——先建一个 agent 能跑的 pass/fail 反馈回路，再用可证伪假设逐一排查，先写回归测试再改，最后清理 + 复盘。锚定"只有可执行的验证才真正约束调试"。
+
+适用：bug 复现费劲、偶发、看不出根因、性能回归。明显笔误/编译错直接改，不套流程。
+
+触发：`/diagnose` / "调试这个 bug" / "这个 bug 复现不了" / "性能回归变慢了" / "查根因"
+
+> 借鉴 mattpocock/skills `diagnose`，按 AICAP 中文风格本地重写，锚定全局 CLAUDE.md ④（可执行验证）。
+
+---
+
+### `/canvas-design`
+**用途**：用"设计哲学"驱动创作 `.png` / `.pdf` 视觉作品——海报、艺术图、静态设计稿。先确立美学运动/设计语言，再视觉化表达，只输出 `.md` / `.pdf` / `.png`。原创设计，绝不抄袭既有艺术家作品（规避版权）。
+
+触发："做一张海报" / "设计一个 X" / "create a poster / art / design"
+
+> 来源：Anthropic skills（含 `LICENSE.txt`）。
 
 ---
 

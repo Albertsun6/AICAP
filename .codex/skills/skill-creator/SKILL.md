@@ -487,22 +487,3 @@ Repeating one more time the core loop here for emphasis:
 Please add steps to your TodoList, if you have such a thing, to make sure you don't forget. If you're in Cowork, please specifically put "Create evals JSON and run `eval-viewer/generate_review.py` so human can review test cases" in your TodoList to make sure it happens.
 
 Good luck!
-
----
-
-## AICAP SSOT 部署（仅 AICAP 项目）
-
-如果当前工作目录包含 `rulesync.jsonc`（即 AICAP SSOT 环境），skill 定稿后执行以下步骤将其部署到三工具并全局暴露：
-
-```bash
-# 1. 确认 SKILL.md 已放在正确位置
-#    ~/Desktop/AICAP/.rulesync/skills/<name>/SKILL.md
-
-# 2. 生成四工具产物（Claude Code / Cursor / Codex / Copilot）
-cd ~/Desktop/AICAP && pnpm run ai:generate
-
-# 3. 创建全局 symlink（Cursor / Claude Code / Codex 均从此路径发现 skill）
-ln -s ~/Desktop/AICAP/.claude/skills/<name> ~/.claude/skills/<name>
-```
-
-非 AICAP 项目忽略此节。
