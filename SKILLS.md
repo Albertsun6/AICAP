@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（19 个，跨工具同步）
+## SSOT 管理的 Skills（20 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -173,6 +173,19 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 触发："做一张海报" / "设计一个 X" / "create a poster / art / design"
 
 > 来源：Anthropic skills（含 `LICENSE.txt`）。
+
+---
+
+### `/project-health`
+**用途**：系统化评估一个 git 仓库的"项目健康度"——架构合理性、代码规范与精简、目录结构、冗余/死代码、解耦隔离、技术架构、历史评审教训。分四层产出报告：L0 仓库治理/供应链（OpenSSF 风格 + secret 扫描）、L1 静态门禁（knip/vulture/radon/scc/jscpd/dependency-cruiser）、L2 churn×complexity hotspots（纯 git+python 零安装）、L3 AI 语义评审 + cursor-agent 异构终审。
+
+设计：可量化维度一律用可执行探针出客观 JSON（不许 LLM 目测）；探针三态降级（ran_ok / tool_failed / skipped，装了崩绝不当 skip）；secret 扫描只输出规则名+路径不输出值（fail-closed）；软维度异构兜底；结论固化成 lint/fitness rule/ADR。
+
+适用：整仓库健康度评估。不适用：单 PR/diff 评审（用 `/pre-land-review`）。
+
+触发：`/project-health` / "评估项目健康度" / "repo / codebase health" / "查死代码冗余" / "技术债在哪"
+
+> 来源：由一次 `/survey` 调研落地（设计经 2 轮 cursor-agent 异构对抗评审硬化）。
 
 ---
 

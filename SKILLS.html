@@ -84,7 +84,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（19个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（20个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -104,6 +104,7 @@
           {h:'#pre-land-review',t:'/pre-land-review',sub:true},
           {h:'#diagnose',t:'/diagnose',sub:true},
           {h:'#canvas-design',t:'/canvas-design',sub:true},
+          {h:'#project-health',t:'/project-health',sub:true},
           {h:'#local',t:'本地专用（3个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
@@ -133,7 +134,7 @@
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
     <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-19</div>
     <blockquote class="!my-5">
-      <strong>22 个 Skill，一个路径。</strong>19 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      <strong>23 个 Skill，一个路径。</strong>20 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -159,6 +160,7 @@
           <tr class="bg-emerald-50/40"><td><code><a href="#pre-land-review">/pre-land-review</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>PR 落地前结构性评审：SQL 安全 / LLM 信任边界 / 副作用</td><td>"合并前评审 diff"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#diagnose">/diagnose</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>结构化调试：先建 pass/fail 反馈回路，再用可证伪假设逐一排查</td><td>"调试这个 bug" / "查根因"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#canvas-design">/canvas-design</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>用设计哲学驱动创作 .png / .pdf 视觉作品（海报/艺术图）</td><td>"做一张海报" / "设计一个 X"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#project-health">/project-health</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>仓库健康度四层评估（治理/静态门禁/hotspots/AI 异构），可执行探针出 JSON</td><td>"评估项目健康度" / "技术债在哪"</td></tr>
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
@@ -169,8 +171,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（19 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 19 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（20 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 20 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -406,6 +408,16 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">做一张海报</span><span class="trigger-tag">设计一个 X</span><span class="trigger-tag">create a poster / art / design</span></div>
   </section>
 
+  <!-- project-health -->
+  <section id="project-health" class="section-card">
+    <h2 class="text-xl mb-1">/project-health <a href="#project-health" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">仓库健康度四层评估：可执行探针 + AI 异构兜底</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">评估一个 git 仓库的健康度——架构合理性、代码规范精简、目录结构、冗余/死代码、解耦隔离、技术架构、历史评审教训。分层产出：<code>L0</code> 仓库治理/供应链（OpenSSF 风格 + secret 扫描）、<code>L1</code> 静态门禁（knip/vulture/radon/scc/jscpd/dependency-cruiser）、<code>L2</code> churn×complexity hotspots（纯 git+python 零安装）、<code>L3</code> AI 语义评审 + cursor-agent 异构终审。</p></div>
+    <div class="skill-block"><h3>设计</h3><p class="text-sm text-slate-700">可量化维度一律用探针出客观 JSON（不许 LLM 目测）；三态降级 <code>ran_ok / tool_failed / skipped</code>（装了崩绝不当 skip）；secret 扫描只输出规则名+路径不输出值（fail-closed）；软维度异构兜底；结论固化成 lint/fitness rule/ADR。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：由一次 <code>/survey</code> 调研落地，设计经 2 轮 cursor-agent 异构对抗评审硬化。不适用单 PR 评审（用 <code>/pre-land-review</code>）。</p>
+    <div class="mt-3"><span class="trigger-tag">评估项目健康度</span><span class="trigger-tag">repo / codebase health</span><span class="trigger-tag">查死代码冗余</span><span class="trigger-tag">技术债在哪</span></div>
+  </section>
+
   <!-- 本地专用 -->
   <section id="local" class="section-card">
     <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
@@ -455,8 +467,8 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>19 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>19 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>20 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>20 个目录</td><td>rulesync 生成产物</td></tr>
           <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>13 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>
