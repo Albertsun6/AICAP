@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（20 个，跨工具同步）
+## SSOT 管理的 Skills（23 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -85,6 +85,35 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 > 来源：vercel-labs/skills `skills/find-skills`。纯 prompt，无 license/hook 约束，跨工具完全可移植。
 
 触发："find a skill for X" / "有没有能做 X 的 skill" / "how do I do X"（X 可能存在现成 skill 时）
+
+---
+
+### `/search-online-skills`
+**用途**：到**线上多源**搜「有没有现成 skill 能做某事」并核实排序。跨「官方市场（anthropics/openai/vercel/cloudflare）+ 社区 + 聚合 awesome 列表 + skills.sh 注册表 + GitHub 代码搜索 + 全网」广搜，逐个对抗式核实「确实存在且真做这事」，按相关度 × 质量信号（installs/stars/官方）排序输出对比表。**只读不安装**——要装转 `/install-skill`，查不到转 `/skill-creator` 自建。
+
+与另两个的边界：`find-skills` 只问 skills.sh 一个注册表、`install-skill` 以装为主且源写死；本 skill 是**能力驱动的跨源发现层**。
+
+> **查找源动态维护**：源不写死在正文，全在 `sources.yaml`（版本化种子 + 发现探针）。每次运行还会联网发现新市场，确认有价值的再回写注册表 → `ai:generate`，源随用随长。
+
+触发："搜索线上 skill" / "网上有没有做 X 的 skill" / "去市场找 X 的 skill" / "线上找个现成 skill" / "search online for a skill"
+
+---
+
+### `/diagramming-code`
+**用途**：把整个代码库自动可视化成 **Mermaid 结构图**——调用图、类继承、模块依赖图、包含关系、复杂度热图、数据流/攻击面追踪。把代码解析成 Trailmark code graph 后由 `scripts/diagram.py` 生成,**真解析**而非 LLM 凭感觉画。
+
+> 来源：[trailofbits/skills](https://github.com/trailofbits/skills)（**CC-BY-SA-4.0**，已在 `diagramming-code/SOURCE.md` 署名 Trail of Bits，未改其内容）。运行前需 `uv pip install trailmark`；偏 Python/Rust。
+
+触发："画调用图" / "可视化代码架构" / "生成依赖图/类图" / "complexity heatmap"
+
+---
+
+### `/architecture-blueprint-generator`
+**用途**：分析整个代码库 → 自动识别技术栈与架构模式 → 产出一份**架构蓝图 Markdown**(C4/UML/Flow/Component 图 + 分层/数据架构/ADR/扩展蓝图的长叙述)。可配 `DIAGRAM_TYPE`、`DETAIL_LEVEL` 等变量。报告型(图由 LLM 读码后绘制)。
+
+> 来源：[github/awesome-copilot](https://github.com/github/awesome-copilot)（MIT）。纯 prompt，无运行依赖，跨工具可移植。
+
+触发："生成架构蓝图" / "分析项目架构" / "architecture documentation"
 
 ---
 
@@ -211,6 +240,19 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：批量查询 FedEx 追踪号的发货日期，输出 CSV。用真实 Chrome（CDP 驱动）模拟点击绕过 Akamai 反爬，随机延迟 8-15s。
 
 触发：有一批 FedEx 追踪号需要提取发货日期时
+
+---
+
+## 外部全局插件（非 SSOT，原生安装）
+
+> 这类工具**不是** prompt skill，而是自带 CLI 的 npm/pip 包,经其自身安装器注册到 Claude Code（插件机制，非 `~/.claude/skills/` 软链）。不进 SSOT、不经 rulesync 同步。
+
+### `oh-my-mermaid`（`/omm-scan`、`/omm-view`）
+**用途**：整库扫描 → 多视角嵌套 **Mermaid 架构图**（overall-architecture / data-flow / dependency-map / request-lifecycle…），可递归钻取；`/omm-view` 起本地交互 viewer 在浏览器里点着看。1277★，多工具支持。
+
+安装方式：`npm install -g oh-my-mermaid && omm setup claude`（装成 user 作用域 Claude Code 插件）。撤：`omm setup claude --uninstall` 或在 Claude Code 删插件 + `npm rm -g oh-my-mermaid`。
+
+> 图由 Claude 读码后撰写 Mermaid（非确定性静态解析）。**插件无热加载,新装后需重启会话**才出现 `/omm-scan`。
 
 ---
 

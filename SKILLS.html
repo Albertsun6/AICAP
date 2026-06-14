@@ -69,8 +69,9 @@
     </div>
     <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
       <span class="hidden md:inline">2026-05-18</span>
-      <span class="pill pill-ok">17 SSOT</span>
+      <span class="pill pill-ok">23 SSOT</span>
       <span class="pill pill-muted">3 本地</span>
+      <span class="pill pill-info">1 外部插件</span>
       <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
     </div>
   </div>
@@ -84,7 +85,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（20个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（23个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -94,6 +95,9 @@
           {h:'#webapp-testing',t:'/webapp-testing',sub:true},
           {h:'#install-skill',t:'/install-skill',sub:true},
           {h:'#find-skills',t:'/find-skills',sub:true},
+          {h:'#search-online-skills',t:'/search-online-skills',sub:true},
+          {h:'#diagramming-code',t:'/diagramming-code',sub:true},
+          {h:'#architecture-blueprint-generator',t:'/architecture-blueprint-generator',sub:true},
           {h:'#aicap-commit',t:'/aicap-commit',sub:true},
           {h:'#xcuitest-skill',t:'/xcuitest-skill',sub:true},
           {h:'#sync-aicap',t:'/sync-aicap',sub:true},
@@ -109,6 +113,8 @@
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
           {h:'#fedex-tracker',t:'/fedex-tracker',sub:true},
+          {h:'#external-plugins',t:'外部全局插件（1个）',sub:false},
+          {h:'#oh-my-mermaid',t:'oh-my-mermaid',sub:true},
           {h:'#maintenance',t:'维护规则',sub:false}
         ]">
           <li>
@@ -127,14 +133,14 @@
   <!-- 概览 -->
   <section id="summary" class="section-card">
     <div class="flex flex-wrap gap-2 mb-4 text-xs">
-      <span class="pill pill-ok">22 个 Skills</span>
+      <span class="pill pill-ok">27 个 Skills</span>
       <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
     <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-19</div>
     <blockquote class="!my-5">
-      <strong>23 个 Skill，一个路径。</strong>20 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目）。
+      <strong>27 个 Skill，一个路径。</strong>23 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目），1 个外部全局插件（原生安装）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -150,6 +156,9 @@
           <tr><td><code><a href="#webapp-testing">/webapp-testing</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>Playwright 测试本地 Web 应用</td><td>"测一下这个网页"</td></tr>
           <tr><td><code><a href="#install-skill">/install-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>从 skill market fetch + 选择 + 部署</td><td>"从 anthropics 安装 skill"</td></tr>
           <tr><td><code><a href="#find-skills">/find-skills</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>对话内即时发现并安装 skill（npx skills）</td><td>"有没有能做 X 的 skill"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#search-online-skills">/search-online-skills</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>线上多源搜现成 skill 并对抗式核实排序（只读不安装）</td><td>"网上有没有做 X 的 skill"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#diagramming-code">/diagramming-code</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>把代码库真解析成 Mermaid 结构图（调用图/类图/依赖/热图）</td><td>"画调用图" / "可视化代码架构"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#architecture-blueprint-generator">/architecture-blueprint-generator</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>分析代码库产出架构蓝图 Markdown（C4/UML/Flow + 长叙述）</td><td>"生成架构蓝图" / "分析项目架构"</td></tr>
           <tr><td><code><a href="#aicap-commit">/aicap-commit</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>AICAP 专用提交：更新文档 + 生成 HTML + generate + commit</td><td>"提交到 AICAP"</td></tr>
           <tr><td><code><a href="#xcuitest-skill">/xcuitest-skill</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>生成 XCUITest Swift 测试代码，支持本地模拟器 + 云端真机</td><td>"XCUITest" / "iOS UI test"</td></tr>
           <tr><td><code><a href="#sync-aicap">/sync-aicap</a></code></td><td><span class="pill pill-ok">SSOT</span></td><td>双向同步：拉最新 / 把本地新 skill 推 PR 给团队</td><td>"同步 AICAP"</td></tr>
@@ -164,6 +173,7 @@
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#oh-my-mermaid">oh-my-mermaid</a></code></td><td><span class="pill pill-info">外部插件</span> <span class="pill pill-info">新</span></td><td>整库扫描 → 多视角嵌套 Mermaid 架构图，可递归钻取 + 本地 viewer</td><td>"omm scan" / "omm view"</td></tr>
         </tbody>
       </table>
     </div>
@@ -171,8 +181,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（20 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 20 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（23 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 23 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -280,6 +290,34 @@ flowchart LR
     <div class="skill-block"><h3>与 /install-skill 的分工</h3><p class="text-sm text-slate-700"><code>find-skills</code> 偏对话内即时发现；<code>install-skill</code> 偏团队级 SSOT 固化（GitHub API → 选源 → generate → symlink，纳入版本控制）。</p></div>
     <p class="text-sm text-slate-600 mt-3">来源：<code>vercel-labs/skills</code> · 纯 prompt，无 license/hook 约束，跨工具完全可移植。</p>
     <div class="mt-3"><span class="trigger-tag">find a skill for X</span><span class="trigger-tag">有没有能做 X 的 skill</span><span class="trigger-tag">how do I do X</span></div>
+  </section>
+
+  <!-- search-online-skills -->
+  <section id="search-online-skills" class="section-card">
+    <h2 class="text-xl mb-1">/search-online-skills <a href="#search-online-skills" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">到线上多源搜「有没有现成 skill 能做某事」并核实排序</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">跨「官方市场（anthropics/openai/vercel/cloudflare）+ 社区 + 聚合 awesome 列表 + skills.sh 注册表 + GitHub 代码搜索 + 全网」广搜，逐个对抗式核实「确实存在且真做这事」，按相关度 × 质量信号（installs/stars/官方）排序输出对比表。<strong>只读不安装</strong>——要装转 <code>/install-skill</code>，查不到转 <code>/skill-creator</code> 自建。</p></div>
+    <div class="skill-block"><h3>与另两个的边界</h3><p class="text-sm text-slate-700"><code>find-skills</code> 只问 skills.sh 一个注册表；<code>install-skill</code> 以装为主且源写死；本 skill 是<strong>能力驱动的跨源发现层</strong>。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">查找源动态维护：源全在 <code>sources.yaml</code>（版本化种子 + 发现探针），每次运行联网发现新市场、确认有价值的再回写注册表 → <code>ai:generate</code></p>
+    <div class="mt-3"><span class="trigger-tag">搜索线上 skill</span><span class="trigger-tag">网上有没有做 X 的 skill</span><span class="trigger-tag">去市场找 X 的 skill</span><span class="trigger-tag">线上找个现成 skill</span><span class="trigger-tag">search online for a skill</span></div>
+  </section>
+
+  <!-- diagramming-code -->
+  <section id="diagramming-code" class="section-card">
+    <h2 class="text-xl mb-1">/diagramming-code <a href="#diagramming-code" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">把整个代码库自动可视化成 Mermaid 结构图</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">调用图、类继承、模块依赖图、包含关系、复杂度热图、数据流/攻击面追踪。把代码解析成 Trailmark code graph 后由 <code>scripts/diagram.py</code> 生成，<strong>真解析</strong>而非 LLM 凭感觉画。偏 Python/Rust。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：trailofbits/skills（<strong>CC-BY-SA-4.0</strong>，已在 <code>diagramming-code/SOURCE.md</code> 署名 Trail of Bits，未改其内容）· 运行前需 <code>uv pip install trailmark</code></p>
+    <div class="mt-3"><span class="trigger-tag">画调用图</span><span class="trigger-tag">可视化代码架构</span><span class="trigger-tag">生成依赖图/类图</span><span class="trigger-tag">complexity heatmap</span></div>
+  </section>
+
+  <!-- architecture-blueprint-generator -->
+  <section id="architecture-blueprint-generator" class="section-card">
+    <h2 class="text-xl mb-1">/architecture-blueprint-generator <a href="#architecture-blueprint-generator" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">分析代码库产出架构蓝图 Markdown（报告型）</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">分析整个代码库 → 自动识别技术栈与架构模式 → 产出一份<strong>架构蓝图 Markdown</strong>（C4/UML/Flow/Component 图 + 分层/数据架构/ADR/扩展蓝图的长叙述）。可配 <code>DIAGRAM_TYPE</code>、<code>DETAIL_LEVEL</code> 等变量。图由 LLM 读码后绘制。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">来源：github/awesome-copilot（MIT）· 纯 prompt，无运行依赖，跨工具可移植</p>
+    <div class="mt-3"><span class="trigger-tag">生成架构蓝图</span><span class="trigger-tag">分析项目架构</span><span class="trigger-tag">architecture documentation</span></div>
   </section>
 
   <!-- aicap-commit -->
@@ -446,6 +484,24 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">有 FedEx 追踪号批次</span><span class="trigger-tag">批量查 FedEx 发货日期</span></div>
   </section>
 
+  <!-- 外部全局插件 -->
+  <section id="external-plugins" class="section-card">
+    <h2 class="text-xl mb-4">外部全局插件（非 SSOT，原生安装）<a href="#external-plugins" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">这类工具<strong>不是</strong> prompt skill，而是自带 CLI 的 npm/pip 包，经其自身安装器注册到 Claude Code（插件机制，非 <code>~/.claude/skills/</code> 软链）。不进 SSOT、不经 rulesync 同步。</p>
+    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 text-sm text-slate-700 rounded-r">插件无热加载，新装后需<strong>重启会话</strong>才出现对应斜杠命令。</div>
+  </section>
+
+  <section id="oh-my-mermaid" class="section-card">
+    <h2 class="text-xl mb-1">oh-my-mermaid <a href="#oh-my-mermaid" class="anchor-link">#</a><span class="pill pill-info ml-2">外部插件 · 非 SSOT</span></h2>
+    <p class="text-slate-500 text-sm mb-4">整库扫描 → 多视角嵌套 Mermaid 架构图，可递归钻取（<code>/omm-scan</code>、<code>/omm-view</code>）</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">整库扫描 → 多视角嵌套 <strong>Mermaid 架构图</strong>（overall-architecture / data-flow / dependency-map / request-lifecycle…），可递归钻取；<code>/omm-view</code> 起本地交互 viewer 在浏览器里点着看。1277★，多工具支持。</p></div>
+    <p class="text-sm text-slate-600 mt-3 mb-2 font-semibold">安装方式：</p>
+    <pre class="codeblk">npm install -g oh-my-mermaid &amp;&amp; omm setup claude   # 装成 user 作用域 Claude Code 插件
+# 撤：omm setup claude --uninstall  或在 Claude Code 删插件 + npm rm -g oh-my-mermaid</pre>
+    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 text-sm text-slate-700 rounded-r mt-3">图由 Claude 读码后撰写 Mermaid（非确定性静态解析）。<strong>插件无热加载，新装后需重启会话</strong>才出现 <code>/omm-scan</code>。</div>
+    <div class="mt-3"><span class="trigger-tag">omm scan</span><span class="trigger-tag">omm view</span><span class="trigger-tag">扫描架构</span><span class="trigger-tag">可视化架构图</span></div>
+  </section>
+
   <!-- 维护规则 -->
   <section id="maintenance" class="section-card">
     <h2 class="text-xl mb-4">维护规则 <a href="#maintenance" class="anchor-link">#</a></h2>
@@ -467,9 +523,9 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>20 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>20 个目录</td><td>rulesync 生成产物</td></tr>
-          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>13 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>23 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>23 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>23 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>
     </div>

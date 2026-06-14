@@ -1,0 +1,85 @@
+# search-online-skills 源注册表（SSOT 种子）
+#
+# 这是「到线上找 skill」时要扫的市场/来源的**种子清单**。它不是写死的全部——
+# skill 每次运行还会联网「发现」新市场（见 SKILL.md Step 2），确认有价值的新源
+# 由用户拍板后**回写到本文件**再 `pnpm run ai:generate`，于是源会随用随长。
+#
+# 字段说明：
+#   id        稳定短名（kebab-case）
+#   kind      official | community | aggregator | registry
+#   ref       org/repo（GitHub）或 registry 入口
+#   trust     high | medium | low —— 决定排序时的质量加权与是否需额外人审
+#   list_via  怎么列出它下面的 skill（供 agent 照做）
+#   notes     擅长领域 / 已知坑
+#
+# 维护：新增源就在 sources 下追加一项；下线就删一项。改完跑 ai:generate。
+# 改这里，不要改 .claude/skills/ 下的生成副本（会被覆盖）。
+
+version: 1
+updated: 2026-06-13
+
+# ---- 联网「发现新源」用的探针（Step 2 用，不写死结果，只写怎么找）----
+discovery_probes:
+  github_repo_search:
+    - 'gh search repos "claude skills" --sort stars --limit 30'
+    - 'gh search repos "agent skills" SKILL.md --limit 30'
+    - 'gh search repos "claude code skills" --sort stars --limit 20'
+    - 'gh search code --filename SKILL.md "name:" --limit 30   # 反查含 SKILL.md 的仓库'
+  aggregator_lists:
+    # 聚合/awesome 列表本身就是「源的源」——读它们能发现注册表里还没有的市场
+    - https://github.com/ComposioHQ/awesome-claude-skills
+    - https://skills.sh/                      # 排行榜，按安装量排
+  web_search:
+    - '"claude skills" marketplace OR registry site:github.com'
+    - 'awesome agent skills SKILL.md list'
+
+# ---- 种子市场 ----
+sources:
+  - id: anthropics-skills
+    kind: official
+    ref: anthropics/skills
+    trust: high
+    list_via: 'gh api /repos/anthropics/skills/contents/skills --jq ".[]|select(.type==\"dir\").name"'
+    notes: Anthropic 官方，纯 prompt、跨工具可移植，文档/前端/通用能力最稳
+
+  - id: openai-skills
+    kind: official
+    ref: openai/skills
+    trust: high
+    list_via: 'gh api /repos/openai/skills/contents/ --jq ".[]|select(.type==\"dir\").name"'
+    notes: OpenAI 官方，偏 Codex 生态
+
+  - id: vercel-agent-skills
+    kind: official
+    ref: vercel-labs/agent-skills
+    trust: high
+    list_via: 'gh api /repos/vercel-labs/agent-skills/contents/ --jq ".[]|select(.type==\"dir\").name"'
+    notes: Vercel 官方，React/Next/Vercel 栈、web design，安装量大
+
+  - id: cloudflare-skills
+    kind: official
+    ref: cloudflare/skills
+    trust: high
+    list_via: 'gh api /repos/cloudflare/skills/contents/ --jq ".[]|select(.type==\"dir\").name"'
+    notes: Cloudflare 平台专属（Workers/Pages/D1 等）
+
+  - id: skills-sh-registry
+    kind: registry
+    ref: 'npx --yes skills find "<query>"'
+    trust: medium
+    list_via: 'npx --yes skills find "<query>" 2>&1 | head -60   # 失败回退 WebFetch https://skills.sh/?q=<query>'
+    notes: 开放注册表 + CLI，带 install 计数。可一次性按关键词跨作者搜，但只覆盖已登记到 skills.sh 的
+
+  - id: awesome-claude-skills
+    kind: aggregator
+    ref: ComposioHQ/awesome-claude-skills
+    trust: medium
+    list_via: 'WebFetch https://github.com/ComposioHQ/awesome-claude-skills 读 README 表格'
+    notes: 社区聚合 awesome 列表——既是搜索目标，也是「发现新源」的入口
+
+  - id: obra-superpowers
+    kind: community
+    ref: obra/superpowers
+    trust: medium
+    list_via: 'gh api /repos/obra/superpowers/contents/skills --jq ".[]|select(.type==\"dir\").name"'
+    notes: 社区高人气 skill 合集；社区源安装前按 SKILL.md 内容人审一遍
