@@ -16,7 +16,7 @@
 # 改这里，不要改 .claude/skills/ 下的生成副本（会被覆盖）。
 
 version: 1
-updated: 2026-06-13
+updated: 2026-06-18
 
 # ---- 联网「发现新源」用的探针（Step 2 用，不写死结果，只写怎么找）----
 discovery_probes:
@@ -83,3 +83,67 @@ sources:
     trust: medium
     list_via: 'gh api /repos/obra/superpowers/contents/skills --jq ".[]|select(.type==\"dir\").name"'
     notes: 社区高人气 skill 合集；社区源安装前按 SKILL.md 内容人审一遍
+
+  # ---- 2026-06-18 经 learning-skills 搜索发现并核实（真实 GitHub 市场；star 数为 gh api 实测，非杜撰）----
+  - id: alirezarezvani-claude-skills
+    kind: community
+    ref: alirezarezvani/claude-skills
+    trust: medium
+    list_via: 'WebFetch https://github.com/alirezarezvani/claude-skills 读 README 索引；嵌套布局 <category>/<skill>/skills/<skill>/（如 engineering/llm-wiki/skills/llm-wiki），gh api 逐层列'
+    notes: 18403★ MIT，337-skill 多领域大市场（含 llm-wiki 等 PKM/学习）；star 是整库级、非单 skill
+
+  - id: sanyuan-skills
+    kind: community
+    ref: sanyuan0704/sanyuan-skills
+    trust: medium
+    list_via: 'gh api /repos/sanyuan0704/sanyuan-skills/contents/skills --jq ".[]|select(.type==\"dir\").name"'
+    notes: 3657★ MIT 纯 prompt 市场；book-study（读书→Obsidian wiki→掌握度测验→真 SRS）即出自此，学习类强
+
+  - id: arscontexta
+    kind: community
+    ref: agenticnotetaking/arscontexta
+    trust: medium
+    list_via: 'gh api /repos/agenticnotetaking/arscontexta/contents/skills --jq ".[]|select(.type==\"dir\").name"；建议整插件装 /plugin marketplace add agenticnotetaking/arscontexta'
+    notes: 3409★ MIT 一方 PKM 插件（Ars Contexta，本地 md 知识库，9 skill+26 命令）；Claude Code 专用
+
+  - id: dair-academy-plugins
+    kind: community
+    ref: dair-ai/dair-academy-plugins
+    trust: medium
+    list_via: 'gh api /repos/dair-ai/dair-academy-plugins/contents/plugins --jq ".[]|select(.type==\"dir\").name"（见 .claude-plugin/marketplace.json）'
+    notes: 411★ DAIR.AI 一方（Prompt Engineering Guide 团队）；含 learn 辅导插件，质量信号可靠（但 learn 无 license 文件）
+
+  - id: mercury-agent-skills
+    kind: community
+    ref: cosmicstack-labs/mercury-agent-skills
+    trust: medium
+    list_via: 'gh api /repos/cosmicstack-labs/mercury-agent-skills/contents/categories --jq ".[]|select(.type==\"dir\").name" 再逐 category 列；榜单 skills.mercuryagent.sh'
+    notes: 352★ MIT 策划市场（24 类~132 skill，带 likes/installs 榜）；education-learning 类含 learning-science
+
+  - id: lyndonkl-claude
+    kind: community
+    ref: lyndonkl/claude
+    trust: medium
+    list_via: 'gh api /repos/lyndonkl/claude/contents --jq ".[]|select(.type==\"dir\").name"；亦在 skills.sh（npx --yes skills find）'
+    notes: 122★；少数有真实 skills.sh 安装量+安全审计的源（memory-retrieval-learning 出自此，330 installs）
+
+  - id: majiayu-skill-registry
+    kind: aggregator
+    ref: majiayu000/claude-skill-registry
+    trust: low
+    list_via: 'gh api /repos/majiayu000/claude-skill-registry/contents/skills --jq ".[]" 或 WebFetch 仓库索引（~1000 skill 聚合镜像）'
+    notes: 422★ 大型聚合镜像（按领域归类）——发现入口好，但坑多：抓取时常漏 references/ 致断链，metadata 多为 NOASSERTION/restricted，装前必查上游
+
+  - id: ferrox-wayland-edu
+    kind: community
+    ref: FerroxLabs/wayland
+    trust: low
+    list_via: 'gh api 路径 src/process/resources/skills-library/bodies/skills/education/ 下逐 skill 列（非标准市场布局）'
+    notes: 443★，Wayland 产品内置 127-skill 教育库（active-recall/spaced-repetition/flashcard-generation 等）；路径深、AGPL vs Apache license 矛盾，装需指目录
+
+  - id: travisvn-awesome-claude-skills
+    kind: aggregator
+    ref: travisvn/awesome-claude-skills
+    trust: medium
+    list_via: 'WebFetch https://github.com/travisvn/awesome-claude-skills 读 README 表格（既是搜索目标也是「源的源」）'
+    notes: 社区 awesome 聚合列表；可作发现新市场的入口
