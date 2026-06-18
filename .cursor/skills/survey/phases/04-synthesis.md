@@ -179,8 +179,8 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X（默认）或 A+B+C（cursor
 1. **主脚本**：`bash ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/generate-audio.sh -o "<cwd>/<topic>-音频概要.m4a" "<cwd>/<topic>-完整报告.md"`
    - 脚本支持 `-o OUT` 参数（脚本直接写到指定路径，无需主 agent mv 重命名）
    - 不传 `-o` 时默认输出 `<report>.audio.m4a`（向后兼容旧调用方）
-   - 跨平台检测（uname + command -v say）；非 macOS 直接 skipped
-   - 默认不指定 voice（系统默认）+ rate 170 WPM；env var `SURVEY_AUDIO_VOICE` / `SURVEY_AUDIO_RATE` 可 override
+   - 引擎：**首选 edge-tts 晓晓**（复用 `report-to-audio/scripts/tts.py --provider auto`，与对话播报 Stop hook `tts-play.sh` 同款神经嗓音）；tts.py 不可用（无 python3 / 脚本缺失）时退回 macOS `say`；非 macOS 且无 tts.py 才 skipped（exit 65 → caller 可试 openai 脚本）
+   - 嗓音按语言自动选（zh→晓晓 / en→英文神经嗓音）；env var `SURVEY_AUDIO_VOICE` 覆盖嗓音，`SURVEY_AUDIO_RATE` 仅影响 `say` 兜底语速（默认 170 WPM）
    - **路径必须双引号**——应对路径含空格 / 中文 / 特殊字符
 
 2. **可选 fallback**：`bash ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/generate-audio-openai.sh -o "<cwd>/<topic>-音频概要.mp3" "<cwd>/<topic>-完整报告.md"`
