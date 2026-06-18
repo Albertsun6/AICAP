@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Agent 架构调研（2025-2026）</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "base", flowchart: { curve: "basis" } });
+</script>
+<style>
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body { font-family: "PingFang SC","Noto Sans SC",system-ui,sans-serif; background:#fafaf9; color:#0f172a; line-height:1.75; }
+  .pill { display:inline-block; padding:.1rem .55rem; border-radius:999px; font-size:.72rem; font-weight:600; }
+  .pill-ok { background:#d1fae5; color:#065f46; }
+  .pill-warn { background:#fef3c7; color:#92400e; }
+  .section-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:1.5rem; margin-bottom:1.25rem; }
+  table { border-collapse:collapse; width:100%; font-size:.9rem; }
+  th,td { border:1px solid #e2e8f0; padding:.5rem .7rem; vertical-align:top; }
+  th { background:#f1f5f9; text-align:left; }
+  tbody tr:hover { background:#f8fafc; }
+  .tablewrap { overflow-x:auto; margin:1rem 0; }
+  a { color:#047857; }
+  .nav-link.active { background:#ecfdf5; color:#047857; font-weight:600; }
+  details > summary { cursor:pointer; font-weight:600; }
+  .mermaid { background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; margin:1rem 0; }
+</style>
+</head>
+<body x-data="{ active: '#reco' }">
+<nav class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-5 py-3 flex items-center gap-3">
+    <div class="font-bold text-sm md:text-base">AI Agent 架构调研（2025-2026）</div>
+    <div class="ml-auto flex gap-2 text-xs">
+      <span class="pill pill-ok">Citation PASS</span>
+      <span class="pill pill-warn">置信度 中高</span>
+      <span class="hidden md:inline text-slate-500">2026-05-18</span>
+    </div>
+  </div>
+</nav>
+<div class="max-w-6xl mx-auto px-5 py-8 flex gap-8">
+<aside class="hidden lg:block w-52 shrink-0">
+  <div class="sticky top-20 text-sm space-y-1">
+    <template x-for="i in [
+      {h:'#reco',t:'推荐'},
+      {h:'#runtime',t:'运行时架构'},
+      {h:'#loops',t:'推理循环'},
+      {h:'#memory',t:'记忆'},
+      {h:'#multi',t:'多 Agent'},
+      {h:'#mcp',t:'MCP / A2A'},
+      {h:'#frameworks',t:'框架对比'},
+      {h:'#prod',t:'观测评测'},
+      {h:'#risks',t:'待验证风险'},
+      {h:'#meta',t:'Metadata'}
+    ]">
+      <a :href="i.h" @click="active=i.h" :class="{'active': active===i.h}" class="nav-link block px-3 py-1.5 rounded text-slate-600 hover:bg-slate-100" x-text="i.t"></a>
+    </template>
+  </div>
+</aside>
+<main class="flex-1 min-w-0">
+<section id="reco" class="section-card">
+<h1 class="text-2xl font-bold mb-3">推荐结论</h1>
+<p><strong>2025-2026 生产级 Agent 主流架构</strong> = 显式编排运行时 + 分层记忆 + MCP 工具层 + 内建观测/评测/护栏；推理循环按任务选 ReAct / Plan-Execute / Reflection；<strong>默认单 Agent</strong>，仅在角色边界清楚时引入多 Agent。</p>
+<ul class="list-disc pl-5 mt-3 space-y-1 text-slate-700">
+<li>长流程靠 <strong>state / checkpoint / durable execution</strong>，而非更长 prompt</li>
+<li>MCP <strong>正在快速收敛</strong>为跨厂商工具互操作标准（企业内部仍常用 OpenAPI）</li>
+<li>框架选型跟 <strong>模型与云生态锁定</strong>，不追 GitHub star</li>
+</ul>
+</section>
+
+<section id="runtime" class="section-card">
+<h2 class="text-xl font-bold mb-2">运行时架构</h2>
+<p>Anthropic 区分 <em>Workflow</em>（预定义路径）与 <em>Agent</em>（动态选工具）。2025 后重心：状态机编排、可恢复运行时、上下文工程。</p>
+<div class="mermaid">flowchart TB
+  subgraph Runtime["Agent Runtime"]
+    ORCH[编排 Graph/Workflow]
+    STATE[共享 State/Session]
+    LOOP[Agent Loop]
+    MEM[记忆 短+结构+长]
+    TOOLS[MCP/Functions]
+    OBS[Traces/Evals/Guardrails]
+  end
+  USER((用户)) --> ORCH --> LOOP
+  LOOP --> MEM & TOOLS & OBS
+  ORCH --> STATE</div>
+</section>
+
+<section id="loops" class="section-card">
+<h2 class="text-xl font-bold mb-2">推理循环</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>模式</th><th>适用</th><th>风险</th></tr></thead>
+<tbody>
+<tr><td>ReAct / Tool loop</td><td>短任务、API</td><td>轮次失控</td></tr>
+<tr><td>Plan-then-Execute</td><td>可拆解任务</td><td>计划僵化</td></tr>
+<tr><td>Reflection</td><td>高风险输出</td><td>成本翻倍</td></tr>
+<tr><td>Workflow DAG</td><td>审计、稳定流程</td><td>灵活性低</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="memory" class="section-card">
+<h2 class="text-xl font-bold mb-2">记忆三层</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>层</th><th>内容</th><th>实现</th></tr></thead>
+<tbody>
+<tr><td>短期</td><td>thread、tool 结果</td><td>上下文 / session API</td></tr>
+<tr><td>结构化状态</td><td>进度、schema</td><td>LangGraph State、ADK session</td></tr>
+<tr><td>长期</td><td>跨会话知识</td><td>向量库、外部 DB</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="multi" class="section-card">
+<h2 class="text-xl font-bold mb-2">单 Agent vs 多 Agent</h2>
+<p>OpenAI SDK 区分 <strong>Manager</strong>（子 Agent 当工具）与 <strong>Handoff</strong>（交控制权）。共识：多 Agent 仅在<strong>角色边界清楚</strong>时有 ROI。</p>
+</section>
+
+<section id="mcp" class="section-card">
+<h2 class="text-xl font-bold mb-2">MCP 与 A2A</h2>
+<p>MCP：JSON-RPC，标准化 tools/resources/prompts。OpenAI、Google、Pydantic AI、Strands 等已支持。<strong>A2A</strong> 补充 Agent 间互操作，不替代 MCP。</p>
+</section>
+
+<section id="frameworks" class="section-card">
+<h2 class="text-xl font-bold mb-2">框架选型（简表）</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>框架</th><th>适合</th></tr></thead>
+<tbody>
+<tr><td>LangGraph</td><td>复杂状态机、完全控制</td></tr>
+<tr><td>OpenAI Agents SDK</td><td>OpenAI 栈快速落地</td></tr>
+<tr><td>Google ADK</td><td>GCP / 长运行 Agent</td></tr>
+<tr><td>CrewAI</td><td>角色协作原型</td></tr>
+<tr><td>Pydantic AI + Temporal</td><td>耐久执行、HITL</td></tr>
+<tr><td>AWS Strands</td><td>Bedrock / AWS 栈</td></tr>
+</tbody></table></div>
+<p class="text-sm text-slate-600 mt-2">边界补充：Semantic Kernel（.NET）、LlamaIndex（RAG-heavy）、Haystack（搜索 pipeline）— 见完整报告 .md。</p>
+</section>
+
+<section id="prod" class="section-card">
+<h2 class="text-xl font-bold mb-2">观测 · 评测 · 护栏</h2>
+<p>生产必备：Tracing（LangSmith / Phoenix / Braintrust）、Evals（promptfoo）、Guardrails、HITL（LangGraph interrupt、ADK、Temporal）。OpenTelemetry 成为跨框架底座。</p>
+</section>
+
+<section id="risks" class="section-card">
+<h2 class="text-xl font-bold mb-2">待验证风险</h2>
+<ul class="list-disc pl-5 space-y-1">
+<li>框架 license / maintainer（AG2 过渡）</li>
+<li>MCP Server 供应链安全</li>
+<li>多 Agent 真实 p99 与 token 成本</li>
+<li>A2A 跨厂商落地（2026 H2 跟踪）</li>
+</ul>
+</section>
+
+<section id="meta" class="section-card">
+<details>
+<summary>调研 Metadata</summary>
+<ul class="mt-3 text-sm text-slate-600 space-y-1">
+<li>异构搜索：2 Claude + 1 cursor-agent</li>
+<li>Phase 6：Refine → 已 incorporate</li>
+<li>Citation：17/17 URL ok</li>
+<li>完整报告：<code>AI-Agent架构调研-完整报告.md</code></li>
+<li>音频：<code>AI-Agent架构调研-音频概要.m4a</code></li>
+</ul>
+</details>
+</section>
+</main>
+</div>
+</body>
+</html>

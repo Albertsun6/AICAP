@@ -1,0 +1,13 @@
+created: 2026-06-14T06:10:44.377Z
+updated: 2026-06-14T06:10:44.781Z
+update_count: 6
+last_field: note
+git_commit: 70af9f9
+git_branch: main
+children:
+  - ai-generate
+  - commit
+  - discover
+  - edit-rulesync
+  - per-tool
+  - setup-skills

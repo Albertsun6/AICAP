@@ -1,0 +1,9 @@
+graph LR
+    rules["Rules\n.rulesync/rules/"]
+    skills["Skills\n.rulesync/skills/ (23)"]
+    subagents["Subagents\n.rulesync/subagents/"]
+    commands["Commands\n.rulesync/commands/"]
+    mcp-config["MCP Config\n.rulesync/mcp.json"]
+    hooks["Hooks\n.rulesync/hooks/ + hooks.json"]
+    rules -.->|"项目规则约束所有能力"| skills
+    rules -.->|"约束子代理行为"| subagents

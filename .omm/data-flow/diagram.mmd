@@ -1,0 +1,16 @@
+graph LR
+    edit-rulesync["Edit SSOT\n.rulesync/<feature>"]
+    ai-generate["ai:generate\nrulesync generate"]
+    per-tool["Per-tool Outputs\n.claude .cursor .codex .github"]
+    commit["Commit src+products\ngit"]
+    setup-skills["setup:skills\nsymlink"]
+    discover["Tools Discover\n~/.claude/skills/"]
+    edit-rulesync -->|"能力只改一次"| ai-generate
+    ai-generate -->|"写各工具原生格式"| per-tool
+    per-tool -->|"源+产物一起进版本库(可被 CI drift gate 比对)"| commit
+    per-tool -->|"把 skills 全局软链"| setup-skills
+    setup-skills -->|"任意项目可发现"| discover
+    classDef entry fill:#89b4fa,stroke:#89b4fa,color:#1e1e2e
+    classDef store fill:#a6e3a1,stroke:#a6e3a1,color:#1e1e2e
+    class edit-rulesync entry
+    class discover store

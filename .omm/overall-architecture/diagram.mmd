@@ -1,0 +1,14 @@
+graph LR
+    rulesync-ssot["Rulesync SSOT\n.rulesync/"]
+    generator["Generator\npackage.json ai:generate"]
+    tool-outputs["Tool Outputs\n.claude .cursor .codex .github"]
+    global-activation["Global Activation\nscripts/setup-global-skills.sh"]
+    supporting["Supporting\nscripts promptfoo docs"]
+    rulesync-ssot -->|"rulesync generate: 能力只定义一次"| generator
+    generator -->|"写出各工具原生格式"| tool-outputs
+    tool-outputs -->|"symlink .claude/skills/* 到 ~/.claude/skills/"| global-activation
+    supporting -.->|"MCP 包装 / eval / 文档 支撑流水线"| generator
+    classDef store fill:#a6e3a1,stroke:#a6e3a1,color:#1e1e2e
+    classDef entry fill:#89b4fa,stroke:#89b4fa,color:#1e1e2e
+    class rulesync-ssot entry
+    class tool-outputs store

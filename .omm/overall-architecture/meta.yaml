@@ -1,0 +1,12 @@
+created: 2026-06-14T06:00:07.277Z
+updated: 2026-06-14T06:00:07.750Z
+update_count: 7
+last_field: note
+git_commit: 70af9f9
+git_branch: main
+children:
+  - generator
+  - global-activation
+  - rulesync-ssot
+  - supporting
+  - tool-outputs

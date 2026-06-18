@@ -1,0 +1,9 @@
+created: 2026-06-14T06:01:19.411Z
+updated: 2026-06-14T06:01:19.411Z
+update_count: 1
+last_field: description
+kind: nested-class
+title: skills
+children: []
+parentPath:
+  - rulesync-ssot

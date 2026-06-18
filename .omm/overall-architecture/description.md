@@ -1,0 +1,1 @@
+AICAP 的顶层架构:团队所有 AI 编码工具(Claude Code / Cursor / Codex / Copilot)的项目级能力(rules / skills / subagents / commands / mcp / hooks)只在 .rulesync/ 定义一次,经 rulesync generate 生成到各工具各自的目录与文件名,再由 setup-global-skills.sh 把 skills 全局 symlink 暴露。源与生成产物都纳入版本控制。

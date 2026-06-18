@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多平台 AI 前端开发设计最佳实践</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  @media print { #sidebar { display: none; } body { font-size: 12px; } }
+  html { scroll-behavior: smooth; }
+  .pill-ok    { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800; }
+  .pill-warn  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800; }
+  .pill-muted { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600; }
+  .pill-fail  { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700; }
+  table { border-collapse: collapse; width: 100%; }
+  th { background: #f8fafc; }
+  th, td { border: 1px solid #e2e8f0; padding: 8px 12px; font-size: 0.85rem; }
+  tr:hover td { background: #f8fafc; }
+  .active-section { font-weight: 600; color: #1e40af; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.8rem; line-height: 1.6; }
+  code { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+  h2 { border-bottom: 2px solid #e2e8f0; padding-bottom: 0.4rem; margin-top: 2rem; }
+  h3 { margin-top: 1.5rem; color: #1e40af; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans" x-data="{ activeSection: '' }">
+
+<!-- Sticky Top Bar -->
+<div class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm px-6 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <span class="font-semibold text-slate-900 text-sm">多平台 AI 前端开发设计最佳实践</span>
+    <span class="pill-ok">核心 High</span>
+    <span class="pill-warn">跨平台 Medium</span>
+    <span class="pill-muted">新兴协议 Medium</span>
+  </div>
+  <div class="flex items-center gap-3 text-xs text-slate-500">
+    <span>2026-05-17</span>
+    <button onclick="window.print()" class="px-3 py-1 border border-slate-300 rounded text-slate-600 hover:bg-slate-50">打印</button>
+  </div>
+</div>
+
+<div class="flex max-w-7xl mx-auto">
+
+  <!-- Sidebar -->
+  <nav id="sidebar" class="w-56 shrink-0 sticky top-12 h-screen overflow-y-auto py-6 px-4 text-xs space-y-1 hidden lg:block">
+    <p class="text-slate-400 uppercase tracking-widest text-[10px] font-semibold mb-3">目录</p>
+    <a href="#research-question" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">研究问题</a>
+    <a href="#comparison" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">方案对比矩阵</a>
+    <a href="#conflict" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">冲突分析</a>
+    <a href="#recommendations" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">推荐</a>
+    <a href="#web" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600 pl-4">· Web 层</a>
+    <a href="#ios" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600 pl-4">· iOS 层</a>
+    <a href="#android" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600 pl-4">· Android 层</a>
+    <a href="#cross-platform" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600 pl-4">· 跨平台策略</a>
+    <a href="#sources" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">主要来源</a>
+    <a href="#risks" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">待验证风险</a>
+    <a href="#metadata" class="block py-1 px-2 rounded hover:bg-slate-100 text-slate-600">调研 Metadata</a>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="flex-1 px-8 py-8 max-w-4xl">
+
+    <!-- Research Question -->
+    <section id="research-question" class="mb-10">
+      <h1 class="text-2xl font-bold text-slate-900 mb-2">多平台 AI 产品前端交互层架构</h1>
+      <p class="text-slate-500 text-sm mb-4">完整调研报告 · 2026-05-17 · 3 Agent 并行搜索 + Phase 6 独立终审</p>
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+        <strong>研究问题：</strong>在多平台（iOS、Android、Web）AI 产品前端开发中，如何设计交互层、组件架构与状态管理，使 AI 体验在感知性能、UX 一致性、可维护性上达到业界最优？
+      </div>
+      <div class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+        <div class="bg-white border border-slate-200 rounded p-3 text-xs text-center">
+          <div class="font-semibold text-slate-700">流式 UX</div>
+          <div class="text-slate-400 mt-1">渲染质量</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded p-3 text-xs text-center">
+          <div class="font-semibold text-slate-700">多平台一致性</div>
+          <div class="text-slate-400 mt-1">设计复用</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded p-3 text-xs text-center">
+          <div class="font-semibold text-slate-700">状态管理</div>
+          <div class="text-slate-400 mt-1">Agent 状态机</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded p-3 text-xs text-center">
+          <div class="font-semibold text-slate-700">性能</div>
+          <div class="text-slate-400 mt-1">TTFT / 渲染</div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded p-3 text-xs text-center">
+          <div class="font-semibold text-slate-700">可维护性</div>
+          <div class="text-slate-400 mt-1">SDK / 组件化</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture Diagram -->
+    <section class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">推荐分层架构总览</h2>
+      <div class="mermaid bg-white border border-slate-200 rounded-lg p-4">
+graph TB
+    A["设计 Token 层<br/>Figma Variables → Style Dictionary → iOS/Android/Web"] --> B
+    A --> C
+    A --> D
+
+    subgraph WEB["Web 层"]
+      D["Vercel AI SDK 5<br/>UIMessage / ModelMessage"] --> D2["Zustand (UI 状态)"]
+      D2 --> D3["XState Agent (多步任务,按需)"]
+    end
+
+    subgraph IOS["iOS 层"]
+      B["iOS 26+<br/>Apple Foundation Models<br/>streamResponse"]
+      B2["iOS 18+<br/>GetStream Swift AI<br/>URLSession SSE"]
+    end
+
+    subgraph ANDROID["Android 层"]
+      C["Android 15+<br/>Gemini Nano / AICore"]
+      C2["Android 8+<br/>GetStream Compose AI<br/>OkHttp EventSource"]
+    end
+
+    PROTO["通信层: SSE (默认) + WebSocket (双向补充)"] --> WEB
+    PROTO --> IOS
+    PROTO --> ANDROID
+      </div>
+    </section>
+
+    <!-- Comparison Matrices -->
+    <section id="comparison" class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">方案对比矩阵</h2>
+
+      <h3 class="font-semibold mb-2">矩阵 1：流式协议选择</h3>
+      <div class="overflow-x-auto mb-6">
+        <table>
+          <thead>
+            <tr>
+              <th>方案</th><th>流式 UX</th><th>性能</th><th>可维护性</th><th>适用场景</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>SSE (text/event-stream)</strong></td><td>★★★★★</td><td>★★★★★</td><td>★★★★★</td><td>所有 LLM token 推送（行业默认）</td></tr>
+            <tr><td>WebSocket</td><td>★★★☆☆</td><td>★★★★☆</td><td>★★★☆☆</td><td>多方协作、工具进度实时双向反馈</td></tr>
+            <tr><td>Polling</td><td>★★☆☆☆</td><td>★★☆☆☆</td><td>★★★☆☆</td><td>遗留系统（不推荐新项目使用）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-semibold mb-2">矩阵 2：渲染优化策略（梯度叠加）</h3>
+      <div class="overflow-x-auto mb-6">
+        <table>
+          <thead>
+            <tr><th>方案</th><th>流式 UX</th><th>性能</th><th>可维护性</th><th>适用场景</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>RAF + Batching</strong></td><td>★★★★★</td><td>★★★★★</td><td>★★★☆☆</td><td>流式 token 渲染首选（React 18）</td></tr>
+            <tr><td><strong>React 19 useOptimistic + streaming Suspense</strong></td><td>★★★★★</td><td>★★★★★</td><td>★★★★★</td><td>React 19 项目首选，简化三层梯度</td></tr>
+            <tr><td>TanStack Virtual</td><td>★★★☆☆</td><td>★★★★★</td><td>★★★☆☆</td><td>超长对话（200+ 条消息）</td></tr>
+            <tr><td>CSS content-visibility: auto</td><td>★★★☆☆</td><td>★★★★☆</td><td>★★★★★</td><td>轻量补充（无 JS 开销）</td></tr>
+            <tr><td>逐 token setState（无优化）</td><td>★☆☆☆☆</td><td>★☆☆☆☆</td><td>★★★★★</td><td>仅 Demo 可用</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-semibold mb-2">矩阵 3：Web 状态管理方案</h3>
+      <div class="overflow-x-auto mb-6">
+        <table>
+          <thead>
+            <tr><th>方案</th><th>流式 UX</th><th>状态管理</th><th>厂商依赖</th><th>适用场景</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Vercel AI SDK 5</strong></td><td>★★★★★</td><td>★★★★★</td><td>Vercel/Next.js</td><td>Next.js + Vercel 部署（前提条件）</td></tr>
+            <tr><td>TanStack Query + 自定义 SSE hook</td><td>★★★★☆</td><td>★★★★☆</td><td>无</td><td>自托管 / AWS / GCP</td></tr>
+            <tr><td>LangChain.js streaming</td><td>★★★★☆</td><td>★★★★☆</td><td>LangChain</td><td>Backend 已用 LangChain 栈</td></tr>
+            <tr><td>XState + @statelyai/agent</td><td>★★★★☆</td><td>★★★★★</td><td>无</td><td>多步 Agent 任务 / MCP tool call 编排</td></tr>
+            <tr><td>Zustand finite state slice</td><td>★★★☆☆</td><td>★★★☆☆</td><td>无</td><td>UI 局部状态 / 中等复杂度状态机</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-semibold mb-2">矩阵 4：平台 AI 框架</h3>
+      <div class="overflow-x-auto mb-6">
+        <table>
+          <thead>
+            <tr><th>平台</th><th>方案</th><th>流式 UX</th><th>离线能力</th><th>最低系统</th><th>适用场景</th></tr>
+          </thead>
+          <tbody>
+            <tr><td rowspan="2"><strong>iOS</strong></td><td>Apple Foundation Models</td><td>★★★★★</td><td>★★★★★</td><td>iOS 26+</td><td>设备端推理 / 隐私敏感</td></tr>
+            <tr><td>GetStream Swift AI</td><td>★★★★☆</td><td>★★☆☆☆</td><td>iOS 18+</td><td>云端 / 快速集成</td></tr>
+            <tr><td rowspan="2"><strong>Android</strong></td><td>Gemini Nano / AICore</td><td>★★★★★</td><td>★★★★★</td><td>Android 15+</td><td>设备端（Developer Preview）</td></tr>
+            <tr><td>GetStream Compose AI</td><td>★★★★☆</td><td>★★☆☆☆</td><td>Android 8+</td><td>云端 / 快速集成</td></tr>
+            <tr><td rowspan="3"><strong>Web</strong></td><td>assistant-ui</td><td>★★★★★</td><td>—</td><td>—</td><td>定制化 B2B AI 产品</td></tr>
+            <tr><td>Open WebUI</td><td>★★★★☆</td><td>—</td><td>—</td><td>Ollama 本地部署</td></tr>
+            <tr><td>LibreChat</td><td>★★★★☆</td><td>—</td><td>—</td><td>企业多 provider 聚合</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-semibold mb-2">矩阵 5：跨平台策略</h3>
+      <div class="overflow-x-auto mb-6">
+        <table>
+          <thead>
+            <tr><th>策略</th><th>一致性</th><th>性能</th><th>可维护性</th><th>AI 生态集成</th><th>适用场景</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>原生各平台</td><td>★★☆☆☆</td><td>★★★★★</td><td>★★☆☆☆</td><td>★★★★★</td><td>旗舰产品，三平台独立团队</td></tr>
+            <tr><td><strong>设计 Token 统一 + 平台原生渲染</strong></td><td>★★★★☆</td><td>★★★★★</td><td>★★★★☆</td><td>★★★★☆</td><td>中大型团队，<strong>推荐首选</strong></td></tr>
+            <tr><td>React Native + Expo</td><td>★★★★☆</td><td>★★★☆☆</td><td>★★★★☆</td><td>★★★☆☆</td><td>中小团队，Web 优先</td></tr>
+            <tr><td>Flutter（Gemini SDK）</td><td>★★★★★</td><td>★★★★☆</td><td>★★★★☆</td><td>★★★★★</td><td>Google 生态，像素级一致性</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Conflict Analysis -->
+    <section id="conflict" class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">冲突分析</h2>
+      <div class="space-y-4">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div class="font-semibold text-amber-900 mb-1">冲突 1：流式 UI — 技术优化 vs UX 悖论</div>
+          <p class="text-sm text-amber-800">技术视角认为 RAF Batching 能解决流式 UX 问题；社区视角发现<strong>原始流式渲染本身是 UX 反模式</strong>——强制自动滚动让用户感知比批量交付更慢。</p>
+          <p class="text-sm text-amber-700 mt-2"><strong>裁决：</strong>技术优化是必要条件，但不充分。还需设计层主动处理：60px 阈值意图检测、布局锚定、流式进度指示器。</p>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div class="font-semibold text-amber-900 mb-1">冲突 2：跨平台策略 — 无普适答案</div>
+          <p class="text-sm text-amber-800">三路 Agent 立场分散：设计 Token 统一视觉、原生 SDK、跨平台框架各有支持者。</p>
+          <p class="text-sm text-amber-700 mt-2"><strong>裁决：</strong>交互模型必须原生实现；视觉 Token 可统一；取决于团队规模和产品阶段。</p>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div class="font-semibold text-amber-900 mb-1">冲突 3：状态管理层叠复杂度</div>
+          <p class="text-sm text-amber-800">Vercel AI SDK 5 Agentic Loop Control 与 XState 在多步 Agent 场景有概念重叠。</p>
+          <p class="text-sm text-amber-700 mt-2"><strong>裁决：</strong>职责分离——Vercel AI SDK 5 管 LLM 通信，XState 仅用于确定性多步编排（≥5 状态转移时引入）。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recommendations -->
+    <section id="recommendations" class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">推荐</h2>
+
+      <!-- Universal Layer -->
+      <h3 class="font-semibold text-blue-900 mb-3">通用层最佳实践</h3>
+
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-sm">
+        <strong class="text-red-800">生产必配（基础设施陷阱）：</strong>
+        <span class="text-red-700">反向代理设置 <code>X-Accel-Buffering: no</code>，idle timeout 60–120s。Nginx/Cloudflare 默认缓冲会将流式静默降级为批量响应，无报错。</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="font-semibold text-slate-700 mb-2">AI 状态分层架构</div>
+          <pre class="text-xs"><code>AI Context 层
+  (LLM history / tool calls)
+  → Vercel AI SDK 5 / TanStack Query
+
+UI 状态层
+  (滚动位置 / 动画 / 选择态)
+  → Zustand / Jotai
+
+任务编排层 (按需)
+  (多步 Agent / MCP tool call 流)
+  → XState @statelyai/agent</code></pre>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-4">
+          <div class="font-semibold text-slate-700 mb-2">7 态 Agent 状态机</div>
+          <div class="mermaid text-xs">
+graph LR
+  Idle --> Validating --> Sending --> Streaming
+  Streaming --> Complete
+  Streaming --> Interrupted
+  Streaming --> Failed
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Failed 需区分三种子类型：policy block / context limit / provider error</p>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-lg p-4 mb-6">
+        <div class="font-semibold text-slate-700 mb-2">流式 UX 设计规则</div>
+        <ul class="text-sm space-y-2">
+          <li><strong>自动滚动：</strong>检测 60px 阈值判断用户是否在主动向上滚，暂停 auto-scroll；用户回底部时恢复</li>
+          <li><strong>Markdown 渲染：</strong>块级 React.memo memoization + 50ms 节流；在空白/句边界触发解析，避免全量重解析</li>
+          <li><strong>代码块：</strong>等待闭合围栏后渲染，或显示流式进度指示器</li>
+          <li><strong>无障碍：</strong><code>role="log"</code> + <code>aria-live="polite"</code> + <code>aria-atomic="false"</code>（95%+ 覆盖率）<br>
+          <span class="text-slate-400">未来增强：Edge 136+ ariaNotify() API（当前覆盖率 ~5-10%，不进主推荐）</span></li>
+        </ul>
+      </div>
+
+      <!-- Web -->
+      <h3 id="web" class="font-semibold text-blue-900 mb-3">Web 层推荐</h3>
+      <div class="bg-white border border-slate-200 rounded-lg p-4 mb-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="font-semibold">首选：Vercel AI SDK 5 + assistant-ui + Zustand + TanStack Virtual</span>
+          <span class="pill-warn">前提: Next.js + Vercel 部署</span>
+        </div>
+        <p class="text-sm text-slate-600 mb-3">若自托管（AWS/GCP），改用 <strong>TanStack Query + 自定义 SSE hook</strong>（无厂商锁定）或 LangChain.js streaming（backend 已用 LangChain）。</p>
+        <div class="text-sm space-y-1">
+          <div><strong>React 18 渲染：</strong>RAF Batching + startTransition + TanStack Virtual（消息 100+ 条时）</div>
+          <div><strong>React 19 渲染：</strong>useOptimistic + streaming Suspense（可简化 RAF 手动实现）</div>
+          <div><strong>MCP tool call 渲染：</strong>XState 建模 tool call 的 Pending/Executing/Success/Error 四态</div>
+        </div>
+      </div>
+
+      <!-- iOS -->
+      <h3 id="ios" class="font-semibold text-blue-900 mb-3">iOS 层推荐</h3>
+      <div class="overflow-x-auto mb-4">
+        <table>
+          <thead>
+            <tr><th>条件</th><th>推荐路径</th><th>关键 API</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>iOS 26+，隐私敏感，离线需求</td>
+              <td><strong>Apple Foundation Models</strong></td>
+              <td>streamResponse，结构化 Swift 类型流式快照</td>
+            </tr>
+            <tr>
+              <td>iOS 18+ 兼容，云端，快速上线</td>
+              <td><strong>GetStream stream-chat-swift-ai</strong></td>
+              <td>StreamingMessageView（5ms 字符级队列）</td>
+            </tr>
+            <tr>
+              <td>最大兼容性 / 完全自定义</td>
+              <td>URLSession SSE + 自定义渲染</td>
+              <td>iOS 16+，Text Renderer API（iOS 18+）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800 mb-4">
+        ⚠️ Apple Foundation Models 仅支持 ~3B 规模模型。复杂推理场景需结合云端 API 或采用路径 B/C。
+      </div>
+
+      <!-- Android -->
+      <h3 id="android" class="font-semibold text-blue-900 mb-3">Android 层推荐</h3>
+      <div class="overflow-x-auto mb-4">
+        <table>
+          <thead>
+            <tr><th>条件</th><th>推荐路径</th><th>关键组件</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Android 15+，设备端，Google 生态</td>
+              <td><strong>Gemini Nano / AICore API</strong></td>
+              <td>Developer Preview（需申请访问权限）</td>
+            </tr>
+            <tr>
+              <td>主流场景，Android 8+</td>
+              <td><strong>GetStream Compose AI</strong></td>
+              <td>StreamingText + AITypingIndicator，OkHttp EventSource</td>
+            </tr>
+            <tr>
+              <td>完全离线 / 隐私极敏感</td>
+              <td>llama.cpp + ARM NEON/SVE</td>
+              <td>维护成本高，速度受硬件限制</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Cross-platform -->
+      <h3 id="cross-platform" class="font-semibold text-blue-900 mb-3">跨平台策略推荐</h3>
+      <div class="bg-white border border-slate-200 rounded-lg p-4 mb-4 text-sm">
+        <div class="font-semibold mb-2">推荐：设计 Token 统一 + 平台原生渲染层</div>
+        <div class="space-y-2">
+          <div><strong>① SSOT：</strong>Figma Variables 作为设计 Token 单一事实来源</div>
+          <div><strong>② Transform pipeline：</strong>Style Dictionary 或 Tokens Studio 将 Token JSON 转换为 iOS ColorSet/SwiftUI → Android Material You Theme → Web CSS 变量/Tailwind</div>
+          <div><strong>③ 渲染层：</strong>各平台使用原生框架，不强行统一交互模型</div>
+        </div>
+        <div class="mt-3 text-slate-500">
+          <strong>可接受折中：</strong>React Native + Expo（中小团队，Web 优先）。需为 Apple FM 和 Gemini Nano 分别编写 Native Module。<br>
+          <strong>不推荐：</strong>强行用 React Native/Flutter 统一三平台交互（iOS 手势体系和 Android 导航范式无法原生表达）。
+        </div>
+      </div>
+    </section>
+
+    <!-- Sources -->
+    <section id="sources" class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">主要来源</h2>
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr><th>来源</th><th>关键结论</th><th>置信度</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><a href="https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol" class="text-blue-600 hover:underline">Vercel AI SDK 5 官方文档</a></td><td>SSE 为默认协议，UIMessage/ModelMessage 分离</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://developer.apple.com/documentation/FoundationModels" class="text-blue-600 hover:underline">Apple Foundation Models</a></td><td>iOS 26 streamResponse API，设备端推理</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://developer.apple.com/design/human-interface-guidelines/generative-ai" class="text-blue-600 hover:underline">Apple HIG Generative AI</a></td><td>AI 内容标注、用户控制规范</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://docs.ag-ui.com/" class="text-blue-600 hover:underline">AG-UI 协议官方文档</a></td><td>跨框架 Agent 通信协议</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://github.com/statelyai/agent" class="text-blue-600 hover:underline">XState @statelyai/agent</a></td><td>确定性 LLM Agent 状态机</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://www.smashingmagazine.com/2026/05/designing-stable-interfaces-streaming-content/" class="text-blue-600 hover:underline">Smashing Magazine 2026</a></td><td>流式 UI 三大 UX 失效模式</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://www.sitepoint.com/streaming-backends-react-controlling-re-render-chaos/" class="text-blue-600 hover:underline">SitePoint RAF Batching</a></td><td>requestAnimationFrame 流式渲染优化实测</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://ai-sdk.dev/cookbook/next/markdown-chatbot-with-memoization" class="text-blue-600 hover:underline">Vercel AI SDK Markdown Cookbook</a></td><td>块级 memoization 解决 Markdown 重渲染</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://github.com/GetStream/stream-chat-swift-ai" class="text-blue-600 hover:underline">GetStream Swift AI</a></td><td>iOS SwiftUI 流式 AI 聊天组件</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://github.com/GetStream/stream-chat-android-ai" class="text-blue-600 hover:underline">GetStream Android AI</a></td><td>Android Compose AI 聊天组件</td><td><span class="pill-ok">High</span></td></tr>
+            <tr><td><a href="https://testparty.ai/blog/aria-notify-is-here-the-most-important-accessibility-api-in-a-decade" class="text-blue-600 hover:underline">ariaNotify() API</a></td><td>Edge 136+ 新无障碍 API</td><td><span class="pill-warn">Medium</span></td></tr>
+            <tr><td><a href="https://intuitionlabs.ai/articles/conversational-ai-ui-comparison-2025" class="text-blue-600 hover:underline">AI UI 平台对比 2025</a></td><td>ChatGPT/Claude/Gemini 跨平台 UX 差异</td><td><span class="pill-warn">Medium</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Risks -->
+    <section id="risks" class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">待验证风险</h2>
+      <div class="space-y-3">
+        <div class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
+          <input type="checkbox" class="mt-1 shrink-0">
+          <div>
+            <div class="font-medium text-sm">AG-UI 协议主流化时间线</div>
+            <div class="text-xs text-slate-500 mt-1">目前仅 CopilotKit 生态完整，LangChain/Vercel 未内置。跟踪 Vercel AI SDK 和 LangChain.js changelog</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
+          <input type="checkbox" class="mt-1 shrink-0">
+          <div>
+            <div class="font-medium text-sm">Apple Foundation Models API 稳定性（iOS 26 Beta）</div>
+            <div class="text-xs text-slate-500 mt-1">iOS 26 仍在 Beta，API 面可能变动。验证时机：iOS 26 GM 发布后（预计 2026 年 Q3）</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
+          <input type="checkbox" class="mt-1 shrink-0">
+          <div>
+            <div class="font-medium text-sm">Gemini Nano/AICore Android 开放时间线</div>
+            <div class="text-xs text-slate-500 mt-1">Developer Preview 阶段。关注 Google I/O 2026 公告</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
+          <input type="checkbox" class="mt-1 shrink-0">
+          <div>
+            <div class="font-medium text-sm">React 19 streaming Suspense 成熟度</div>
+            <div class="text-xs text-slate-500 mt-1">useOptimistic + streaming Suspense 在复杂 AI 产品中实战案例仍有限</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
+          <input type="checkbox" class="mt-1 shrink-0">
+          <div>
+            <div class="font-medium text-sm">XState + Vercel AI SDK 5 叠加调试体验</div>
+            <div class="text-xs text-slate-500 mt-1">两套状态层在 Agentic Loop 场景有概念重叠，实际集成复杂度需团队实践验证</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg p-4">
+          <input type="checkbox" class="mt-1 shrink-0">
+          <div>
+            <div class="font-medium text-sm">Vercel AI SDK 5 非 Vercel 部署适配成本</div>
+            <div class="text-xs text-slate-500 mt-1">TanStack Query 替代路径在大型项目的完整功能对等性待实测</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Metadata -->
+    <section id="metadata" class="mb-10">
+      <h2 class="text-lg font-bold text-slate-900 mb-4">调研 Metadata</h2>
+      <details class="bg-white border border-slate-200 rounded-lg">
+        <summary class="p-4 cursor-pointer font-medium text-slate-700 hover:bg-slate-50">展开详细 Metadata（Phase 5.5 引用健康 + Phase 6 辩论历史）</summary>
+        <div class="p-4 border-t border-slate-200 text-sm space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <div class="text-slate-500 text-xs uppercase tracking-wide mb-1">调研日期</div>
+              <div>2026-05-17</div>
+            </div>
+            <div>
+              <div class="text-slate-500 text-xs uppercase tracking-wide mb-1">信源总数</div>
+              <div>32 个（A:12 / B:15 / C:13，含重叠）</div>
+            </div>
+            <div>
+              <div class="text-slate-500 text-xs uppercase tracking-wide mb-1">近 12 月占比</div>
+              <div>~85%（2025-2026 为主）</div>
+            </div>
+            <div>
+              <div class="text-slate-500 text-xs uppercase tracking-wide mb-1">Primary source 占比</div>
+              <div>~45%</div>
+            </div>
+          </div>
+
+          <div>
+            <div class="font-semibold text-slate-700 mb-2">Phase 5.5 Citation Health</div>
+            <div class="space-y-1 text-xs">
+              <div><strong>Layer A：</strong>10 URLs | 9 ok (90%) | 1 error (Apple HIG JS渲染墙) | 0 dead</div>
+              <div><strong>Layer B：</strong>5 claims | 1 supported | 2 partial | 2 not-supported → <span class="pill-fail">FAIL → 已修正</span></div>
+              <div class="mt-2 text-slate-500">
+                修正记录：① 移除虚假引用「Open WebUI 采用 content-visibility」（实际推荐虚拟滚动）；② 软化「唯一默认协议」措辞；③ 软化「最被投诉」措辞
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="font-semibold text-slate-700 mb-2">Phase 6 异构终审</div>
+            <div class="text-xs space-y-1">
+              <div><strong>Verdict：</strong>Refine | <strong>收敛：</strong>Round 1 全 accept | <strong>人类介入：</strong>无</div>
+            </div>
+            <table class="mt-2 text-xs">
+              <thead><tr><th>建议</th><th>立场</th></tr></thead>
+              <tbody>
+                <tr><td>AG-UI 过度抬升，移出主路径</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>Vercel 厂商锁定未量化，补充非 Vercel 替代</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>iOS 推荐缺设备端/云端并行路径</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>Android 推荐深度不足，Gemini Nano 完全缺失</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>设计 Token 实施路径过于模糊</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>XState 引入条件「按需」定义不清</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>React 19 + MCP tool call 渲染完全遗漏</td><td><span class="pill-ok">accept</span></td></tr>
+                <tr><td>ariaNotify() 覆盖率 5-10% 不应进主推荐</td><td><span class="pill-ok">accept</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="text-xs text-slate-500">
+            <strong>Output：</strong>/Users/yongqian/Desktop/AICAP/多平台AI前端开发设计最佳实践-完整报告.md &amp; .html<br>
+            <strong>Audio：</strong>pending
+          </div>
+        </div>
+      </details>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+</script>
+</body>
+</html>

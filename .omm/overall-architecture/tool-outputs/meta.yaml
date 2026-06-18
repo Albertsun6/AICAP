@@ -1,0 +1,12 @@
+created: 2026-06-14T06:00:42.505Z
+updated: 2026-06-14T06:01:28.763Z
+update_count: 2
+last_field: diagram
+kind: nested-class
+title: tool-outputs
+children:
+  - claude-code
+  - codex
+  - copilot
+  - cursor
+parentPath: []
