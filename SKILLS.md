@@ -5,7 +5,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## SSOT 管理的 Skills（23 个，跨工具同步）
+## SSOT 管理的 Skills（24 个，跨工具同步）
 
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
@@ -215,6 +215,17 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 触发：`/project-health` / "评估项目健康度" / "repo / codebase health" / "查死代码冗余" / "技术债在哪"
 
 > 来源：由一次 `/survey` 调研落地（设计经 2 轮 cursor-agent 异构对抗评审硬化）。
+
+---
+
+### `/learning-loop`
+**用途**：把一个话题**学进长期记忆**的「个人学习闭环」——研究/摄入（自动委派 deep-research/survey）→ 闭书理解（费曼自解释）→ 蒸馏成原子笔记（Obsidian 兼容 markdown + `[[wikilinks]]`，无硬依赖、可存任意目录）→ 主动回忆测验（先自答再揭晓、预测-核对校准）→ SM-2-lite 间隔重复排程（纯 frontmatter 日期数学，无 app / 付费 API）。每次会话自动读今天日期、扫描笔记库，把 `next_review <= 今天` 的卡片按主题打散成复习队列。
+
+设计：只做有证据的事——两条 HIGH 证据机制（检索练习=测验、间隔效应=排程）是骨架，中等证据的（费曼自解释/追问/交错/双编码）是廉价增强，流行但弱的（划线/重读/纯总结/学习风格神话）主动避开（Dunlosky et al. 2013 高/中/低分级，见 `references/evidence.md`）。每条事实笔记带真实引用。
+
+边界：不重做网络研究——宽泛/需多源核实的话题先调 `deep-research` / `survey` 出引用报告，再消费其报告做蒸馏；本 skill 只拥有「蒸馏 → 原子笔记 → 测验 → 排程 → 复习」这半程。
+
+触发：`/learning-loop X` / "学一下X / 帮我学X" / "做原子笔记 / make notes on X" / "考我 / quiz me" / "今天有什么要复习 / what's due" / "间隔重复 / 抗遗忘 / spaced repetition / active recall"
 
 ---
 

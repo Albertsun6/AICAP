@@ -69,7 +69,7 @@
     </div>
     <div class="ml-auto flex items-center gap-3 text-xs text-slate-500">
       <span class="hidden md:inline">2026-05-18</span>
-      <span class="pill pill-ok">23 SSOT</span>
+      <span class="pill pill-ok">24 SSOT</span>
       <span class="pill pill-muted">3 本地</span>
       <span class="pill pill-info">1 外部插件</span>
       <button onclick="window.print()" class="hidden md:inline px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-slate-700">打印 / PDF</button>
@@ -85,7 +85,7 @@
       <ul class="space-y-0.5 text-sm" x-data>
         <template x-for="item in [
           {h:'#summary',t:'概览',sub:false},
-          {h:'#ssot',t:'SSOT Skills（23个）',sub:false},
+          {h:'#ssot',t:'SSOT Skills（24个）',sub:false},
           {h:'#survey',t:'/survey',sub:true},
           {h:'#debate-review',t:'/debate-review',sub:true},
           {h:'#report-to-html',t:'/report-to-html',sub:true},
@@ -109,6 +109,7 @@
           {h:'#diagnose',t:'/diagnose',sub:true},
           {h:'#canvas-design',t:'/canvas-design',sub:true},
           {h:'#project-health',t:'/project-health',sub:true},
+          {h:'#learning-loop',t:'/learning-loop',sub:true},
           {h:'#local',t:'本地专用（3个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
@@ -133,14 +134,14 @@
   <!-- 概览 -->
   <section id="summary" class="section-card">
     <div class="flex flex-wrap gap-2 mb-4 text-xs">
-      <span class="pill pill-ok">27 个 Skills</span>
+      <span class="pill pill-ok">28 个 Skills</span>
       <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
     <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-19</div>
     <blockquote class="!my-5">
-      <strong>27 个 Skill，一个路径。</strong>23 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目），1 个外部全局插件（原生安装）。
+      <strong>28 个 Skill，一个路径。</strong>24 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目），1 个外部全局插件（原生安装）。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -170,6 +171,7 @@
           <tr class="bg-emerald-50/40"><td><code><a href="#diagnose">/diagnose</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>结构化调试：先建 pass/fail 反馈回路，再用可证伪假设逐一排查</td><td>"调试这个 bug" / "查根因"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#canvas-design">/canvas-design</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>用设计哲学驱动创作 .png / .pdf 视觉作品（海报/艺术图）</td><td>"做一张海报" / "设计一个 X"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#project-health">/project-health</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>仓库健康度四层评估（治理/静态门禁/hotspots/AI 异构），可执行探针出 JSON</td><td>"评估项目健康度" / "技术债在哪"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#learning-loop">/learning-loop</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>个人学习闭环：原子笔记 + 主动回忆 + 间隔重复，纯 markdown 无外部 app</td><td>"学一下X" / "考我" / "今天要复习什么"</td></tr>
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
@@ -181,8 +183,8 @@
 
   <!-- SSOT 概览 + 流程图 -->
   <section id="ssot" class="section-card">
-    <h2 class="text-xl mb-4">SSOT 管理的 Skills（23 个）<a href="#ssot" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-4">这 23 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
+    <h2 class="text-xl mb-4">SSOT 管理的 Skills（24 个）<a href="#ssot" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-4">这 24 个 skill 从 <code>.rulesync/skills/</code> 经 rulesync 生成，同步到 Claude Code / Cursor / Codex / Copilot，并通过 <code>~/.claude/skills/</code> symlink 全局暴露。</p>
     <div class="mermaid">
 flowchart LR
     A[".rulesync/skills/"] -->|"pnpm run ai:generate"| B["rulesync"]
@@ -456,6 +458,16 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">评估项目健康度</span><span class="trigger-tag">repo / codebase health</span><span class="trigger-tag">查死代码冗余</span><span class="trigger-tag">技术债在哪</span></div>
   </section>
 
+  <!-- learning-loop -->
+  <section id="learning-loop" class="section-card">
+    <h2 class="text-xl mb-1">/learning-loop <a href="#learning-loop" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
+    <p class="text-slate-500 text-sm mb-4">个人学习闭环：研究 → 理解 → 原子笔记 → 主动回忆 → 间隔重复，纯 markdown 无外部 app</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">把一个话题<strong>学进长期记忆</strong>：研究/摄入（自动委派 <code>deep-research</code>/<code>survey</code>）→ 闭书理解（费曼自解释）→ 蒸馏成原子笔记（Obsidian 兼容 markdown + <code>[[wikilinks]]</code>，无硬依赖、可存任意目录）→ 主动回忆测验（先自答再揭晓、预测-核对校准）→ SM-2-lite 间隔重复排程（纯 frontmatter 日期数学，无 app / 付费 API）。每次会话自动读今天日期、扫描笔记库，把 <code>next_review &lt;= 今天</code> 的卡片按主题打散成复习队列。</p></div>
+    <div class="skill-block"><h3>设计</h3><p class="text-sm text-slate-700">只做有证据的事——两条 HIGH 证据机制（检索练习=测验、间隔效应=排程）是骨架，中等证据的（费曼自解释/追问/交错/双编码）是廉价增强，流行但弱的（划线/重读/纯总结/学习风格神话）主动避开（Dunlosky et al. 2013 高/中/低分级）。每条事实笔记带真实引用。</p></div>
+    <p class="text-xs text-slate-500 mt-3 mb-3">边界：不重做网络研究——宽泛/需多源核实的话题先调 <code>deep-research</code> / <code>survey</code> 出引用报告再蒸馏；本 skill 只拥有「蒸馏 → 原子笔记 → 测验 → 排程 → 复习」这半程。</p>
+    <div class="mt-3"><span class="trigger-tag">学一下X / 帮我学X</span><span class="trigger-tag">做原子笔记</span><span class="trigger-tag">考我 / quiz me</span><span class="trigger-tag">今天有什么要复习</span><span class="trigger-tag">间隔重复 / 抗遗忘</span></div>
+  </section>
+
   <!-- 本地专用 -->
   <section id="local" class="section-card">
     <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
@@ -523,9 +535,9 @@ ln -s ~/Desktop/AICAP/.claude/skills/&lt;name&gt; ~/.claude/skills/&lt;name&gt;<
       <table>
         <thead><tr><th>路径</th><th>内容</th><th>说明</th></tr></thead>
         <tbody>
-          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>23 个目录</td><td>SSOT 源，手工维护</td></tr>
-          <tr><td><code>AICAP/.claude/skills/</code></td><td>23 个目录</td><td>rulesync 生成产物</td></tr>
-          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>23 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
+          <tr><td><code>AICAP/.rulesync/skills/</code></td><td>24 个目录</td><td>SSOT 源，手工维护</td></tr>
+          <tr><td><code>AICAP/.claude/skills/</code></td><td>24 个目录</td><td>rulesync 生成产物</td></tr>
+          <tr class="bg-emerald-50/40"><td><code>~/.claude/skills/</code></td><td>24 symlink + 3 real dir</td><td><strong>全局发现路径</strong>，Cursor / Claude Code / Codex 均读</td></tr>
         </tbody>
       </table>
     </div>
