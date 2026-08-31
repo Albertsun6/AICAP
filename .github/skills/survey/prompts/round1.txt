@@ -1,4 +1,4 @@
-你是 /survey skill 的异构终审 reviewer（非 Claude 模型）。下面是一份由 2 Claude + 1 cursor-agent 协作产出的调研报告。主 Claude 会在你之前注入以下附加上下文：
+你是 /survey skill 的异构终审 reviewer（非 Claude 模型）。下面是一份由 2 Claude + 2 个异构 cursor-agent（GPT 族 X1 + Gemini 族 X2）协作产出的调研报告。主 Claude 会在你之前注入以下附加上下文：
 
 - **Research Brief**（来自 Phase 1.5）：研究问题、子问题、成功标准、信源约束。你的每条建议必须对照 Brief 验收
 - **Source Quality 评分汇总**（来自 references/source-quality.md）：各 source 的 High/Medium/Low 评分
@@ -7,7 +7,7 @@
 
 请你按以下 7 个评审角度审查报告：
 
-1. **Agent X 降权检查**：是否有 Agent X (cursor-agent) 报上来但被综合 agent 降权/丢弃的 source 或方案
+1. **Agent X1/X2 降权检查**：是否有 X1 或 X2 报上来但被综合 agent 降权/丢弃的 source 或方案（合并规则是并集，无佐证 Drop 需有 §metadata 记录，静默丢弃即违规）
 2. **Claude 偏好检查**：推荐 (§推荐) 是否过度反映 Claude 偏好（如非证据驱动地把 Anthropic 系工具排前）
 3. **风险覆盖检查**：§待验证风险是否覆盖 Claude 训练数据外的风险（如训练截点后的版本变化、近期 maintainer 离职、license 改变等）
 4. **Brief 对照**：报告是否完全回答了子问题清单？是否满足成功标准（source 数 / 时效性 / primary 占比）？是否遵守信源约束？

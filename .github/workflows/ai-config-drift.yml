@@ -32,26 +32,73 @@ jobs:
 
       # pin 版本：与本仓库约定的 rulesync 版本一致，避免不同版本生成差异造成假阳性
       - name: Regenerate from SSOT
-        run: npx -y rulesync@8.18.0 generate
+        run: npx -y rulesync@16.2.0 generate
 
       - name: Fail if generated output drifted from SSOT
         run: |
           if ! git diff --exit-code; then
             echo "::error::生成产物与 .rulesync/ SSOT 不一致。"
-            echo "本地修复：npx rulesync@8.18.0 generate 后提交，"
+            echo "本地修复：npx rulesync@16.2.0 generate 后提交，"
             echo "且不要手工编辑生成出来的 CLAUDE.md / AGENTS.md / .cursor 等文件。"
             exit 1
           fi
           echo "OK: 生成产物与 SSOT 一致，无漂移。"
 
-  # 可选质量门禁：对高价值 skill/prompt 跑回归（按需启用，需在 promptfoo/ 配好用例）
-  prompt-eval:
-    if: ${{ false }} # 配好 promptfoo 用例后改成 true
+      # skill 调用图 / 索引一致性。全局层需要 ~/.claude/，CI 上不存在，
+      # 显式传 --ssot-only 让跳过是声明出来的而不是碰巧发生的。
+      # 先证明门禁自己能红（每条规则一个合成违规），再让它去评判仓库。
+      # 顺序不能反：一个坏掉的门禁会安静地放行一切。
+      # drift gate 只发现「内容不一致」，发现不了「整棵树被遗弃」——generate
+      # 不触碰死树，所以它永远不会 diff。rulesync 8.18→16.2 就把 codexcli 的
+      # skill 输出从 .codex/skills/ 挪到了 .agents/skills/，留下 199 个入库的
+      # 僵尸文件而 CI 全绿。这一步把 SSOT 生成到临时目录，拿新鲜产出当真值对账。
+      - name: 孤儿产物检查（入库了但 generate 不再产出）
+        run: python3 scripts/check-orphan-products.py
+
+      - name: 门禁自检（每条规则必须能证伪）
+        run: python3 scripts/test-check-skills.py
+
+      - name: Skill 门禁（断链 / 索引 / 硬编码路径）
+        run: python3 scripts/check-skills.py --ssot-only
+
+  # promptfoo 需要 ANTHROPIC_API_KEY。secrets 上下文在 job 级 if 里不可用，
+  # 所以先用一个 job 把"密钥在不在"变成输出。
+  has-api-key:
     runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.probe.outputs.present }}
+    steps:
+      - id: probe
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$KEY" ]; then
+            echo "present=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::未配置 ANTHROPIC_API_KEY，prompt-eval 与触发 eval 被跳过——本次 PR 的 skill 触发准确度没有被验证。"
+          fi
+
+  # 质量门禁：skill 触发准确度 + 高价值 prompt 回归。
+  # 没有密钥时整个 job 跳过（上面已 ::warning:: 提示），有密钥时必须绿。
+  prompt-eval:
+    needs: has-api-key
+    if: needs.has-api-key.outputs.present == 'yes'
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: promptfoo regression
+
+      # 索引从 SSOT 现生成，保证 eval 问的是当前的 description 而不是快照
+      - name: 生成 skill 索引
+        run: python3 promptfoo/build-skill-index.py > promptfoo/skill-index.txt
+
+      - name: 触发准确度 eval（正例 + 邻近负例）
+        run: npx -y promptfoo@latest eval -c promptfoo/trigger-eval.yaml --no-cache
+
+      - name: prompt 回归
         run: npx -y promptfoo@latest eval -c promptfoo/promptfooconfig.yaml --no-cache

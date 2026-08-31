@@ -12,8 +12,23 @@ description: >-
 
 ## 常量
 
-```
-AICAP_ROOT = ~/Desktop/AICAP   （如迁移路径，在此更新）
+不写死仓库路径——本仓库搬过一次家（`Desktop/AICAP` → `Desktop/AIProject/AICAP`），
+写死的路径悄悄失效了很久没被发现。运行时定位，并校验确实定位到了 AICAP：
+
+```bash
+AICAP_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+# 不在 AICAP 仓库内时，从全局 skill 软链反查仓库位置。
+# `[ -L ]` 守卫是必须的：软链不存在时 readlink 返回空，dirname "" = "."，
+# 于是 cd "./../.." 会静静地算出 cwd 的祖父目录——比没有 fallback 更危险。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  _link="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/sync-aicap"
+  [ -L "$_link" ] && AICAP_ROOT="$(cd "$(dirname "$(readlink "$_link")")/../.." && pwd)"
+fi
+# 最终校验：两条路都没定位到就停，绝不带着一个猜出来的路径往下跑。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  echo "✗ 定位不到 AICAP 仓库根。请在 AICAP 仓库内运行，或先跑 pnpm run setup:skills。" >&2
+  exit 1
+fi
 ```
 
 ## 模式判断
@@ -21,7 +36,7 @@ AICAP_ROOT = ~/Desktop/AICAP   （如迁移路径，在此更新）
 进入时先检查工作区状态，决定走哪条路：
 
 ```bash
-cd ~/Desktop/AICAP
+cd "$AICAP_ROOT"
 git status --short
 git log origin/main..HEAD --oneline   # 有无本地未推送提交
 ```
@@ -39,7 +54,7 @@ git log origin/main..HEAD --oneline   # 有无本地未推送提交
 ### A1 — 记录当前 skill 快照
 
 ```bash
-ls ~/Desktop/AICAP/.rulesync/skills/
+ls "$AICAP_ROOT"/.rulesync/skills/
 ```
 
 保存为 `BEFORE` 列表。
@@ -47,7 +62,7 @@ ls ~/Desktop/AICAP/.rulesync/skills/
 ### A2 — git pull
 
 ```bash
-cd ~/Desktop/AICAP && git pull
+cd "$AICAP_ROOT" && git pull
 ```
 
 - 若已是最新（`Already up to date.`），告知用户，**仍继续执行 A3-A4**（幂等保证）。
@@ -56,13 +71,13 @@ cd ~/Desktop/AICAP && git pull
 ### A3 — 重新生成工具产物
 
 ```bash
-cd ~/Desktop/AICAP && pnpm run ai:generate
+cd "$AICAP_ROOT" && pnpm run ai:generate
 ```
 
 ### A4 — 更新全局 symlink
 
 ```bash
-cd ~/Desktop/AICAP && pnpm run setup:skills
+cd "$AICAP_ROOT" && pnpm run setup:skills
 ```
 
 ### A5 — 展示变动 diff
@@ -81,7 +96,7 @@ cd ~/Desktop/AICAP && pnpm run setup:skills
 
 删除 (0): 无
 
-本机全局路径 ~/.claude/skills/ 已同步，共 10 个 skill。
+本机全局 skill 目录已同步，共 10 个 skill。
 ```
 
 Claude Code / Cursor 通常热加载 skills，无需重启；若未生效建议重启工具。
@@ -106,7 +121,7 @@ Claude Code / Cursor 通常热加载 skills，无需重启；若未生效建议�
 ### B3 — 重新生成工具产物
 
 ```bash
-cd ~/Desktop/AICAP && pnpm run ai:generate
+cd "$AICAP_ROOT" && pnpm run ai:generate
 ```
 
 ### B4 — 暂存并提交

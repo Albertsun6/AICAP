@@ -7,9 +7,14 @@
     "ai:generate": "rulesync generate",
     "ai:check": "rulesync generate && git diff --exit-code",
     "ai:eval": "promptfoo eval -c promptfoo/promptfooconfig.yaml --no-cache",
+    "ai:eval:trigger": "python3 promptfoo/run-trigger-eval.py",
+    "ai:eval:arena": "python3 promptfoo/run-arena-eval.py",
+    "ai:eval:trigger:api": "python3 promptfoo/build-skill-index.py > promptfoo/skill-index.txt && promptfoo eval -c promptfoo/trigger-eval.yaml --no-cache",
+    "ai:check-skills": "python3 scripts/check-skills.py",
+    "ai:check-orphans": "python3 scripts/check-orphan-products.py",
     "setup:skills": "bash scripts/setup-global-skills.sh"
   },
   "devDependencies": {
-    "rulesync": "8.18.0"
+    "rulesync": "16.2.0"
   }
 }

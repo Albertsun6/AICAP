@@ -5,10 +5,13 @@ mcp-idle-wrapper.py — MCP stdio proxy with idle timeout.
 Forwards stdio between Claude Code and the wrapped MCP server.
 Kills the server after MCP_IDLE_TIMEOUT seconds of inactivity (default: 1800s / 30 min).
 
-Usage (in mcp.json):
+Usage (in .rulesync/mcp.json) — 用**仓库相对路径**，不要写死绝对路径：
   "command": "python3",
-  "args": ["~/Desktop/AICAP/scripts/mcp-idle-wrapper.py", "npx", "-y", "some-mcp-pkg"],
+  "args": ["scripts/mcp-idle-wrapper.py", "npx", "-y", "some-mcp-pkg"],
   "env": { "MCP_IDLE_TIMEOUT": "1800" }
+
+依赖 MCP client 以仓库根为 cwd 启动 project MCP（Claude Code / Cursor / Codex 均如此）。
+路径写错时 server 直接起不来、客户端会报 MCP 连接失败——是显性失败，不会静默降级。
 """
 import os
 import sys

@@ -8,7 +8,8 @@ set -euo pipefail
 
 AICAP_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_SKILLS_SRC="$AICAP_ROOT/.claude/skills"
-GLOBAL_DIR="$HOME/.claude/skills"
+# 目标目录可覆盖——这样自动化测试能指到临时目录，不必拿真实的 ~/.claude 冒险
+GLOBAL_DIR="${AICAP_GLOBAL_SKILLS_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills}"
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; RESET='\033[0m'
 ok()   { echo -e "  ${GREEN}✓${RESET} $*"; }
@@ -33,10 +34,38 @@ mkdir -p "$GLOBAL_DIR"
 installed=0
 skipped=0
 warned=0
+descoped=0
+
+# 作用域：SSOT 里写了 `scope: project` 的 skill 只在本仓库内有意义，
+# 不该进全局发现面——它们已经在 <repo>/.claude/skills/ 里，Claude Code 会
+# 按项目自动加载。全局多链一份 = 在所有无关项目里白占上下文、还扩大误触发面。
+# 注意读的是 .rulesync/ 源:rulesync 会把这个自定义字段从产物里剥掉。
+is_project_scoped() {
+  local ssot="$AICAP_ROOT/.rulesync/skills/$1/SKILL.md"
+  [[ -f "$ssot" ]] && grep -qE '^scope:[[:space:]]*project[[:space:]]*$' "$ssot"
+}
 
 for skill_path in "$CLAUDE_SKILLS_SRC"/*/; do
   name="$(basename "$skill_path")"
   target="$GLOBAL_DIR/$name"
+
+  if is_project_scoped "$name"; then
+    # 只回收本仓库自己建的软链;别人的真实目录或指向别处的软链一律不碰
+    if [[ -L "$target" ]]; then
+      current="$(readlink "$target")"
+      if [[ "$current" == "$skill_path" || "$current" == "${skill_path%/}" ]]; then
+        rm "$target"
+        ok "$name  → 项目级，已移除全局软链（仍可在本仓库内使用）"
+      else
+        warn "$name  → 项目级，但全局软链指向别处（$current），未动"
+        ((warned++)) || true
+      fi
+    else
+      ok "$name  → 项目级，跳过全局链接"
+    fi
+    ((descoped++)) || true
+    continue
+  fi
 
   if [[ -L "$target" ]]; then
     current="$(readlink "$target")"
@@ -61,7 +90,7 @@ for skill_path in "$CLAUDE_SKILLS_SRC"/*/; do
 done
 
 echo ""
-echo "完成：新增 $installed 个 symlink，跳过 $skipped 个，需手动检查 $warned 个"
+echo "完成：新增 $installed 个 symlink，跳过 $skipped 个，项目级不入全局 $descoped 个，需手动检查 $warned 个"
 echo ""
 
 if (( warned > 0 )); then

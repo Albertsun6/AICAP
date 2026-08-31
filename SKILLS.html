@@ -110,10 +110,18 @@
           {h:'#canvas-design',t:'/canvas-design',sub:true},
           {h:'#project-health',t:'/project-health',sub:true},
           {h:'#learning-loop',t:'/learning-loop',sub:true},
-          {h:'#local',t:'本地专用（3个）',sub:false},
+          {h:'#local',t:'本地专用（9个）',sub:false},
           {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
           {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
           {h:'#fedex-tracker',t:'/fedex-tracker',sub:true},
+          {h:'#archi-strategy-decode',t:'/archi-strategy-decode',sub:true},
+          {h:'#deploy-team-webapp',t:'/deploy-team-webapp',sub:true},
+          {h:'#browser-handoff',t:'/browser-handoff',sub:true},
+          {h:'#report-to-audio',t:'/report-to-audio',sub:true},
+          {h:'#demo-video',t:'/demo-video',sub:true},
+          {h:'#short-drama',t:'/short-drama',sub:true},
+          {h:'#project-scoped',t:'按项目分发（3个）',sub:false},
+          {h:'#known-missing',t:'已知缺失的能力（3个）',sub:false},
           {h:'#external-plugins',t:'外部全局插件（1个）',sub:false},
           {h:'#oh-my-mermaid',t:'oh-my-mermaid',sub:true},
           {h:'#maintenance',t:'维护规则',sub:false}
@@ -134,14 +142,14 @@
   <!-- 概览 -->
   <section id="summary" class="section-card">
     <div class="flex flex-wrap gap-2 mb-4 text-xs">
-      <span class="pill pill-ok">28 个 Skills</span>
+      <span class="pill pill-ok">34 个 Skills</span>
       <span class="pill pill-info">跨工具：Claude Code / Cursor / Codex</span>
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
-    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-05-19</div>
+    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-07-29</div>
     <blockquote class="!my-5">
-      <strong>28 个 Skill，一个路径。</strong>24 个经 AICAP SSOT 跨工具同步，3 个本地专用（Seaidea 项目），1 个外部全局插件（原生安装）。
+      <strong>34 个 Skill，不止一个路径。</strong>24 个经 AICAP SSOT 跨工具同步（其中 <code>aicap-commit</code> 为项目级、不入全局），9 个本地专用（不经 rulesync，换机器不会跟过来），1 个外部全局插件。另有 3 个<a href="#project-scoped">按项目分发</a>的 skill 住在各自仓库里。另有 3 个<a href="#known-missing">已知缺失的能力</a>——被引用但并不存在。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -175,6 +183,12 @@
           <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
           <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
           <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#archi-strategy-decode">/archi-strategy-decode</a></code></td><td><span class="pill pill-muted">本地 · 跨仓库软链</span> <span class="pill pill-info">新</span></td><td>Archi 里双向共建战略，逐层解码到架构级需求</td><td>"战略解码" / "把战略拆成需求"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#deploy-team-webapp">/deploy-team-webapp</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>静态站 → 私密团队应用（CF Pages + Supabase Auth + RLS）</td><td>"部署上线" / "团队共享"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#browser-handoff">/browser-handoff</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>把浏览器后台操作生成成可粘贴给 Claude for Chrome 的指令</td><td>需要你去后台点东西时</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#report-to-audio">/report-to-audio</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>长报告 → 好听的单文件叙述音频（edge-tts 晓晓优先）</td><td>"做成音频" / "念出来"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#demo-video">/demo-video</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>本地 web 应用 → 带中文旁白的操作演示 mp4</td><td>"录个 demo 视频"</td></tr>
+          <tr class="bg-emerald-50/40"><td><code><a href="#short-drama">/short-drama</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>一句话story → 剧本 + 视频 + TTS + 合成短剧</td><td>"帮我生成短剧"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#oh-my-mermaid">oh-my-mermaid</a></code></td><td><span class="pill pill-info">外部插件</span> <span class="pill pill-info">新</span></td><td>整库扫描 → 多视角嵌套 Mermaid 架构图，可递归钻取 + 本地 viewer</td><td>"omm scan" / "omm view"</td></tr>
         </tbody>
       </table>
@@ -209,8 +223,8 @@ flowchart LR
   <section id="survey" class="section-card">
     <h2 class="text-xl mb-1">/survey <a href="#survey" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span></h2>
     <p class="text-slate-500 text-sm mb-4">针对任意话题的系统性调研，多阶段异构搜索 + 辩论终审</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">选型比较、最佳实践、社区方案研究。产出结构化 Markdown 报告 + .m4a 音频概要。</p></div>
-    <p class="text-sm text-slate-600 mb-3">Phase 1 问题界定 → 1.5 Brief → Phase 2（2 Claude + 1 cursor-agent 并行异构）→ 2.5 Reflection → 3-5 综合 → 5.5 引用核查 → Phase 6 终审辩论 → Finalize</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">选型比较、最佳实践、社区方案研究。产出结构化 Markdown 报告 + .html 交互页 + .pdf + .m4a 音频概要 + .m4a 完整音频。</p></div>
+    <p class="text-sm text-slate-600 mb-3">Phase 1 问题界定 → 1.5 Brief → Phase 2（2 Claude + 2 cursor-agent〔GPT 族与 Gemini 族〕四路并行异构，取并集）→ 2.5 Reflection → 3-5 综合 → 5.5 引用核查 → Phase 6 终审辩论 + Gemini 族事实 tiebreaker → Finalize</p>
     <blockquote class="text-sm">无 flag——每个阶段都是质量门禁，不可跳过。cursor-agent 不可用时自动降级并 banner 提示。</blockquote>
     <div class="mt-3"><span class="trigger-tag">/survey X</span><span class="trigger-tag">调研X方案</span><span class="trigger-tag">比较X和Y</span><span class="trigger-tag">X的最佳实践</span></div>
   </section>
@@ -470,8 +484,8 @@ flowchart LR
 
   <!-- 本地专用 -->
   <section id="local" class="section-card">
-    <h2 class="text-xl mb-4">本地专用 Skills（3 个）<a href="#local" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-3">这 3 个 skill 直接存放在 <code>~/.claude/skills/</code>，不经 rulesync 同步，Seaidea 项目专属。</p>
+    <h2 class="text-xl mb-4">本地专用 Skills（9 个）<a href="#local" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">这些 skill 不经 rulesync 同步：多数是 <code>~/.claude/skills/</code> 下的真实目录，<code>archi-strategy-decode</code> 例外——它是指向 <code>Strage/archi-strategy/</code> 的<strong>跨仓库软链</strong>，随那个仓库走。换机器 / 重装时它们不会自动跟过来。</p>
     <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 text-sm text-slate-700 rounded-r">若将来要跨工具同步，走 AICAP SSOT 路径：加到 <code>.rulesync/skills/</code> → <code>pnpm run ai:generate</code> → 创建 symlink。</div>
   </section>
 
@@ -494,6 +508,91 @@ flowchart LR
     <p class="text-slate-500 text-sm mb-4">批量查 FedEx 发货日期，输出 CSV，绕过 Akamai 反爬</p>
     <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">真实 Chrome（CDP 驱动）模拟点击，随机延迟 8-15s 绕过 Akamai Bot Manager，批量提取发货日期输出 CSV。</p></div>
     <div class="mt-3"><span class="trigger-tag">有 FedEx 追踪号批次</span><span class="trigger-tag">批量查 FedEx 发货日期</span></div>
+  </section>
+
+  <section id="archi-strategy-decode" class="section-card">
+    <h2 class="text-xl mb-1">/archi-strategy-decode <a href="#archi-strategy-decode" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地 · 跨仓库软链</span></h2>
+    <p class="text-slate-500 text-sm mb-4">Archi 里双向共建战略 → 解码到架构级需求</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">人在 Archi GUI 画、Claude 经 archi-mcp-server 读写同一活模型；AI 提议进审批队列、人逐条批准才落地。把战略从 Driver/Stakeholder/Vision 逐层解码（KAOS）到 ArchiMate Requirement，沿途记 ADR，触底后导出需求交接包给 <code>/req-discovery</code>。</p></div>
+    <div class="mt-3"><span class="trigger-tag">用 Archi 共建战略</span><span class="trigger-tag">战略解码</span><span class="trigger-tag">把战略拆成需求</span></div>
+    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 mt-3 text-sm text-slate-700 rounded-r">存放位置特殊：<code>~/.claude/skills/archi-strategy-decode</code> → <code>Strage/archi-strategy/skill/</code> 的软链，随那个仓库走。</div>
+  </section>
+
+  <section id="deploy-team-webapp" class="section-card">
+    <h2 class="text-xl mb-1">/deploy-team-webapp <a href="#deploy-team-webapp" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
+    <p class="text-slate-500 text-sm mb-4">静态站 → 私密、团队共享的线上应用</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">Cloudflare Pages + Supabase Auth（邮箱密码登录、管理员邀请、editor/viewer 角色）+ 实时共享状态。含变体 B：Cloudflare-only 自建账号 + Worker/D1 全站门禁（连页面都要登录才能看）。</p></div>
+    <div class="mt-3"><span class="trigger-tag">部署上线</span><span class="trigger-tag">团队共享</span><span class="trigger-tag">邮箱登录</span><span class="trigger-tag">把这个网页发出去给团队用</span></div>
+  </section>
+
+  <section id="browser-handoff" class="section-card">
+    <h2 class="text-xl mb-1">/browser-handoff <a href="#browser-handoff" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
+    <p class="text-slate-500 text-sm mb-4">浏览器后台操作 → 可整段粘贴的自动执行指令</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">需要你去 Supabase / Cloudflare / GitHub / 阿里云后台点东西时，不给零散口头步骤，而是生成一段能整段粘贴给「Claude for Chrome」自动执行的指令文本并存成 <code>.txt</code>。格式：任务 → 前置/登录 → 分步（URL + 动作 + 原样粘贴内容）→ 完成判据 → 回报内容。</p></div>
+    <div class="mt-3"><span class="trigger-tag">教我操作</span><span class="trigger-tag">生成浏览器操作指令</span><span class="trigger-tag">做成可粘贴的操作步骤</span></div>
+  </section>
+
+  <section id="report-to-audio" class="section-card">
+    <h2 class="text-xl mb-1">/report-to-audio <a href="#report-to-audio" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
+    <p class="text-slate-500 text-sm mb-4">Markdown 长报告 → 好听的叙述音频 .m4a</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">先把报告改写成口语朗读稿（去表格/URL、数字转口语、分段顺口），再按 provider 阶梯朗读：中英优先 edge-tts 神经嗓音（晓晓），回退 OpenAI / Groq Orpheus / macOS <code>say</code>。</p></div>
+    <div class="mt-3"><span class="trigger-tag">把这份报告做成音频</span><span class="trigger-tag">生成音频概要</span><span class="trigger-tag">念出来</span></div>
+  </section>
+
+  <section id="demo-video" class="section-card">
+    <h2 class="text-xl mb-1">/demo-video <a href="#demo-video" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
+    <p class="text-slate-500 text-sm mb-4">本地 web 应用 → 带中文旁白的操作演示 mp4</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">解说词分段 → edge-tts 晓晓配音 → Playwright 按旁白时长驱动真实界面演操作 → 合成带光标高亮/字幕的成片 → 抽帧联络表验收。底层用 argo，本 skill 补上它缺的中文音色与语义验收。</p></div>
+    <div class="mt-3"><span class="trigger-tag">做个操作演示视频</span><span class="trigger-tag">录个 demo 视频</span><span class="trigger-tag">带旁白的演示</span></div>
+  </section>
+
+  <section id="short-drama" class="section-card">
+    <h2 class="text-xl mb-1">/short-drama <a href="#short-drama" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
+    <p class="text-slate-500 text-sm mb-4">一句话故事 → 完整短剧视频</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">剧本生成 → 视频生成 → TTS 配音 → FFmpeg 合成。MOCK 模式（默认，无需 API）用 FFmpeg 占位视频验证全流程；REAL 模式调 Runway MCP 出真实 AI 视频。</p></div>
+    <div class="mt-3"><span class="trigger-tag">/short-drama</span><span class="trigger-tag">帮我生成短剧</span><span class="trigger-tag">把 X 做成短剧</span></div>
+    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 mt-3 text-sm text-slate-700 rounded-r">这个 skill 的 <code>SKILL.md</code> <strong>没有 frontmatter</strong>，<code>name</code> / <code>description</code> 全靠 H1 兜底，自动触发面比其余窄。</div>
+  </section>
+
+  <!-- 按项目分发 -->
+  <section id="project-scoped" class="section-card">
+    <h2 class="text-xl mb-4">按项目分发的 Skills（不在全局发现面）<a href="#project-scoped" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">Claude Code 按 skill 文件<strong>所在位置</strong>决定作用域：放在 <code>&lt;project&gt;/.claude/skills/</code> 里就只在该项目加载。不需要任何“识别项目”的机制，也不牺牲自动触发——在对的仓库里它照常被模型自动调用，在别的仓库里压根不出现。省的不只是 token，更是<strong>误触发面</strong>。</p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>skill</th><th>住在哪</th><th>怎么声明的</th></tr></thead>
+        <tbody>
+          <tr><td><code>/aicap-commit</code></td><td>本仓库 <code>.claude/skills/</code>（generate 产物）</td><td>SSOT frontmatter <code>scope: project</code>；<code>setup:skills</code> 据此跳过并回收全局软链</td></tr>
+          <tr><td><code>/zupu-ship</code></td><td><code>族谱/zupu-cloud/.claude/skills/</code></td><td>真实目录已迁入该仓库，随其版本控制走</td></tr>
+          <tr><td><code>/zupu-spec-sync</code></td><td>同上</td><td>同上</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 mt-4 text-sm text-slate-700 rounded-r">
+      <strong>别用 <code>paths</code> 做仓库隔离。</strong>官方文档与探针实测一致：它匹配的是<strong>会话中正在操作的文件</strong>，不是当前仓库。拿它当仓库作用域会漏触发——你说“帮我提交这次改动”时若还没读过匹配文件，skill 不会出现。它只适合本来就由文件类型驱动的 skill。
+    </div>
+    <div class="skill-block mt-4"><h3>第三档：<code>skillOverrides</code>（settings，不改 SKILL.md）</h3>
+      <p class="text-sm text-slate-700 mb-2">没有可归属项目的 skill 用它降档，四档可选：<code>on</code> / <code>name-only</code>（只给名字，描述不进上下文）/ <code>user-invocable-only</code>（对模型隐藏，<code>/</code> 菜单还在）/ <code>off</code>。当前 <code>name-only</code>：<code>ios-e2e-test</code>、<code>feature-fullstack</code>（Seaidea 项目不在本机）、<code>fedex-tracker</code>。</p>
+    </div>
+  </section>
+
+  <!-- 已知缺失的能力 -->
+  <section id="known-missing" class="section-card">
+    <h2 class="text-xl mb-4">已知缺失的能力（被引用但未安装）<a href="#known-missing" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">这些名字出现在某些 skill 的正文与 <code>invokes</code> / <code>recommends</code> 里，但 SSOT 和本机都没有它们。登记在这里，是为了让门禁能解析这些引用、同时把缺口<strong>显式留痕</strong>——而不是把引用悄悄删掉当作没发生过。</p>
+    <div class="overflow-x-auto">
+      <table>
+        <thead><tr><th>名字</th><th>谁在引用</th><th>现状</th></tr></thead>
+        <tbody>
+          <tr><td><code>deep-research</code></td><td><code>learning-loop</code>（7 处，「边界」段是铁律：「先调用 deep-research 或 survey 出引用报告」）</td><td>不存在。研究委派实际只能落到 <code>/survey</code> 一条腿上。</td></tr>
+          <tr><td><code>plan-design-review</code></td><td><code>plan-ceo-review</code> / <code>plan-eng-review</code>（读共享评审日志时找它的最近记录并显示 <code>(FULL)</code>）</td><td>不存在。来自上游 <code>plan-*-review</code> 家族，本仓库只引进了 ceo / eng 两个。</td></tr>
+          <tr><td><code>design-review-lite</code></td><td>同上（显示 <code>(LITE)</code>）</td><td>同上。不改上游 skill 正文，避免与上游分叉。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 mt-4 text-sm text-slate-700 rounded-r">
+      登记 ≠ 修好：<code>scripts/check-skills.py</code> 会把指向它们的引用报成 <strong>WARN</strong>（不挡 CI，但每次都提醒），而<strong>没登记</strong>的断链仍然是红——防止「登记」变成断链的后门。补上其中任何一个之后，把它从本节移到对应章节即可。
+    </div>
   </section>
 
   <!-- 外部全局插件 -->

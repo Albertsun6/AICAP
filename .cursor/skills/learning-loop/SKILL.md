@@ -1,6 +1,6 @@
 ---
 name: learning-loop
-description: '把一个话题学进长期记忆的「个人学习闭环」：研究/摄入(自动委派 deep-research/survey)→ 闭书理解(费曼自解释)→ 蒸馏成原子笔记(Obsidian 兼容 markdown + [[wikilinks]]，但无硬依赖、可存任意目录)→ 主动回忆测验(先自己答出来再揭晓、 预测-核对校准)→ SM-2-lite 间隔重复排程(纯 markdown frontmatter 里的日期数学，无任何外部 app / 付费 API)。 每次会话开始自动读取今天日期、扫描笔记库、把 next_review <= 今天的卡片按主题打散后推成复习队列。 每条事实笔记都带真实引用(作者/年份或 URL)，并明确区分有证据支撑的技巧与流行但弱的技巧(Dunlosky 2013 高/中/低分级)。 Use when the user says: "学一下X / 帮我学X / 把X学进去" / "给X做笔记 / 做原子笔记 / make notes on X / 加到我的笔记" / "考我 / 测我一下 / quiz me / 用主动回忆测我" / "今天有什么要复习 / what''s due / 该复习什么了 / 复习一下" / "间隔重复 / 抗遗忘 / spaced repetition / active recall / 闪卡 / flashcards / Anki 风格但不用 Anki" / "Obsidian 笔记 / 知识管理 + 记牢" / "/learning-loop X"。 主动触发：用户想把读到/研究到的东西真正记住、想建可复习的个人知识库、提到 Zettelkasten / 卡片盒 / 费曼 / 抗遗忘曲线、或新会话开始时想知道有没有到期复习——即使没逐字说"间隔重复"或"原子笔记"也应触发。 边界：本 skill 不重做网络研究——遇宽泛/不熟/需多源核实的话题，先调用 deep-research 或 survey 出引用报告， 再消费其报告做蒸馏。本 skill 只拥有「蒸馏 → 原子笔记 → 测验 → 排程 → 复习」这半程。'
+description: 把一个话题学进长期记忆的个人学习闭环：研究摄入 → 闭书自解释 → 蒸馏成带真实引用的 原子笔记 → 主动回忆测验 → 间隔重复排程。纯 markdown，无外部 app、无付费 API。 新会话开始会自动扫笔记库，把今天到期的卡片推成复习队列。 触发："学一下X / 帮我学X / 把X学进去" / "给X做笔记 / 做原子笔记 / make notes on X" / "考我 / 测我一下 / quiz me" / "今天有什么要复习 / what's due / 该复习什么了" / "间隔重复 / 抗遗忘 / spaced repetition / active recall / 闪卡 / flashcards / Anki 风格但不用 Anki" / "Zettelkasten / 卡片盒 / 费曼" / "Obsidian 笔记"。 用户想把读到的东西真正记住、想建可复习的知识库时也应触发，不必逐字说出上述词。 边界：不重做网络研究——宽泛或需多源核实的话题先用 survey 出带引用的报告， 本 skill 只做「蒸馏 → 笔记 → 测验 → 排程 → 复习」这半程。
 ---
 # learning-loop — 个人学习闭环
 

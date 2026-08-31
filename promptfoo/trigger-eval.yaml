@@ -1,0 +1,223 @@
+# 触发 eval —— 两只异构评审都指出的最大缺口。
+#
+# 测什么：把 Claude Code 实际放进上下文的那份 `name + description` 原样喂给模型，
+# 问它「这句话该触发哪个 skill」。测的是**描述的可分辨性**——唯一我们能改的变量。
+#
+# 不测什么：这不是 Claude Code 真实触发链路的复刻（没有系统提示、没有会话历史、
+# 没有工具集）。所以它是**代理指标**，不是真值。它能回答的是「改了 description
+# 之后，区分度是变好还是变差」——在此之前这个问题只能靠体感。
+#
+# 索引来自 SSOT，跑之前必须先生成：
+#   python3 promptfoo/build-skill-index.py > promptfoo/skill-index.txt
+#   npx promptfoo@latest eval -c promptfoo/trigger-eval.yaml --no-cache
+#
+# 期望答案只能是 24 个 SSOT skill 之一或 NONE——CI 里没有 `~/.claude/skills`，
+# 本机专属 skill 不可复现。
+
+description: skill 触发准确度（正例 + 邻近负例）
+
+prompts:
+  - |
+    你是 Claude Code 的技能路由器。当前可用的 skill 清单（`name: description`）：
+
+    {{skillIndex}}
+
+    用户说：
+    {{utterance}}
+
+    如果清单里**恰好有一个** skill 就是为这句话设计的，只输出它的 name。
+    如果没有任何 skill 匹配，或所需能力不在清单里，只输出 NONE。
+    不要解释，不要加标点，不要输出任何其它字符。
+
+providers:
+  - id: anthropic:messages:claude-opus-5
+
+defaultTest:
+  vars:
+    skillIndex: file://skill-index.txt
+
+tests:
+  # ---------- 正例 ----------
+  - description: 写提交信息 → conventional-commit
+    vars:
+      utterance: 把我这次改动整理成一条规范的提交信息
+    assert:
+      - type: regex
+        value: '^\s*conventional-commit\s*$'
+
+  # 邻近正例：跟上一条只差"在 AICAP 里"，考的是两个 commit skill 分不分得开
+  - description: 在 AICAP 里提交 → aicap-commit（而非 conventional-commit）
+    vars:
+      utterance: 帮我提交 AICAP 这次的改动
+    assert:
+      - type: regex
+        value: '^\s*aicap-commit\s*$'
+
+  - description: 方案调研比较 → survey
+    vars:
+      utterance: 调研一下别人怎么做增量静态站点构建，把几种方案比一比
+    assert:
+      - type: regex
+        value: '^\s*survey\s*$'
+
+  # 邻近正例：同样是"上网搜"，但搜的是 skill 本身，不是方案
+  - description: 去市场搜现成 skill → search-online-skills（而非 survey / find-skills）
+    vars:
+      utterance: 去各个 skill 市场线上搜一圈，看有没有现成能做 PDF 表格抽取的 skill
+    assert:
+      - type: regex
+        value: '^\s*search-online-skills\s*$'
+
+  - description: 偶发失败排查 → diagnose
+    vars:
+      utterance: 这个测试偶发失败，我本地怎么都复现不了
+    assert:
+      - type: regex
+        value: '^\s*diagnose\s*$'
+
+  - description: 模糊想法转需求 → req-discovery
+    vars:
+      utterance: 我有个功能想法但还很模糊，帮我理成能直接开发的需求
+    assert:
+      - type: regex
+        value: '^\s*req-discovery\s*$'
+
+  - description: 仓库健康度评估 → project-health
+    vars:
+      utterance: 帮我看看这个仓库的架构合不合理、技术债都在哪
+    assert:
+      - type: regex
+        value: '^\s*project-health\s*$'
+
+  # ---------- 邻近负例：看起来像、但不该触发任何 skill ----------
+  - description: 普通编码任务 → NONE（不该被任何 skill 抢走）
+    vars:
+      utterance: 帮我写个把字符串反转的函数
+    assert:
+      - type: regex
+        value: '^\s*NONE\s*$'
+
+  - description: 完全无关 → NONE
+    vars:
+      utterance: 今天北京天气怎么样
+    assert:
+      - type: regex
+        value: '^\s*NONE\s*$'
+
+  # 治理边界守卫：report-to-audio 是本机专属、不在 SSOT，CI 的索引里没有它。
+  # 若将来把它迁进 SSOT，这条的期望要同步改成 report-to-audio——改动是有意的，
+  # 不是测试坏了。
+  - description: 报告转语音 → NONE（该能力不在 SSOT 索引内）
+    vars:
+      utterance: 把这份调研报告念成语音发我
+    assert:
+      - type: regex
+        value: '^\s*NONE\s*$'
+
+  # ============================================================
+  # 刁钻组 —— 上面 10 条首轮全绿，说明它们测不出改进空间，只能防回归。
+  # 这一组专挑**描述边界糊**的近邻，目的是让 eval 能指路而不只是把门。
+  # 每条的期望答案都能在该 skill 的 description 里找到字面依据；
+  # 红了通常意味着两个 description 该收敛，而不是用例出错。
+  # ============================================================
+
+  # 三个"找 skill"的 skill 互为近邻，区分点是**产出形态**：
+  #   find-skills          = 单一注册表 + 即时装来就用，不进 SSOT
+  #   search-online-skills = 跨多源广搜 + 核实排序，只读不装
+  #   install-skill        = 固化进 AICAP SSOT（版本控制 + 跨工具同步）
+  #
+  # 历史：本条最初写成「有没有能把 Excel 转成图表的 skill」，模型答 NONE——
+  # 排查后发现那句有歧义（可读成"我要做 Excel 转图表"这件事，而非"我在找 skill"），
+  # 是用例出错不是描述出错。顺着查下去才发现 find-skills 的真实边界
+  # （npx skills CLI / skills.sh 单一源 / 不进 SSOT）压根没写进它的 description。
+  - description: 即时装来就用 → find-skills（而非 install-skill 的进 SSOT）
+    vars:
+      utterance: 我想加个处理 PDF 的能力，有没有现成 skill 能直接装来用
+    assert:
+      - type: regex
+        value: '^\s*find-skills\s*$'
+
+  - description: 点名市场 + 要装 → install-skill
+    vars:
+      utterance: 从 anthropics/skills 里挑个 PDF 处理的装进来
+    assert:
+      - type: regex
+        value: '^\s*install-skill\s*$'
+
+  # project-context（拉齐上下文）vs project-health（评估健康度）
+  - description: 新接手要上下文 → project-context（而非 project-health）
+    vars:
+      utterance: 我刚接手这个仓库，先帮我把目标和架构拉齐一下
+    assert:
+      - type: regex
+        value: '^\s*project-context\s*$'
+
+  # 自然语言别名：description 里根本没有"体检"二字
+  - description: 别名「仓库体检」→ project-health
+    vars:
+      utterance: 给这个仓库做个体检
+    assert:
+      - type: regex
+        value: '^\s*project-health\s*$'
+
+  # diagramming-code（Mermaid 图）vs architecture-blueprint-generator（叙述文档）
+  - description: 要图 → diagramming-code（而非 blueprint-generator）
+    vars:
+      utterance: 画一下 auth 模块的调用图
+    assert:
+      - type: regex
+        value: '^\s*diagramming-code\s*$'
+
+  - description: 要长文档 → architecture-blueprint-generator（而非 diagramming-code）
+    vars:
+      utterance: 生成一份完整的架构蓝图文档，要有技术栈识别和实现模式说明
+    assert:
+      - type: regex
+        value: '^\s*architecture-blueprint-generator\s*$'
+
+  # 三个 review skill 的三角：战略 / 工程 / 落地前
+  - description: 战略视角挑前提 → plan-ceo-review
+    vars:
+      utterance: 从创始人视角挑战一下这个方案的前提，该不该扩大范围
+    assert:
+      - type: regex
+        value: '^\s*plan-ceo-review\s*$'
+
+  - description: 合并前查安全 → pre-land-review（而非 plan-eng-review）
+    vars:
+      utterance: 这个 PR 合并之前帮我看看有没有 SQL 注入和副作用问题
+    assert:
+      - type: regex
+        value: '^\s*pre-land-review\s*$'
+
+  - description: 粘贴外部 AI 评审要逐条裁决 → debate-review
+    vars:
+      utterance: 我把另一个 AI 给的架构评审贴给你，你逐条判断哪些该接受哪些该反驳
+    assert:
+      - type: regex
+        value: '^\s*debate-review\s*$'
+
+  # learning-loop 的 description 从 917 字符精简到 496（S9 警戒线）。精简描述的风险
+  # 是砍掉召回面而不自知，所以补两条守它：一条带明确触发词，一条是纯自然语言别名
+  # （不含「间隔重复」「原子笔记」这类词），后者才真正测得出召回。
+  - description: 明确触发词 → learning-loop
+    vars:
+      utterance: 考我一下我上周记的那些笔记，看还记得多少
+    assert:
+      - type: regex
+        value: '^\s*learning-loop\s*$'
+
+  - description: 自然语言别名（不含任何触发词）→ learning-loop
+    vars:
+      utterance: 我想把最近读的东西真正记牢，别过两天就忘光了
+    assert:
+      - type: regex
+        value: '^\s*learning-loop\s*$'
+
+  # survey 的描述很宽（"调研任意话题"），容易把排查类问题吸走
+  - description: 性能排查 → diagnose（不该被 survey 吸走）
+    vars:
+      utterance: 这个接口最近突然变慢了三倍，帮我找根因
+    assert:
+      - type: regex
+        value: '^\s*diagnose\s*$'

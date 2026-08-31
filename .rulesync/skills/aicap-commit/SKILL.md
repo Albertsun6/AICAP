@@ -6,6 +6,8 @@ description: >-
   触发：提交到 AICAP / aicap commit / commit aicap changes /
   我要提交 AICAP / 帮我提交这次改动（在 AICAP 项目目录内）
 targets: ["*"]
+scope: project
+recommends: ["conventional-commit", "report-to-html"]
 ---
 
 # aicap-commit
@@ -15,8 +17,17 @@ AICAP 仓库的专用提交 workflow，在 `conventional-commit` 基础上补充
 
 ## 常量
 
-```
-AICAP_ROOT = ~/Desktop/AICAP   （如迁移路径，在此更新）
+不写死仓库路径——本仓库搬过一次家（`Desktop/AICAP` → `Desktop/AIProject/AICAP`），
+写死的路径悄悄失效了很久没被发现。运行时定位，并校验确实定位到了 AICAP：
+
+```bash
+AICAP_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+# 本 skill 是项目级（scope: project），只在 AICAP 仓库内可见，所以 git 定位必然可用。
+# 定位不到就停——猜一个路径会让后续的 generate / commit 打到别的仓库去。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  echo "✗ 定位不到 AICAP 仓库根（当前不在仓库内？）。停止，不猜路径。" >&2
+  exit 1
+fi
 ```
 
 ## 执行流程
@@ -42,7 +53,7 @@ git status --short | grep -q "\.rulesync/"
 若命中，执行：
 
 ```bash
-cd ~/Desktop/AICAP && pnpm run ai:generate
+cd "$AICAP_ROOT" && pnpm run ai:generate
 ```
 
 检查输出无报错后继续。

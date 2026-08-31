@@ -1,6 +1,6 @@
 ---
 name: diagramming-code
-description: Generates Mermaid diagrams from Trailmark code graphs. Produces call graphs, class hierarchies, module dependency maps, containment diagrams, complexity heatmaps, and attack surface data flow visualizations. Use when visualizing code architecture, drawing call graphs, generating class diagrams, creating dependency maps, producing complexity heatmaps, or visualizing data flow and attack surface paths as Mermaid diagrams.
+description: 把代码库的真实结构画成 Mermaid 图：调用图、类继承、模块依赖、包含关系、 复杂度热图、攻击面数据流。用户说「画调用图」「可视化代码架构」「类图」 「依赖图」「哪块最复杂」「数据怎么流的」时触发——包括只给一个模块名， 让你画它的内部与跨模块调用关系。 底层用 Trailmark 解析出代码图谱再成图，所以画的是真实结构而非阅读后的臆测。
 ---
 # Diagramming Code
 

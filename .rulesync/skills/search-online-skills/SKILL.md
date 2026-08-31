@@ -10,6 +10,7 @@ description: >-
   有没有现成 skill 能 X / search online for a skill / is there an online skill for X
   （强调"线上 / 现成 / 市场"，要广搜多源而不只是问某一个 CLI）。
 targets: ["*"]
+recommends: ["find-skills", "install-skill", "skill-creator"]
 ---
 
 # search-online-skills
@@ -28,10 +29,27 @@ targets: ["*"]
 
 ## 常量
 
-```
-SKILL_DIR = ~/Desktop/AICAP/.rulesync/skills/search-online-skills
-SOURCES   = $SKILL_DIR/sources.yaml        # 源注册表（种子 + 发现探针），SSOT
-SSOT_ROOT = ~/Desktop/AICAP
+不写死仓库路径——本仓库搬过一次家（`Desktop/AICAP` → `Desktop/AIProject/AICAP`），
+写死的路径悄悄失效了很久没被发现。运行时定位，并校验确实定位到了 AICAP：
+
+```bash
+AICAP_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+# 不在 AICAP 仓库内时，从全局 skill 软链反查仓库位置。
+# `[ -L ]` 守卫是必须的：软链不存在时 readlink 返回空，dirname "" = "."，
+# 于是 cd "./../.." 会静静地算出 cwd 的祖父目录——比没有 fallback 更危险。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  _link="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/search-online-skills"
+  [ -L "$_link" ] && AICAP_ROOT="$(cd "$(dirname "$(readlink "$_link")")/../.." && pwd)"
+fi
+# 最终校验：两条路都没定位到就停，绝不带着一个猜出来的路径往下跑。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  echo "✗ 定位不到 AICAP 仓库根。请在 AICAP 仓库内运行，或先跑 pnpm run setup:skills。" >&2
+  exit 1
+fi
+
+SSOT_ROOT="$AICAP_ROOT"
+SKILL_DIR="$AICAP_ROOT/.rulesync/skills/search-online-skills"
+SOURCES="$SKILL_DIR/sources.yaml"          # 源注册表（种子 + 发现探针），SSOT
 ```
 
 ## 执行流程

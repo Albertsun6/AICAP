@@ -1,0 +1,6 @@
+# pnpm 会就每个带 build script 的依赖征询一次；答过就不再问。
+# tldjs 经 rulesync → fastmcp → mcp-proxy → pipenet 传递进来，它的 postinstall
+# 是联网更新 public suffix list。rulesync generate 不需要这个产物（实测全绿），
+# 而 postinstall 是供应链攻击的常见入口，故拒绝。
+allowBuilds:
+  tldjs: false

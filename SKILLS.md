@@ -10,7 +10,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 ### `/survey`
 **用途**：对任意话题做系统性调研——选型比较、最佳实践、社区方案研究。
 
-流程：Phase 1 问题界定 → 1.5 Brief → Phase 2（2 Claude + 1 cursor-agent 并行异构搜索）→ 2.5 Reflection Gate → 3-5 综合报告 → 5.5 Citation Health → Phase 6 异构终审 + 最多 3 轮辩论 → Finalize（`.md` 报告 + `.m4a` 音频）。
+流程：Phase 1 问题界定 → 1.5 Brief → Phase 2（2 Claude + 2 cursor-agent〔GPT 族与 Gemini 族〕四路并行异构搜索，发现取并集不投票）→ 2.5 Reflection Gate → 3-5 综合报告 → 5.5 Citation Health → Phase 6 异构终审 + 最多 3 轮辩论 + 事实争议交 Gemini 族 tiebreaker → Finalize（`.md` 报告 + `.html` 交互页 + `.pdf` + `.m4a` 音频概要 + `.m4a` 完整音频）。
 
 触发：`/survey X` / "调研X方案" / "比较X和Y" / "X的最佳实践"
 
@@ -80,7 +80,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 ### `/find-skills`
 **用途**：在对话中即时发现并安装 agent skill。当用户问 "how do I do X" / "有没有能做 X 的 skill" / "find a skill for X" 时自动激活，内部通过 Skills CLI（`npx skills find` / `npx skills add`）从开放 skill 生态搜索并安装。
 
-与 `/install-skill` 互补：`find-skills` 偏对话内即时发现，`install-skill` 偏团队级 SSOT 固化（GitHub API → 选源 → generate → symlink，纳入版本控制）。
+三者分工（互斥）：`find-skills` 走 **skills.sh 单一注册表**、对话内即时装来就用、**不进 SSOT**；`/search-online-skills` 跨多市场 + GitHub + 全网广搜并核实排序、**只读不装**；`/install-skill` 把 skill **固化进 AICAP SSOT**（版本控制 + 跨工具同步）。
 
 > 来源：vercel-labs/skills `skills/find-skills`。纯 prompt，无 license/hook 约束，跨工具完全可移植。
 
@@ -229,9 +229,11 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## 本地专用 Skills（3 个，非 SSOT，仅本机）
+## 本地专用 Skills（9 个，非 SSOT，仅本机）
 
-> 这 3 个 skill 直接存放在 `~/.claude/skills/`，不经 rulesync 同步，Seaidea 项目专属。
+> 这些 skill 不经 rulesync 同步：多数是 `~/.claude/skills/` 下的真实目录，`archi-strategy-decode`
+> 例外——它是指向 `Strage/archi-strategy/` 的**跨仓库 symlink**，随那个仓库走。
+> 换机器 / 重装时它们不会自动跟过来，`scripts/check-skills.py` 会报出本机实况与本节的差异。
 
 ### `/feature-fullstack`
 **用途**：端到端实施一个 Seaidea/claude-web feature，覆盖 backend + iOS + 验证 + 真机部署，一次完成。从 M0.5 实施经验蒸馏（~1100 行新代码，4 个 feature，一次 sitting 验证到位）。
@@ -251,6 +253,113 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 **用途**：批量查询 FedEx 追踪号的发货日期，输出 CSV。用真实 Chrome（CDP 驱动）模拟点击绕过 Akamai 反爬，随机延迟 8-15s。
 
 触发：有一批 FedEx 追踪号需要提取发货日期时
+
+---
+
+### `/archi-strategy-decode`
+**用途**：在 Archi（开源 ArchiMate 工具）里双向共建战略——人在 GUI 画、Claude 经 archi-mcp-server 读写同一活模型，AI 提议进审批队列、人逐条批准才落地。把战略从 Driver/Stakeholder/Vision 逐层解码（KAOS）到架构级 Requirement，沿途记 ADR，触底后导出需求交接包给 `/req-discovery`。
+
+触发："用 Archi 共建战略" / "战略解码" / "把战略拆成需求"
+
+> 存放位置特殊：`~/.claude/skills/archi-strategy-decode` → `Strage/archi-strategy/skill/` 的软链。
+
+---
+
+### `/deploy-team-webapp`
+**用途**：把静态站 / 前端 / 内部工具部署成「私密、团队共享」的线上应用——Cloudflare Pages + Supabase Auth（邮箱密码登录、管理员邀请、editor/viewer 角色）+ 实时共享状态。含变体 B：Cloudflare-only 自建账号 + Worker/D1 全站门禁（连页面都要登录才能看）。
+
+触发："部署上线 / 团队共享 / 邮箱登录 / 免备案 / 把这个网页发出去给团队用"
+
+---
+
+### `/browser-handoff`
+**用途**：需要用户去浏览器后台操作（Supabase / Cloudflare / GitHub / 阿里云）时，不给零散口头步骤，而是生成一段可整段粘贴给「Claude for Chrome」自动执行的指令文本，存成 `.txt`。格式：任务 → 前置/登录 → 分步（URL + 动作 + 原样粘贴内容）→ 完成判据 → 回报内容。
+
+触发：任何需要用户做浏览器后台操作时 / "教我操作" / "生成浏览器操作指令"
+
+---
+
+### `/report-to-audio`
+**用途**：把 Markdown 长报告转成好听的单文件叙述音频（`.m4a`）——先改写成口语朗读稿（去表格/URL、数字转口语），再按 provider 阶梯朗读：中英优先 edge-tts 神经嗓音（晓晓），回退 OpenAI / Groq Orpheus / macOS `say`。
+
+触发："把这份报告做成音频" / "生成音频概要" / "念出来" / "report 转语音"
+
+---
+
+### `/demo-video`
+**用途**：给本地 web 应用录带中文旁白的操作演示视频（mp4）——解说词分段 → edge-tts 配音 → Playwright 按旁白时长驱动真实界面 → 合成带光标高亮/字幕的成片 → 抽帧联络表验收。底层 argo，本 skill 补上它缺的中文音色与语义验收。
+
+触发："做个操作演示视频" / "录个 demo 视频" / "带旁白的演示"
+
+---
+
+### `/short-drama`
+**用途**：把一句话故事想法做成完整短剧视频——剧本生成 → 视频生成 → TTS 配音 → FFmpeg 合成。MOCK 模式（默认，无需 API）用 FFmpeg 占位视频验证全流程；REAL 模式调 Runway MCP 出真实 AI 视频。
+
+触发：`/short-drama [故事想法]` / "帮我生成短剧" / "把 [故事] 做成短剧"
+
+> 这个 skill 的 `SKILL.md` **没有 frontmatter**，`name` / `description` 全靠 H1 兜底，自动触发面比其余窄。
+
+---
+
+## 按项目分发的 Skills（不在全局发现面）
+
+> 这些 skill 只在**它服务的那个仓库里**可见——因为 Claude Code 按 skill 文件所在位置
+> 决定作用域：放在 `<project>/.claude/skills/` 里就只在该项目加载。不需要任何"识别项目"
+> 的机制，也不牺牲自动触发：在对的仓库里它照常被模型自动调用，在别的仓库里它压根不出现。
+>
+> 好处不只是省 token，更是**缩小误触发面**——你在写别的项目时，不该看到 zupu 的发布流水线。
+
+| skill | 住在哪 | 怎么声明的 |
+|---|---|---|
+| `/aicap-commit` | 本仓库 `.claude/skills/`（generate 产物） | SSOT frontmatter `scope: project`，`setup:skills` 据此跳过全局软链 |
+| `/zupu-ship` | `族谱/zupu-cloud/.claude/skills/` | 真实目录已迁入该仓库，随仓库走 |
+| `/zupu-spec-sync` | 同上 | 同上 |
+
+**新增一个项目级 skill**：在 SSOT 的 `SKILL.md` frontmatter 写 `scope: project`，然后
+`pnpm run setup:skills`——脚本会跳过它，并回收本仓库先前建过的那条全局软链。
+门禁规则 G5 负责对账：声明了项目级却还在 `~/.claude/skills/` 就报错。
+
+### 另一档：装着但降低存在感（`skillOverrides`）
+
+有些 skill 没有可归属的项目（个人工具，或它服务的项目已不在本机）。这类不搬家，改用
+`~/.claude/settings.json` 的 `skillOverrides` 降档——`/skills` 菜单里按空格键也能切：
+
+| 值 | 模型看到 | `/` 菜单 |
+|---|---|---|
+| `on` | 名字 + 描述 | 有 |
+| `name-only` | **只有名字**（描述不进上下文） | 有 |
+| `user-invocable-only` | 隐藏 | 有 |
+| `off` | 隐藏 | 隐藏 |
+
+当前设为 `name-only` 的：`ios-e2e-test`、`feature-fullstack`（Seaidea / claude-web 项目
+全盘未搜到）、`fedex-tracker`（低频个人工具）。要彻底隐藏就改 `off`。
+
+> `skillOverrides` 比 frontmatter 的 `disable-model-invocation` 更合适做这件事：
+> 不用改 SKILL.md（不污染 SSOT）、可按项目在 `.claude/settings.local.json` 里单独覆盖、
+> 而且有四档而非开关两档。
+
+---
+
+## 已知缺失的能力（被引用但未安装）
+
+> 这些名字出现在某些 skill 的正文与 `invokes` / `recommends` 里，但 SSOT 和本机都没有它们。
+> 登记在这里，是为了让门禁能解析这些引用、同时把缺口**显式留痕**——而不是把引用悄悄删掉
+> 当作没发生过。`scripts/check-skills.py` 会把指向它们的引用报成 WARN（不挡 CI，但每次都提醒）。
+> 补上其中任何一个之后，把它从本节移到上面对应章节即可。
+
+### `/deep-research`
+**谁在引用**：`learning-loop`（7 处，其中「边界」段写的是铁律：「先调用 deep-research 或 survey 出引用报告」）。
+
+**现状**：不存在。所以 learning-loop 的研究委派实际上只能落到 `/survey` 一条腿上。
+
+---
+
+### `/plan-design-review`
+### `/design-review-lite`
+**谁在引用**：`plan-ceo-review` 与 `plan-eng-review`——它们读取共享评审日志时，会去找这两个 skill 的最近记录并显示 `(FULL)` / `(LITE)`。
+
+**现状**：不存在。这两个来自上游 `plan-*-review` 家族，本仓库只引进了 ceo / eng 两个。不改上游 skill 的正文，避免与上游分叉。
 
 ---
 
@@ -278,7 +387,7 @@ mkdir AICAP/.rulesync/skills/<name> && vim AICAP/.rulesync/skills/<name>/SKILL.m
 cd AICAP && pnpm run ai:generate
 
 # 3. 创建全局 symlink
-ln -s /Users/yongqian/Desktop/AICAP/.claude/skills/<name> ~/.claude/skills/<name>
+pnpm run setup:skills   # 幂等：只补缺失的软链，不覆盖已有真实目录
 ```
 
 不要直接在 `~/.claude/skills/` 建真实目录，除非明确只用于本地单机且不打算跨工具同步。

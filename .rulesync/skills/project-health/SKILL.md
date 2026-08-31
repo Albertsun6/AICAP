@@ -10,6 +10,7 @@ description: |
   / "查冗余文件和死代码" / "看看耦合解耦怎么样" / "代码精简度评估" / "/project-health" /
   "这个项目健康吗" / "技术债在哪" / "architecture / code quality audit"。
   适用对象是一个 git 仓库（默认 cwd）。不是写代码、不是单 PR 评审（那用 /code-review / pre-land-review）。
+recommends: ["debate-review", "feature-fullstack", "pre-land-review"]
 ---
 
 # /project-health — 仓库健康度评估（分层 · 可执行探针 · 异构兜底）

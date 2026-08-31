@@ -2,36 +2,62 @@
 
 **始终执行**：cursor-agent 异构终审 + 主 agent 判断矩阵 + 最多 3 轮辩论 + 剩余分歧人类裁决。**无 opt-out**——/survey 是高质量调研 skill，Phase 6 是质量门禁不是可选项。
 
-> **`finalize` 语义统一定义**：本文档所有 `finalize` 指代 → 进入 [`phases/04-synthesis.md`](04-synthesis.md) §Finalize 输出步骤（写 cwd 报告 + audio）。**只有** Phase 6 收敛（Round 1 全 accept / Round 2/3 双方同档 / 人类裁决完成）后才允许触发 finalize；之前任何 round 的中间矩阵 / rebuttal 都**禁止**写 cwd 文件。
+> **`finalize` 语义统一定义**：本文档所有 `finalize` 指代 → 进入 [`phases/04-synthesis.md`](04-synthesis.md) §Finalize 输出步骤（写 cwd 报告 + audio）。**只有** Phase 6 收敛（合法路径 5 条：Round 1 全 accept / Round 2/3 双方同档 / tiebreaker 裁清全部剩余分歧 / 人类裁决完成 / Phase 6 整段被跳过且已打 SKIPPED banner）后才允许触发 finalize；之前任何 round 的中间矩阵 / rebuttal 都**禁止**写 cwd 文件。
 
-cursor-agent 不可用时整段 Phase 6 跳过 + 顶部 banner（见 `../phases/02-research.md` §cursor-agent 不可用时的自动降级）。
+两只异构眼都不可用时整段 Phase 6 跳过 + 顶部 banner（见 `../phases/02-research.md` §自动降级矩阵）。
 
 ## 设计原则
 
-cursor-agent 终审是**独立 lens 的意见**，不是"权威修订指令"。主 agent 必须对每条建议表态；剩余分歧由人类裁决而非 AI 共识收敛——防止 Claude 与 GPT-5.5 共享盲区时的"AI 回声室"。
+cursor-agent 终审是**独立 lens 的意见**，不是"权威修订指令"。主 agent 必须对每条建议表态；剩余分歧由人类裁决而非 AI 共识收敛——防止 Claude 与 GPT 共享盲区时的"AI 回声室"。
 
-## 工作流（线性 7 步）
+**红队第二评审（grok，2026-08-15 加）也不是第三票**：它存在的理由恰恰是"报告作者是 Claude、主评审是 GPT，这两家最可能一起觉得没问题"。所以——
+- 两位 reviewer 意见相左时**不投票、不取交集**：两边的条目**并集**进判断矩阵，主 agent 逐条四档表态
+- 红队是**增量意见不是质量门禁**：它挂了不阻断 Phase 6（主评审那份照走），标 metadata 即可
+- 红队 **one-shot**：只出 Round 1，不进 Round 2/3 rebuttal。它的非 accept 条目直接进第 7 步分类
 
-1. **Round 1**：cursor-agent 终审 → verdict
-   - Concur → 写最小 metadata，结束
-   - Refine / Dissent → 主 agent 4 档判断矩阵
+**tiebreaker 模型（默认 gemini）同样不改变这条原则**：它只被允许裁决**可核查的事实**，且必须附证据 URL；一切判断类分歧仍然只归人类。**本 skill 任何环节都不做多数投票**——发现阶段取并集，终审阶段靠辩论 + 人类裁决，事实争议靠实查。理由见 `02-research.md` §合并规则。
+
+## 工作流（线性 8 步）
+
+1. **Round 1（双评审并发）**：主评审（`gpt` 族）+ 红队第二评审（`grok` 族，one-shot）**同一回合各发一个 async job** → 两份 verdict
+   - 两份都 Concur → 写最小 metadata，结束
+   - 任一 Refine / Dissent → 主 agent 对**两份条目的并集**做 4 档判断矩阵
 2. **收敛检查 1**：全 accept → finalize；否则进 Round 2
-3. **Round 2**：cursor-agent rebuttal 非 accept 条目 → 主 agent 二轮判断（维持原档 OR 让步并改档，必附论据）
+3. **Round 2**：主评审 rebuttal 非 accept 条目 → 主 agent 二轮判断（维持原档 OR 让步并改档，必附论据）。**红队条目不进本轮**（one-shot），它的非 accept 条目原样挂着等第 7 步
 4. **收敛检查 2**：双方同档（无分歧）→ finalize；否则进 Round 3
-5. **Round 3**：cursor-agent 二次 rebuttal → 主 agent 三轮判断（同 Round 2 规则）
-6. **收敛检查 3**：双方同档 → finalize；仍分歧 → 进人类裁决
-7. **人类裁决**：AskUserQuestion 暴露分歧条目（>4 条分批 ≤4），每条 options = 采纳主 agent / 采纳 cursor-agent / 独立判断；用户最终立场 → finalize（不再回 cursor-agent）
+5. **Round 3**：主评审二次 rebuttal → 主 agent 三轮判断（同 Round 2 规则）
+6. **收敛检查 3**：双方同档 → finalize；仍分歧（含红队挂着的非 accept 条目）→ 进第 7 步
+7. **事实核查 tiebreaker**（族按 helper §三族分工 的选族规则定，默认 `gemini`，1 次调用）：把剩余分歧分成**事实性**与**判断性**；事实性的交裁判模型实查裁决，判断性的直接进第 8 步
+8. **人类裁决**：AskUserQuestion 暴露**剩下的**分歧（判断性分歧 + tiebreaker 判 `UNRESOLVED` 的），>4 条分批 ≤4，每条 options = 采纳主 agent / 采纳 reviewer（**注明是主评审还是红队**）/ 独立判断；用户最终立场 → finalize（不再回 cursor-agent）
 
-## Round 1：cursor-agent 异构终审
+## Round 1：异构终审（主评审 + 红队第二评审，并发）
+
+> **提速（2026-07-31 加）**：Round 1 应在**报告初稿落盘后立刻发起**（`run_in_background: true`），不要先跟用户逐条汇报再发——终审跑的这几分钟里主 agent 可以做别的事（如同步更新下游文档、准备修订清单）。实测这一条能省 3-4 分钟。
 
 **输入**：Phase 5 完整报告 markdown
 
-**Round 1 prompt 模板路径**：`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/prompts/round1.txt`
+**prompt 模板路径**：
+- 主评审：`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/prompts/round1.txt`
+- 红队：`prompts/round1-grok-prefix.txt` **拼在** `round1.txt` **全文之前**（红队要知道主评审在查什么，才能避开重复；两个文件都必须 Read，不许凭记忆拼）
 
-**调度**：Round 1 必须调用 cursor-agent；失败时跳过 Phase 6（不进人类裁决）。注入内容：Brief + Source Quality 评分汇总（见 `../references/source-quality.md`）+ Phase 2.5 Reflection 结果（见 `../phases/03-reflection.md`）+ Phase 5.5 Citation Health（见 `../phases/05-citation.md`）。具体调用方式（exit code / timeout / prompt 文件命名规范）见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)，**进入本段前必须 Read helper**。
+**调度**：
+
+| | 主评审 | 红队第二评审 |
+|---|---|---|
+| family | `gpt`（替补链 `gpt → grok → gemini`） | `grok`（主评审已降到 grok 时**取消本路**） |
+| 文件前缀 | `survey-r1-` | `survey-r1g-` |
+| 调用方式 | `run-cursor-agent-async.sh`，deadline 1800s | 同左 |
+| 失败后果 | 按替补链换族**重试 1 次**；替补也失败才跳过整个 Phase 6 + banner | **不阻断**，§metadata 标 `red-team: unavailable (<原因>)` |
+
+- **两个 job 必须同一回合发出**——串行会白多花 8-15 分钟（两边都是 xhigh 全文评审）
+- **Round 1-3 这类全文评审必须走异步 job**：xhigh 档评审常要 8-15 分钟，同步 570s 窗口装不下，实测硬塞会超时白烧配额（见 helper §异步 job）。grok 族基础延迟更高（263s 玩具 prompt 实测），更没有走同步的余地
+- **注入内容（两路相同）**：Brief + Source Quality 评分汇总（见 `../references/source-quality.md`）+ Phase 2.5 Reflection 结果（见 `../phases/03-reflection.md`）+ Phase 5.5 Citation Health（见 `../phases/05-citation.md`）
+- 具体调用方式（exit code / timeout / prompt 文件命名规范 / 三族分工与替补链）见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)，**进入本段前必须 Read helper**
+
+**红队 4 个角度（invariants，与主评审的 7 角度互补、不重叠）**：共识盲区（"大家都这么说所以没人查"的断言 + 出处链条是否只是互相转引）/ 反面证据缺席（失败案例、迁走复盘、生产事故搜过没有）/ 利益相关信源（vendor 文档、作者博客、融资通稿冒充独立证据）/ 被主流叙事盖住的选项。**允许直接 Concur**——红队不设"必须提 N 条"的指标，凑数比 Concur 更糟。
 
 **Round 1 模板硬约束（invariants，cursor-agent 必须按这 7 个角度评审）**：
-1. **Agent X 降权检查**：是否有 Agent X 上报但被 Claude 降权 / 丢弃的 source 或方案
+1. **Agent X1/X2 降权检查**：是否有 X1 或 X2 上报但被 Claude 降权 / 丢弃的 source 或方案（并集规则下丢弃即违规）
 2. **Claude 偏好检查**：推荐是否非证据驱动地排 Anthropic 系工具靠前
 3. **风险覆盖检查**：待验证风险是否覆盖训练截点后的版本变化 / maintainer 离职 / license 改变
 4. **Brief 对照**：子问题清单全答？成功标准达标？信源约束遵守？
@@ -43,10 +69,16 @@ cursor-agent 终审是**独立 lens 的意见**，不是"权威修订指令"。�
 
 ## Round 1 主 agent 判断矩阵
 
-收到 cursor-agent verdict 后：
+收到两份 verdict（主评审 + 红队；红队不可用时只有一份）后：
 
-- **Concur 路径**：跳过矩阵；§metadata 写一行 `Phase 6 verdict: Concur; no changes requested; no additional claims introduced`（表达"reviewer 未提出修订"而非"报告无偏见"，防误读为权威背书）→ 进入 finalize（Phase 4）
-- **Refine / Dissent 路径**：对**每一条建议**做 4 档表态，写入 §metadata 子段 `Phase 6 辩论历史 > Round 1`
+- **两份都 Concur**：跳过矩阵；§metadata 写一行 `Phase 6 verdict: 主评审 Concur / 红队 Concur; no changes requested; no additional claims introduced`（表达"reviewer 未提出修订"而非"报告无偏见"，防误读为权威背书）→ 进入 finalize（Phase 4）
+- **任一 Refine / Dissent**：对**两份条目的并集**逐条做 4 档表态，写入 §metadata 子段 `Phase 6 辩论历史 > Round 1`
+
+**双评审条目的合并规则（照搬 Phase 2 的并集精神）**：
+- 每条标来源 `[R1-主评审]` / `[R1-红队]`，**两份都提的同一问题合成一条并标 `[两方共提]`**（共提本身是强信号，值得在矩阵里看得见）
+- **两位 reviewer 互相矛盾时不投票、不取交集**：两条都保留、各自表态。谁也不因为"另一位没提"而被降权——这正是红队存在的意义
+- 红队条目照走同一套四档规则与"禁止"清单，**但不进 Round 2/3**：它的非 accept 条目挂到第 7 步统一分类（事实性 → tiebreaker，判断性 → 人类裁决）
+- 红队标了 `[前提类]` 的条目**同样不走四档**（见下方"禁止"最后一条）——原样进回问用户流程
 
 **4 档判断规则**：
 - **accept**：证据扎实、与主结论方向一致 → 直接 incorporate
@@ -58,6 +90,7 @@ cursor-agent 终审是**独立 lens 的意见**，不是"权威修订指令"。�
 - 不要 refute 仅因"我不同意"——必须给 reason
 - 不要 accept 仅因"权威给的"——必须给独立证据支持
 - 不要把 partial / defer 当 escape hatch 用于规避表态
+- **前提类建议不走四档**：凡 reviewer 建议实质动摇 Brief 前提（研究问题 / 比较对象 / 排除范围 / 用户澄清记录里用户亲口定的边界），无论证据多扎实都**不许直接 accept incorporate**——改走 `03-reflection.md` §前提破裂 的回问用户流程（非交互时同其降级）。两个 AI 达成一致不等于用户同意换靶
 
 **Round 1 收敛条件**：全部 accept → 进入 finalize（Phase 4），跳过 Round 2/3。
 
@@ -105,11 +138,66 @@ cursor-agent 终审是**独立 lens 的意见**，不是"权威修订指令"。�
 
 **主 agent 三轮判断**：同 Round 2 规则。
 
-**Round 3 收敛条件**：双方同档 → finalize（Phase 4）；仍有分歧 → 进入人类裁决。
+**Round 3 收敛条件**：双方同档 → finalize（Phase 4）；仍有分歧 → 进入**事实核查 tiebreaker**（工作流第 7 步），之后剩余分歧才进人类裁决。
+
+## 事实核查 tiebreaker（第三个模型，非投票）
+
+**触发**：Round 3 后仍有 ≥1 条分歧。**先分类，再决定谁裁**。
+
+### 为什么这不是"第三票"
+
+三方投票会毁掉这个 skill 的核心价值：本 skill 防的是**漏**（训练盲区），多数投票会把"只有一方发现的真实方案"投掉；而且两个共享语料的模型可以联手压过正确的少数派——那正是 §设计原则 要防的 AI 回声室。所以 tiebreaker **只做一件事：把能查清的事实当场查清**，让人类不必为可查证的问题做裁决。**判断永远归人类**。
+
+### 分类规则（主 agent 执行，逐条判定）
+
+| 类型 | 判据 | 去向 |
+|---|---|---|
+| **事实性分歧** | **能用单一官方来源直接确证的客观状态**：某源是否存在/已失效、发布日期、版本号、benchmark 数值、某产品官方文档是否声明支持某特性、**官方是否已标记 deprecated/EOL** | → tiebreaker |
+| **判断性分歧** | 任何含**好坏 / 优劣 / 快慢 / 值不值 / 适不适合 / "实际上是不是已经过时"**的定性描述；优先级排序、推荐次序、风险权重 | → 直接进人类裁决，**不送 tiebreaker** |
+
+**边界最易被击穿的地方（异构评审 2026-07-21 指出）**：带技术名词的判断题会伪装成事实题。判别口诀——
+
+- ✅ 事实：「官方 changelog 里 X 被标了 deprecated 吗」→ 有唯一官方答案
+- ❌ 判断：「X 是不是已经过时了 / 还值不值得用」→ 同一事实下两个人可以有不同结论
+- ✅ 事实：「官方文档说 X 支持 Y 吗」→ 查文档即可
+- ❌ 判断：「X 对 Y 的支持够不够好」→ 定性
+
+**拿不准算哪类 → 按判断性处理**（fail-closed：宁可多问人，不可让模型替人做取舍）。宁可漏送 tiebreaker，也不能让判断题溜进去——**LLM 有强烈的迎合倾向，给它一道判断题它极可能硬给个结论而不是标 `OUT_OF_SCOPE`**。
+
+### 调度
+
+- **选族规则（硬约束：必须与当轮主评审异族）**：默认 `gemini`；下列情况改用 `grok`：
+  - gemini 族不可用（doctor 判死 / 调用失败）
+  - 触发利益回避（见下条）
+  - **例外**：主评审已按替补链降到 `grok` 时，tiebreaker 只能用 `gemini`；两族都不可用才判 `tiebreaker: unavailable`
+- **不要复用红队的模型实例/id**：红队是本轮争议的当事评审者，让它给自己的条目当裁判等于自审自签。改用 grok 裁决时**重新解析一次**该族模型（helper §主 Claude 必须做 #2）
+- **调用**：`bash run-cursor-agent.sh <prompt> <out> <gemini|grok>`
+- prompt 模板：`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/prompts/tiebreak.txt`（Read gate 同其他模板）
+- **只调 1 次**：把所有事实性分歧批量注入，不要一条一次
+- 无事实性分歧 → **跳过本步**，不空跑（省配额）
+- **利益回避（2026-08-15 升级：先换族，换不掉才推给人）**：
+  - 争议 source 来自 **X2（gemini）独有发现** → 该条改交 `grok` 裁，§metadata 标 `recusal: X2-sourced → grok`
+  - 争议条目由**红队（grok）提出** → 该条改交 `gemini` 裁，§metadata 标 `recusal: red-team-sourced → gemini`
+  - 两类回避撞在一起（X2 独有 source + 红队提出）→ 无可用异族裁判，直接转人类裁决并标 `recusal: 双向回避`
+  - **回避条目与非回避条目分属不同族时，本步允许调 2 次**（每族各 1 次批量），仍计入 iteration bound
+- 调用方式见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)
+
+### verdict 处理
+
+| verdict | 处理 |
+|---|---|
+| `REVIEWER_对` / `MAIN_对` / `都不对` | 按裁判结论收敛该条，**必须连同其依据 URL** 写进 §metadata；正文按结论修正 |
+| `UNRESOLVED` | **转人类裁决**（fail-closed：查不到就别替人拍板） |
+| `OUT_OF_SCOPE` | 说明主 agent 分类错了 → 归回判断性，转人类裁决 |
+
+**硬约束**：
+- 裁判结论**只对事实有约束力**，不得据此改动推荐排序 / 优先级等判断类表述
+- 裁判**没给 URL 的 verdict 一律降级为 `UNRESOLVED`**——无证据的裁决就是第三个模型的臆断，比不裁更糟
+- tiebreaker 调用失败 / 超时 → **先按 §调度 的选族规则换一次族重试**（gemini ↔ grok，计入 iteration bound）；换族后仍失败、或压根没有可用异族 → 事实性分歧原样转人类裁决 + metadata 标注 `tiebreaker: unavailable (<原因>)`
 
 ## 人类裁决
 
-**触发**：Round 3 后仍有 ≥1 条分歧（双方未同档）。
+**触发**：tiebreaker 后仍有 ≥1 条未收敛分歧（判断性分歧 + `UNRESOLVED` + `OUT_OF_SCOPE` + 利益回避条目）。**若 tiebreaker 把全部剩余分歧都裁清了 → 跳过本步直接 finalize**（这是合法收敛路径，不需要硬造问题去问用户）。
 
 **执行**：用 AskUserQuestion 暴露每条分歧。
 
@@ -125,13 +213,27 @@ cursor-agent 终审是**独立 lens 的意见**，不是"权威修订指令"。�
 
 ## iteration bound
 
-- AI 辩论最多 3 轮（Round 1 + Round 2 rebuttal + Round 3 rebuttal）
-- cursor-agent 总调用 ≤ 3 次（即使 Round 1 直接 Concur 也算 1 次）
+- AI 辩论最多 3 轮（Round 1 + Round 2 rebuttal + Round 3 rebuttal）；**红队只占 Round 1 的 1 次，不参与 rebuttal**
+- cursor-agent 总调用 ≤ **6** 次：主评审 ≤3（即使 Round 1 直接 Concur 也算 1 次）+ 红队 ≤1 + 主评审失败按替补链换族重试 ≤1 + tiebreaker ≤1。**tiebreaker 因利益回避分两族批量、或失败换族重试时，最多允许 2 次**（此时总数 ≤7）
+- **整个 survey 的 cursor-agent 总调用硬上限 10 次**：Phase 2 X1+X2 各 1 + Phase 2.5 追搜 ≤1 + Phase 6 ≤7。Phase 5.5 失败触发的"回 Phase 2 重搜"**只重跑 Claude 补搜，不重跑 X1/X2**（异构眼每 survey 只跑一次）——否则成本没有上界
+- **唯一例外：用户裁决换靶**（`03-reflection.md` §前提破裂）——用户亲口选"换靶重立 Brief"时计数清零、X1/X2 对新 Brief 各允许再跑 1 次；换靶整个 survey 最多 1 次，所以总成本仍有上界（≤20 次）
+- tiebreaker **不可循环**：判完就是判完，不因主 agent 不服再跑一次
 - 主 agent 判断 ≤ 3 次
 - 人类裁决 1 次（不可循环）
 
 ## 降级
 
-- cursor-agent Round 1 不可用 → 跳过整个 Phase 6，报告顶部 banner 已涵盖
-- cursor-agent Round 2 / Round 3 调用失败 → 提前进入人类裁决（带 metadata banner 标注"AI 辩论未跑满 3 轮"）
+- **Round 1 主评审不可用 → 先按替补链换族重试 1 次**（`gpt → grok → gemini`，helper §三族分工）。替补也失败才跳过整个 Phase 6，并**由 Phase 6 自己在报告顶部补 banner**：
+
+  ```markdown
+  > ⚠️ **PHASE 6 DEBATE SKIPPED**
+  > Reason: <exit code 对应原因>
+  > Implication: 报告未经异构终审，只走到 Phase 5.5；结论未被独立模型挑战过
+  ```
+
+  **不要以为 Phase 2 的 banner 已经涵盖**——Phase 2 两只眼都成功时**根本没写 banner**，此时 Phase 6 静默跳过会让用户误以为报告过了终审。这条是异构评审（Gemini lens, 2026-07-21）指出的静默失败。
+- **Round 1 红队（grok）失败** → **不阻断**：照常用主评审那份 verdict 走判断矩阵，§metadata 标 `red-team: unavailable (<原因>)`。红队是增量意见不是质量门禁，**绝不**因为它挂了就跳过 Phase 6，也**绝不**换族顶替（换成 gpt 就成了主评审自己审自己，换成 gemini 又和 tiebreaker 撞族）
+- cursor-agent Round 2 / Round 3 调用失败 → 提前结束辩论，但**仍先走 tiebreaker**（主评审挂了不代表裁判族挂了；事实性分歧该查还得查），之后剩余分歧再进人类裁决（带 metadata banner 标注"AI 辩论未跑满 3 轮"）
+- **tiebreaker 调用失败** → 先按选族规则换族重试 1 次（gemini ↔ grok）；仍失败或无可用异族 → 事实性分歧原样转人类裁决 + §metadata 标 `tiebreaker: unavailable (<原因>)`；**绝不**改用与主评审同族的模型顶替（同族自审没有增量，等于给回声室盖章）
+- **Phase 2 的 X1(gpt) 挂但 X2(gemini) 活着** → Round 1-3 主评审按替补链改用 **grok** 族；此时红队取消（同族），tiebreaker 用 gemini。**只有 grok 也不可用时**主评审才落到 gemini，那种情况下 tiebreaker 才真的无异族可用、事实性分歧全部转人类裁决
 - AskUserQuestion 不可用（极少情况）→ §metadata 标注 "分歧未裁决"，正文不 incorporate 分歧条目

@@ -14,6 +14,14 @@
 ## 排除范围
 <明确 out of scope，例如"不评估具体性能 benchmark / 不深入实现代码细节"等>
 
+## 用户澄清记录（Phase 1.2）
+<未触发则写"未触发——无 blocking unknown"；降级则写"未执行（<原因>），blocking unknown 已转初始假设">
+- R<轮次> Q:<问题> → A:<用户所选项/原话>
+
+## 初始假设（未经用户确认）
+<每项标来源：inferred=上下文推断 / default=常规默认 / unanswered=用户未答或答"你定" / round-limit=3 轮到限 / tool-unavailable=非交互降级。无假设写"无">
+- <假设内容>（<来源>）
+
 ## 成功标准
 - 最少 source 数：<N>（默认 8）
 - 时效性：近 <X> 月 source 占比 ≥ <Y%>（默认 12 月 / 30%）

@@ -6,6 +6,9 @@ node_modules/
 # promptfoo 本地缓存（eval 结果不入库，配置入库）
 .promptfoo/
 promptfoo/output/
+# 触发 eval 的 skill 索引由 build-skill-index.py 从 SSOT 现生成——
+# 入库会变成一份会过期的快照，届时 eval 通过只说明它和旧清单一致
+promptfoo/skill-index.txt
 
 # 临时目录与 Python 字节码缓存
 .tmp/
@@ -20,3 +23,13 @@ req-discovery-workspace/
 
 # 关键：生成产物【不要】ignore —— CI drift gate 依赖它们被提交后再比对
 # 即不要在这里写 CLAUDE.md / AGENTS.md / .cursor/ / .claude/ / .codex/ / .github/
+
+# skill 运行时日志。debate-review 往 ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/<name>/
+# 追加 log.jsonl，而全局那条目录是指向本仓库产物的 symlink——日志于是穿过 symlink
+# 落进了版本控制（还带着别的项目的绝对路径）。它是运行时状态，不是产物。
+.claude/skills/*/log.jsonl
+
+# EnterWorktree 建的隔离工作区。它是本机会话状态，不是产物；且 `.claude/` 整体
+# 没被忽略，跨窗口一次 `git add -A` 就会把整棵 worktree（含另一分支的全部文件）
+# 提进来。全局 CLAUDE.md ⑥ 已禁 `git add -A`，但那是靠人守，这条是靠机器守
+.claude/worktrees/

@@ -8,11 +8,27 @@ description: 从任意 skill market（anthropics/skills、openai/skills、vercel
 
 ## 常量
 
-```
-AICAP_ROOT = ~/Desktop/AICAP
-SSOT_DIR   = $AICAP_ROOT/.rulesync/skills/
-CLAUDE_DIR = $AICAP_ROOT/.claude/skills/
-GLOBAL_DIR = ~/.claude/skills/
+不写死仓库路径——本仓库搬过一次家（`Desktop/AICAP` → `Desktop/AIProject/AICAP`），
+写死的路径悄悄失效了很久没被发现。运行时定位，并校验确实定位到了 AICAP：
+
+```bash
+AICAP_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+# 不在 AICAP 仓库内时，从全局 skill 软链反查仓库位置。
+# `[ -L ]` 守卫是必须的：软链不存在时 readlink 返回空，dirname "" = "."，
+# 于是 cd "./../.." 会静静地算出 cwd 的祖父目录——比没有 fallback 更危险。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  _link="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/install-skill"
+  [ -L "$_link" ] && AICAP_ROOT="$(cd "$(dirname "$(readlink "$_link")")/../.." && pwd)"
+fi
+# 最终校验：两条路都没定位到就停，绝不带着一个猜出来的路径往下跑。
+if [ ! -d "$AICAP_ROOT/.rulesync/skills" ]; then
+  echo "✗ 定位不到 AICAP 仓库根。请在 AICAP 仓库内运行，或先跑 pnpm run setup:skills。" >&2
+  exit 1
+fi
+
+SSOT_DIR="$AICAP_ROOT/.rulesync/skills"
+CLAUDE_DIR="$AICAP_ROOT/.claude/skills"
+GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"
 ```
 
 ## 执行流程
@@ -58,7 +74,7 @@ gh api /repos/<org>/<repo>/contents/<skill-dir>/SKILL.md \
   --jq '.content' | base64 -d | head -30
 ```
 
-记录已安装清单（与 `ls ~/.claude/skills/` 对比）。
+记录已安装清单（与 `ls "$GLOBAL_DIR"` 对比）。
 
 **0c — 展示发现结果**
 
@@ -102,7 +118,7 @@ Step 0 全程不写本地文件，只读 GitHub API。完成选择后携带 `{so
 ### Step 2 — 记录现有 skill 列表
 
 ```bash
-ls ~/Desktop/AICAP/.rulesync/skills/
+ls "$AICAP_ROOT"/.rulesync/skills/
 ```
 
 记下当前所有目录名，用于 Step 4 的对比。
@@ -110,7 +126,7 @@ ls ~/Desktop/AICAP/.rulesync/skills/
 ### Step 3 — 执行 fetch
 
 ```bash
-cd ~/Desktop/AICAP
+cd "$AICAP_ROOT"
 GITHUB_TOKEN=$(gh auth token) npx rulesync fetch <source> --features skills
 ```
 
@@ -138,7 +154,7 @@ fetch 完成后列出 `.rulesync/skills/` 下**新增**的目录（与 Step 2 �
 对用户未选择的所有新增目录：
 
 ```bash
-rm -rf ~/Desktop/AICAP/.rulesync/skills/<unwanted-name>
+rm -rf "$AICAP_ROOT"/.rulesync/skills/<unwanted-name>
 ```
 
 在删除前列出将要删除的列表，让用户最终确认（一行确认即可，不要过度询问）。
@@ -146,7 +162,7 @@ rm -rf ~/Desktop/AICAP/.rulesync/skills/<unwanted-name>
 ### Step 6 — 生成三工具产物
 
 ```bash
-cd ~/Desktop/AICAP && pnpm run ai:generate
+cd "$AICAP_ROOT" && pnpm run ai:generate
 ```
 
 检查输出中是否包含所有保留 skill 的写入行。若报错展示错误并停止。
@@ -156,7 +172,7 @@ cd ~/Desktop/AICAP && pnpm run ai:generate
 对每个保留的新 skill：
 
 ```bash
-ln -s ~/Desktop/AICAP/.claude/skills/<name> ~/.claude/skills/<name>
+ln -s "$AICAP_ROOT"/.claude/skills/<name> "$GLOBAL_DIR"/<name>
 ```
 
 若已存在同名 symlink，跳过并提示（不静默覆盖）。
@@ -164,7 +180,7 @@ ln -s ~/Desktop/AICAP/.claude/skills/<name> ~/.claude/skills/<name>
 ### Step 8 — 汇报
 
 ```bash
-ls -la ~/.claude/skills/
+ls -la "$GLOBAL_DIR"
 ```
 
 输出安装结果摘要：
@@ -173,8 +189,8 @@ ls -la ~/.claude/skills/
 ✓ 安装完成
 
   已安装（N 个）：
-    skill-creator  → ~/Desktop/AICAP/.claude/skills/skill-creator
-    webapp-testing → ~/Desktop/AICAP/.claude/skills/webapp-testing
+    skill-creator  → "$AICAP_ROOT"/.claude/skills/skill-creator
+    webapp-testing → "$AICAP_ROOT"/.claude/skills/webapp-testing
 
   已跳过（M 个）：mcp-builder, frontend-design, ...
 

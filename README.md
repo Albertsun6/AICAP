@@ -125,7 +125,7 @@ pnpm run setup:skills
 ## 日常工作流
 
 ```bash
-pnpm install                 # 安装 pin 住的 rulesync@8.18.0
+pnpm install                 # 安装 pin 住的 rulesync@16.2.0
 # 改 .rulesync/ 下的源文件 …
 pnpm run ai:generate         # 重新生成各工具产物
 pnpm run ai:check            # = generate + git diff --exit-code，本地预演 CI drift gate
@@ -182,7 +182,7 @@ git pull && pnpm run ai:generate && pnpm run setup:skills
 | 质量回归 | `promptfoo/promptfooconfig.yaml`：高价值 skill 的 golden-trace 回归（按需在 workflow 里启用 `prompt-eval`） |
 | 命名/小文件 | kebab-case；单文件单职责；根规则行数上限（建议加 lint/pre-commit 强制） |
 | 权限边界 | secrets 走 env 占位；Claude 侧可在 `.rulesync/` 经 hooks/settings 下发 `permissions.deny` 等组织级硬约束 |
-| 版本 pin | `package.json` 与 CI 均 pin `rulesync@8.18.0`，升级走 PR 并复核 diff |
+| 版本 pin | `package.json` 与 CI 均 pin `rulesync@16.2.0`，升级走 PR 并复核 diff |
 | SSOT 边界 | 能力只在本仓库 `.rulesync/` 维护。`survey` 原独立仓库 `Albertsun6/claude-skills` **已废弃**，不再回写——以本 SSOT 为唯一事实来源 |
 
 ## 目标工具
@@ -199,7 +199,7 @@ git pull && pnpm run ai:generate && pnpm run setup:skills
 
 ## 这个骨架已验证
 
-`rulesync@8.18.0 init → 填充 SSOT → generate` 跑通，Claude Code(`CLAUDE.md`)、Codex/Cursor(`AGENTS.md`)、
+`rulesync@16.2.0 init → 填充 SSOT → generate` 跑通，Claude Code(`CLAUDE.md`)、Codex/Cursor(`AGENTS.md`)、
 Cursor(`.cursor/rules/*.mdc`)、`.mcp.json` 均正确生成；`pnpm run ai:check` 幂等（无漂移）。
 `.rulesync/` 内 `rules/overview.md`、`rules/testing.md`、`skills/project-context`、`skills/conventional-commit`、
 `subagents/planner.md`、`commands/review-pr.md`、`mcp.json`、`hooks.json` 均为可直接替换的真实模板。

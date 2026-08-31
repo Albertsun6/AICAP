@@ -12,6 +12,7 @@ allowed-tools:
   - Glob
   - Bash
   - AskUserQuestion
+recommends: ["design-review-lite", "plan-design-review", "plan-eng-review"]
 ---
 
 ## Step 0: Detect base branch

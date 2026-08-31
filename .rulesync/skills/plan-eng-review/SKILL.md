@@ -12,6 +12,7 @@ allowed-tools:
   - Glob
   - AskUserQuestion
   - Bash
+recommends: ["plan-ceo-review"]
 ---
 
 # Plan Review Mode

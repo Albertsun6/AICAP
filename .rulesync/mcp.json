@@ -3,10 +3,16 @@
   "mcpServers": {
     "github": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "command": "python3",
+      "args": [
+        "scripts/mcp-idle-wrapper.py",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}",
+        "MCP_IDLE_TIMEOUT": "1800"
       }
     }
   }

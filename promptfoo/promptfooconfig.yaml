@@ -18,7 +18,7 @@ prompts:
 
 providers:
   # 按团队实际使用的模型替换；需要对应 API key 环境变量
-  - id: anthropic:messages:claude-sonnet-4-6
+  - id: anthropic:messages:claude-opus-5
     # - id: openai:chat:gpt-5.5   # 如果团队也用 OpenAI
 
 defaultTest:

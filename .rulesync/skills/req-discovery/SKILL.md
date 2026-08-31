@@ -10,6 +10,7 @@ description: |
 
   Always trigger this skill whenever the user has a vague feature idea that needs to become concrete, implementable requirements — even when they don't say "user story" or "requirements" explicitly.
 targets: ["*"]
+invokes: ["feature-fullstack"]
 ---
 
 # /req-discovery — 需求发掘 · User Story 生成

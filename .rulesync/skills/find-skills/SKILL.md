@@ -1,6 +1,15 @@
 ---
 name: find-skills
-description: Helps users discover and install agent skills when they ask questions like "how do I do X", "find a skill for X", "is there a skill that can...", or express interest in extending capabilities. This skill should be used when the user is looking for functionality that might exist as an installable skill.
+description: >-
+  通过 Skills CLI（`npx skills find` / `npx skills add`）在**对话中即时**发现并安装
+  agent skill，数据源是 skills.sh 注册表与排行榜。用户问 "how do I do X" /
+  "find a skill for X" / "有没有能做 X 的 skill" / 想直接装个现成能力来用时触发。
+
+  与另外两个"找 skill"的 skill 的分工（三者互斥，别混）：
+  本 skill = **单一注册表（skills.sh）+ 即时安装，装完就用、不进团队 SSOT**；
+  要跨多个市场 + GitHub 代码搜索 + 全网广搜并对抗式核实排序，用 `/search-online-skills`（只读不装）；
+  要把 skill 固化进 AICAP SSOT（进版本控制、跨工具同步）用 `/install-skill`。
+recommends: ["search-online-skills", "install-skill"]
 ---
 
 # Find Skills

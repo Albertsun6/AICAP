@@ -8,37 +8,51 @@ description: |
   "了解一下别人怎么做X" / "调研X方案" / "网上有哪些做X的方式" / "比较X和Y"
   "X的最佳实践" / "benchmark X" / "别人怎么解决X问题" / "/survey X"
 
-  Phase 2 用 2 个 Claude agent + 1 个 cursor-agent (GPT-5.5-medium) 并行异构搜索，
-  综合后再用 cursor-agent 跑一遍异构终审，最多 3 轮辩论后剩余分歧由人类裁决。
-  对抗 Claude 训练数据集体盲区。cursor-agent CLI 不可用时自动降级到 3 Claude 并在
-  报告顶部 banner 提示——但用户不能主动跳过任何阶段。
-  /survey 无 flag——只有一条高质量路径，每个阶段都是质量门禁。
-targets: ["*"]
+  Phase 2 用 2 个 Claude agent + 2 个不同族的 cursor-agent（GPT 与 Gemini，运行时各自
+  自动选当前最强）四路并行异构搜索，发现取并集不投票；综合后 Phase 6 由 GPT 族主评审
+  与 Grok 族红队第二评审**并发**终审（红队 one-shot、条目并集不投票），最多 3 轮辩论，
+  剩余分歧里的事实争议交 Gemini（回避时 Grok）实查裁决、判断分歧由人类裁决。
+  对抗 Claude 训练数据集体盲区与 Claude↔GPT 回声室。cursor-agent CLI 不可用时自动
+  降级到 3 Claude 并在报告顶部 banner 提示——但用户不能主动跳过任何阶段。
+  Phase 1 遇 blocking unknown（研究对象/优先级/关键约束/排除范围拿不准）时先启动
+  多轮澄清提问（Phase 1.2，AskUserQuestion，≤3 轮）再冷冻 Brief；无 blocking unknown 零打扰。
+  /survey 的**质量门禁无 flag 可跳**（异构搜索/Reflection/Citation Health/异构终审都是硬约束）；
+  但**产物按消费者分三档**（A 内部输入=仅 md / B 给人阅读=+HTML+PDF / C 要听=+audio），
+  Claude 搜索路数按重要度分两档（重大决策 3 路 / 常规 2 路，异构两路任何档都不可省）。
 ---
-
 # /survey — 调研·比较·建议
 
 ## 工作流总览
 
 ```
 Phase 1 问题界定
+  → Phase 1.2 澄清提问（必要时，≤3 轮）      [blocking unknown → AskUserQuestion]
   → Phase 1.5 Brief                        [Read prompts/brief-template.txt]
-  → Phase 2 (2 Claude + 1 cursor-agent     [Read prompts/agent-x.txt]
-             并行异构搜索)
-  → Phase 2.5 Reflection Gate
+  → Phase 2 (2 Claude + 2 cursor-agent     [Read prompts/agent-x.txt + agent-x2.txt]
+             四路并行异构搜索，合并取并集)
+  → Phase 2.5 Reflection Gate              [前提破裂 → 回问用户，换靶则回 Phase 1 重立 Brief（限 1 次）]
   → Phase 3-5 综合                          [生成报告]
   → Phase 5.5 Citation Health
-  → Phase 6 cursor-agent 异构终审            [Read prompts/round1.txt]
-  → 多轮辩论（最多 3 轮）                     [Read prompts/round{2,3}-rebuttal.txt]
-  → 剩余分歧人类裁决
-  → Finalize: 写报告 + HTML + audio 到 cwd      [Write <cwd>/<主题>-完整报告.md]
+  → Phase 6 异构终审：主评审(gpt 族)          [Read prompts/round1.txt]
+             + 红队第二评审(grok 族, one-shot)  [Read prompts/round1-grok-prefix.txt]
+             两个 async job 同回合并发，条目取并集
+  → 多轮辩论（最多 3 轮，仅主评审参与）        [Read prompts/round{2,3}-rebuttal.txt]
+  → 事实争议 tiebreaker(gemini 族/回避时 grok) [Read prompts/tiebreak.txt]
+  → 剩余（判断类）分歧人类裁决
+  → Finalize: 写报告 + HTML + PDF + audio×2 到 cwd  [Write <cwd>/<主题>-完整报告.md]
   → HTML report (step 4.5, after .md)          [Write <cwd>/<主题>-完整报告.html（交互式单页）]
-  → Audio summary (after finalize, once)       [bash generate-audio.sh -o <cwd>/<主题>-音频概要.m4a (脚本 -o 直写)]
+  → PDF report (step 4.6, after .html)         [bash generate-pdf.sh -o <cwd>/<主题>-完整报告.pdf（Chrome headless 打印 HTML）]
+  → Audio summary (step 5a)                    [bash generate-audio.sh -o <cwd>/<主题>-音频概要.m4a (脚本 -o 直写)]
+  → Audio full (step 5b)                       [主 agent 写全文口语稿 → bash generate-audio.sh -t <口语稿> -o <cwd>/<主题>-完整音频.m4a]
 ```
 
 **为什么默认就走异构 + 终审**：对抗 **Claude 训练数据集体盲区**——Claude 倾向把训练集里熟悉的工具/方法排在前面，可能漏掉训练截点后出现的新选项、非 Anthropic 生态的方案、低星但成熟的工业方案。3 个 Claude agent 并行只对抗"搜索范围偏差"，对抗不了模型层面共享的盲区。默认开启异构 = 默认假设你在用 /survey 调研对你重要的事情。**无 opt-out flag**——/survey 只有一条高质量路径。
 
-**自动降级**：cursor-agent CLI 不可用 / 调用失败时，系统自动退化（详见 `phases/02-research.md` §cursor-agent 不可用时的自动降级）；用户无法主动选择跳过任何阶段。
+**三族分工（2026-08-15 把 grok 接进来）**：搜索眼固定 `gpt`(X1) + `gemini`(X2)；Phase 6 主评审 `gpt`、红队第二评审 `grok`、事实裁判 `gemini`。**grok 不做搜索眼**——实测该族基础延迟高（263s 玩具 prompt），放进 Phase 2 会撞同步窗口。完整的替补链与选族规则见 `references/cursor-agent-invocation.md` §三族分工与替补链。
+
+**自动降级**：两只异构眼**各自独立降级**——一只挂了另一只继续；两只都不可用才退回 3 Claude（详见 `phases/02-research.md` §自动降级矩阵）。Phase 6 主评审按 `gpt → grok → gemini` 替补链换族重试；红队挂了**不阻断**（增量意见不是质量门禁）。用户无法主动选择跳过任何阶段。
+
+**异构自检前置**：Phase 2 启动 X1/X2 前先跑 `bash doctor.sh`（秒级，不耗配额）——文件/执行位/安装/登录（`--list-models` 实打服务端，不看 `cursor-agent status` 的自述——过期凭据下它照样自称 Logged in）/三族模型解析/月度额度（读真调用留下的痕迹——额度见底时 `--list-models` 仍全绿，只有真调用会撞）逐层检查，执行位问题当场自动修复，其余给出确切修复命令；非 0 verdict 时**提前**告知用户即将发生的降级，而不是等中途 banner。**grok 族死只报 WARN 不降 verdict**（它只是替补 + 红队，不是搜索眼）。详见 `references/cursor-agent-invocation.md` §自检 + 自修复。
 
 ---
 
@@ -51,9 +65,12 @@ Phase 1 问题界定
 | 阶段 | 必读 prompt 文件 | 强制 gate 语句 |
 |---|---|---|
 | Phase 1.5 Brief | `prompts/brief-template.txt` | `Read brief-template.txt; state "Loaded Brief template"` |
-| Phase 2 Agent X | `prompts/agent-x.txt` | `Read agent-x.txt; state "Loaded Agent X prompt"` |
-| Phase 6 Round 1 | `prompts/round1.txt` | `Read round1.txt; state "Loaded Round 1 prompt"` |
+| Phase 2 Agent X1 | `prompts/agent-x.txt` | `Read agent-x.txt; state "Loaded Agent X1 prompt"` |
+| Phase 2 Agent X2 | `prompts/agent-x2.txt` | `Read agent-x2.txt; state "Loaded Agent X2 prompt"` |
+| Phase 6 Round 1 主评审 | `prompts/round1.txt` | `Read round1.txt; state "Loaded Round 1 prompt"` |
+| Phase 6 Round 1 红队 | `prompts/round1-grok-prefix.txt`（拼在 round1.txt 之前） | `Read round1-grok-prefix.txt; state "Loaded red-team prefix"` |
 | Phase 6 Round 2 | `prompts/round2-rebuttal.txt` | `Read round2-rebuttal.txt; state "Loaded Round 2 prompt"` |
+| Phase 6 事实 tiebreaker | `prompts/tiebreak.txt` | `Read tiebreak.txt; state "Loaded tiebreak prompt"` |
 
 **模板缺失处理**：如果文件不存在或 Read 失败，**停止该阶段**并报告错误；不允许"演"模板内容继续。
 
@@ -65,16 +82,21 @@ Phase 1 问题界定
 
 | Phase | 必读 phase 文件 | 强制 gate 语句 |
 |---|---|---|
-| 1 + 1.5 | `phases/01-question-framing.md` | `Read phases/01-question-framing.md; state "Loaded Phase 1+1.5"` |
-| 2 | `phases/02-research.md` + Agent X prompt | `Read phases/02-research.md; state "Loaded Phase 2"` |
+| 1 + 1.2 + 1.5 | `phases/01-question-framing.md` | `Read phases/01-question-framing.md; state "Loaded Phase 1+1.2+1.5"` |
+| 2 | `phases/02-research.md` + X1/X2 prompts | `Read phases/02-research.md; state "Loaded Phase 2"` |
 | 2.5 | `phases/03-reflection.md` + `references/source-quality.md` | `Read both; state "Loaded Phase 2.5 + Source Quality"` |
 | 3-5 + Audio | `phases/04-synthesis.md` | `Read phases/04-synthesis.md; state "Loaded Phase 3-5 + Audio spec"` |
 | 5.5 | `phases/05-citation.md` | `Read phases/05-citation.md; state "Loaded Phase 5.5"` |
-| 6 | `phases/06-debate.md` + Round 1/2 prompts | `Read phases/06-debate.md + round prompts; state "Loaded Phase 6"` |
+| 6 | `phases/06-debate.md` + Round 1 + 红队 prefix + Round 2 + tiebreak prompts | `Read phases/06-debate.md + round prompts; state "Loaded Phase 6"` |
 
 **为什么 SKILL.md 不能太薄**：以下硬性 invariants 必须保留在 SKILL.md 内（不光放 phase 文件）：
-- 异构搜索强制（Phase 2 必须 2 Claude + 1 cursor-agent）
+- 异构搜索强制（Phase 2 必须 ≥2 Claude + 2 个**不同族** cursor-agent；一只挂了另一只继续。**异构两路任何档位不可省**）
+- **澄清按需、不滥用**（Phase 1.2）：blocking unknown 按**合取门槛**认定（实质分叉可写出 + 推不出 + 无安全默认/条件化覆盖 + 猜错大返工），认定了必须问、不许默默猜；无则零打扰。未知入显式队列，每轮攒齐一次问（AskUserQuestion ≤4 问带选项）、最多 3 轮；**任何终止路径都把剩余未知转显式假设**（进 Brief「初始假设」）；答案冷冻进 Brief 注入下游；非交互/用户不答 → 显式假设 + metadata 披露，不阻塞
+- **Brief 冷冻后改靶必经用户**：任何阶段（Phase 2.5 前提破裂、Phase 6 辩论中 reviewer 的前提类建议）发现研究前提不成立，一律回问用户（按原题继续+标注风险 / 换靶重立 Brief，换靶限 1 次），不许自行改研究问题——两个 AI 一致也不算用户同意
+- **产物分档 ≠ 门禁分档**：产物可按消费者收敛（A/B/C 三档），但 Phase 1-6 的质量门禁一律照跑
+- **全流程不做多数投票**：发现阶段取并集，终审靠辩论，事实争议靠实查，判断归人类。**双评审也不投票**——主评审与红队意见相左时两条都进判断矩阵各自表态，谁也不因"另一位没提"被降权
 - Phase 6 多轮辩论 + 人类裁决强制（高质量 only，无 opt-out）
+- **红队是增量不是门禁**：Round 1 红队（grok，one-shot）挂了不阻断 Phase 6，标 metadata 即可；但**主评审与 tiebreaker 必须异族**这条是硬的，绝不允许同族自审自签
 - cursor-agent 不可用时自动降级 + banner（fallback contract）
 - 信源排除（不搜中文社区）
 - 每个 phase / prompt 进入前的强制 Read gate
@@ -88,23 +110,30 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 ├── SKILL.md                       # 本文件：索引 + 硬 invariants + Read gate
 ├── phases/
 │   ├── 01-question-framing.md     # Phase 1 + 1.5 Brief
-│   ├── 02-research.md             # Phase 2 三方异构搜索 + fallback + cursor-agent 调用
+│   ├── 02-research.md             # Phase 2 四路异构搜索 + 并集合并 + 降级矩阵 + 调用
 │   ├── 03-reflection.md           # Phase 2.5 Reflection Gate
 │   ├── 04-synthesis.md            # Phase 3-5 综合 + 报告 + Audio overview
 │   ├── 05-citation.md             # Phase 5.5 Citation Health Layer A + B
 │   └── 06-debate.md               # Phase 6 多轮辩论 + 人类裁决
 ├── references/
 │   ├── source-quality.md          # Source Quality Helper（被 Phase 2/2.5/5.5/6 共用）
-│   └── cursor-agent-invocation.md # cursor-agent 调度 4 硬点 + exit code（被 Phase 2/6 共用）
+│   └── cursor-agent-invocation.md # 调度 4 硬点 + 各族模型选择 + exit code（被 Phase 2/6 共用）
 ├── prompts/
 │   ├── brief-template.txt         # Phase 1.5 Brief 模板
-│   ├── agent-x.txt                # Phase 2 Agent X cursor-agent 模板
-│   ├── round1.txt                 # Phase 6 Round 1 终审 prompt
-│   └── round2-rebuttal.txt        # Phase 6 Round 2 rebuttal prompt
+│   ├── agent-x.txt                # Phase 2 Agent X1 模板（gpt 族·查 Claude 盲区）
+│   ├── agent-x2.txt               # Phase 2 Agent X2 模板（gemini 族·查 Claude+GPT 共同盲区）
+│   ├── round1.txt                 # Phase 6 Round 1 主评审 prompt（gpt 族·7 个常规评审角度）
+│   ├── round1-grok-prefix.txt     # Phase 6 Round 1 红队 prefix（grok 族·4 个红队角度，拼在 round1.txt 前）
+│   ├── round2-rebuttal.txt        # Phase 6 Round 2 rebuttal prompt
+│   └── tiebreak.txt               # Phase 6 事实核查 tiebreaker prompt（gemini 族，回避时 grok）
 ├── check-citations.sh             # Phase 5.5 Layer A 脚本
-├── run-cursor-agent.sh            # cursor-agent 子进程调用
-├── generate-audio.sh              # Audio overview 主脚本 (macOS `say`，支持 -o OUT)
-└── generate-audio-openai.sh       # Audio overview 可选 fallback (OpenAI TTS，支持 -o OUT)
+├── run-cursor-agent.sh            # cursor-agent 子进程调用（模型运行时自动解析，不钉版本；--resolve-only 供 doctor 复用）
+├── run-cursor-agent-async.sh      # 重活异步 job（nohup 脱离 600s 窗口；Phase 6 评审必走这里）
+├── doctor.sh                      # 异构链路自检+自修复（Phase 2 前必跑快检；--probe 加端到端探针）
+├── test-model-selection.sh        # 模型选择逻辑的可执行断言（Cursor 改命名时先跑这个）
+├── generate-audio.sh              # Audio 主脚本 (edge-tts/say；-o OUT；-t 传口语稿=完整音频模式)
+├── generate-audio-openai.sh       # Audio 可选 fallback (OpenAI TTS，支持 -o OUT)
+└── generate-pdf.sh                # PDF 生成 (Chrome headless 打印 step 4.5 的 HTML；无 Chrome 则 skipped)
 ```
 
 ---
@@ -119,7 +148,42 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 - "benchmark X"
 - "/survey X"
 
-**行为**：始终走全流程（Phase 1 → 1.5 → 2 → 2.5 → 3-5 → 5.5 → 6 多轮辩论 + 人类裁决 → Audio overview）。**无 flag**——/survey 是高质量调研 skill，每个阶段都是质量门禁。需要快速概览请用其他 skill 或直接问 Claude，不要用 /survey。
+**行为**：始终走全流程（Phase 1 → 1.2（必要时）→ 1.5 → 2 → 2.5 → 3-5 → 5.5 → 6 多轮辩论 + 人类裁决）。**质量门禁无 flag 可跳**——异构搜索、Reflection、Citation Health、异构终审都是硬约束。
+
+---
+
+## 输出分档（2026-07-31 加：按消费者定产物，不按心情简化）
+
+**质量门禁不分档，产物分档**。判据是**这份报告的消费者是谁**：
+
+| 档 | 判据 | 产物 | 典型场景 |
+|---|---|---|---|
+| **A 内部输入** | 产出直接喂给流程/设计/决策，**不给人阅读** | **仅 `.md`** | 调研结论要用来改某份设计文档/写 skill/定技术选型 |
+| **B 给人阅读** | 用户要看、要留档、要发同事 | md + HTML + PDF | 用户明确说"我要看"、或调研本身就是交付物 |
+| **C 要听/要演示** | 通勤听、给客户放、培训用 | 再加 audio×2 | 用户明说要音频/要演示 |
+
+**默认 B**。以下情况**直接走 A**（不必问用户）：
+- 用户在一个正在进行的开发/设计任务中途要求调研，且明说了调研用途是改某个文件/做某个决策
+- 调研主题是内部技术细节（如"某 API 怎么用""某算法怎么选"）
+
+**升档**：用户随时可说"这个转 HTML / 加音频"，几分钟内补出（HTML ~1min、PDF ~10s；**audio 最贵：概要 ~16min、完整 ~25min 纯合成**）。
+
+**A 档的报告写法也要收敛**：只写「结论 / 改哪里 / 证据账本 / 待验证」，不写逐子问题详述（目标 ≤80 行）。逐子问题的详细内容留在 subagent 的 Compressed Findings 里，需要时再展开。
+
+---
+
+## 提速要点（2026-07-31 加：实测 20 分钟 → 目标 ≤12 分钟）
+
+耗时结构实测：五路搜索 ~6min（并行但等最慢）、写报告 ~5min、Phase 6 终审 ~5min、中途协调 ~4min。
+
+1. **搜索路数按重要度分档**：
+   - **重大决策**（会改架构/宪法/对外承诺）：五路（Claude×3 + 异构×2）
+   - **常规调研**（选型、最佳实践）：四路（Claude×2 + 异构×2）——异构两路不可省，这是 skill 的立身之本
+   - **轻量核实**（某个事实/某个版本行为）：**不要用 /survey**，直接 WebSearch/WebFetch
+2. **Phase 6 终审在报告初稿落盘后立刻发起**，不等中途汇报——终审跑的这几分钟可以同时做别的事
+3. **减少中途汇报**：各路返回时**不逐路汇报**，全齐后一次性给用户「并集要点 + 分歧点」。逐路汇报本身要花 3-4 分钟
+4. **A 档报告不写详述**：见上方分档表
+5. **finalize 只做本档要求的产物**：A 档跳过步骤 4.5/4.6/5/6（HTML/PDF/audio），metadata 相应字段写 `skipped (档位 A)`
 
 ---
 
@@ -131,12 +195,14 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 
 ## 输出文件位置（finalize 时强制）
 
-- **最终报告 + HTML + audio → cwd**（用户启动 Claude Code 时所在目录）
+- **最终报告 + HTML + PDF + audio×2 → cwd**（用户启动 Claude Code 时所在目录）
   - 报告：`<主题>-完整报告.md`（主题由主 agent 从研究问题提取 8-15 字中文 / 英文短语）
   - HTML：`<主题>-完整报告.html`（交互式单页，含粘性目录 / Mermaid 图 / 置信度 pill，双击即开）
-  - Audio：`<主题>-音频概要.m4a`（macOS）或 `.mp3`（OpenAI TTS）
-  - 同名冲突：`.md` / `.html` / `.m4a` 三者同步累加 `-2` `-3` 后缀（不覆盖旧文件、不询问）
-- **中间产物 → /tmp**：agent prompt 文件（`/tmp/survey-prompt-<ts>.txt`）、subagent 输出（`/tmp/survey-output-<ts>.md`）、Round 1/2/3 prompt 与输出、Citation health JSON 全部留 /tmp，不污染 cwd
+  - PDF：`<主题>-完整报告.pdf`（Chrome headless 打印 HTML；无 Chrome → metadata 标 skipped，不阻断）
+  - Audio 概要：`<主题>-音频概要.m4a`（§推荐+风险摘要，约 10 分钟）
+  - Audio 完整：`<主题>-完整音频.m4a`（主 agent 全文口语稿改写后朗读，约 30-50 分钟）
+  - 同名冲突：`.md` / `.html` / `.pdf` / 两个 `.m4a` 五者同步累加 `-2` `-3` 后缀（不覆盖旧文件、不询问）
+- **中间产物 → /tmp**：agent prompt 文件（`/tmp/survey-{x1,x2,r1,r2,r3,tb}-prompt-<ts>.txt`，前缀不许重名否则并发互相覆盖）、对应输出、Citation health JSON 全部留 /tmp，不污染 cwd
 - 详细 finalize 流程见 `phases/04-synthesis.md` §Finalize 输出步骤
 
 ---
