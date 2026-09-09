@@ -167,8 +167,8 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X1+X2（默认）或降级后�
    - `PDF: pending`（占位，待步骤 4.6 替换）
    - `Audio(概要): pending` 与 `Audio(完整): pending`（占位，待步骤 6 替换）
 4.4. **终稿引用复核（Phase 6 若引入过新 URL）**：辩论 / tiebreaker 期间 incorporate 进正文的**新** URL 没经过 Phase 5.5（它跑在 Phase 6 之前）——终稿前用 `check-citations.sh` 对这些新增 URL 单独跑一遍 Layer A；dead 的按 `02-research.md` §并集的配套闸门处理（Drop + metadata 记录）。Phase 6 没引入新 URL 则跳过本步
-4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，直接按 `report-to-html` skill 的规范内联生成（**不重新触发 `/report-to-html` skill**）：
-   - 读取步骤 4 写好的 `.md` 文件
+4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，**委派给一个 sonnet 子 agent**（Agent 工具 `model=sonnet`，把 `.md` 路径 + 下列特性清单 + 输出路径交给它——这是产出型任务，几十 KB 的 HTML 让主模型亲手写既慢又贵，2026-09-10 改），按 `report-to-html` skill 的规范生成（**不重新触发 `/report-to-html` skill**）：
+   - 子 agent 读取步骤 4 写好的 `.md` 文件
    - 生成包含以下特性的单文件 HTML：
      - 顶部 sticky bar（标题 + 置信度 pill + 日期 + 打印按钮）
      - 左侧粘性目录（提取所有 `##` 章节，滚动高亮）
@@ -178,7 +178,7 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X1+X2（默认）或降级后�
      - `<details>` 折叠（调研 Metadata、辩论历史等次要内容）
      - 零构建：Tailwind + Alpine + Mermaid CDN，双击即开
    - 命名：`<cwd>/<topic>-完整报告.html`（与 `.md` 同 topic + 同编号后缀）
-   - 用 Write 工具落盘；用 `open "<html路径>"` 在浏览器打开验证
+   - 子 agent 用 Write 工具落盘；主 agent 用 `open "<html路径>"` 在浏览器打开验证（只看，不重写）
    - 成功：用 Edit 工具把 §metadata 中的 `HTML: pending` 替换为 `HTML: <html路径>`
    - 失败：Edit 为 `HTML: failed (<reason>)`；**不阻断主流程**，继续步骤 4.6
 4.6. **生成 PDF**：调 `bash ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/generate-pdf.sh -o "<cwd>/<topic>-完整报告.pdf" "<cwd>/<topic>-完整报告.html"`
@@ -187,8 +187,8 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X1+X2（默认）或降级后�
    - 成功：Edit §metadata `PDF: pending` → `PDF: <pdf路径>`；**不阻断主流程**，继续步骤 5
 5. **跑 audio（两条：概要 + 完整）**：
    - **概要**：`bash generate-audio.sh -o "<cwd>/<topic>-音频概要.m4a" "<cwd>/<topic>-完整报告.md"`（内置抽取 §推荐+风险，行为不变）
-   - **完整**：主 agent 先把报告**全文改写成口语稿**写到 `/tmp/survey-narration-full-<ts>.txt`（改写原则同 report-to-audio：逐章覆盖不遗漏结论；表格转成"要点串讲"；删 URL/metadata/辩论历史；数字转口语如 "45kV" → "四十五千伏"可保留阿拉伯数字但避免念符号；预期 6k-12k 字），再调 `bash generate-audio.sh -t "/tmp/survey-narration-full-<ts>.txt" -o "<cwd>/<topic>-完整音频.m4a" "<cwd>/<topic>-完整报告.md"`
-   - 为什么口语稿由主 agent 写而不是脚本 strip 全文：表格与链接直接念出来不可听；主 agent 在 finalize 时上下文里就有全文，改写成本最低
+   - **完整**：**委派 sonnet 子 agent**（Agent 工具 `model=sonnet`，给它 `.md` 路径与输出路径）把报告**全文改写成口语稿**写到 `/tmp/survey-narration-full-<ts>.txt`（改写原则同 report-to-audio：逐章覆盖不遗漏结论；表格转成"要点串讲"；删 URL/metadata/辩论历史；数字转口语如 "45kV" → "四十五千伏"可保留阿拉伯数字但避免念符号；预期 6k-12k 字），主 agent 再调 `bash generate-audio.sh -t "/tmp/survey-narration-full-<ts>.txt" -o "<cwd>/<topic>-完整音频.m4a" "<cwd>/<topic>-完整报告.md"`
+   - 为什么口语稿由模型改写而不是脚本 strip 全文：表格与链接直接念出来不可听。为什么交给 sonnet 而不是主 agent（2026-09-10 改）：这是 6k-12k 字的纯产出任务，主模型 xhigh 档写它只慢不好
    - 注意所有路径必须双引号
 6. **Edit 报告 v2**：用 Edit 工具把 §metadata 中的 `Audio(概要): pending` / `Audio(完整): pending` 分别替换为最终状态：
    - 成功：`Audio(概要): <路径>` / `Audio(完整): <路径>`

@@ -39,7 +39,7 @@ Brief 是冷冻的，改靶必须经用户——搜索发现前提错误时**不
 
 ## 追搜决策（主 agent 自决，Yes/No）
 
-- **Yes**：构造定向 prompt（仅针对缺失 / 单源 / vendor-only / 质量不达标的具体点），启动 1 个异构 agent（默认 `run-cursor-agent.sh … gemini`，同步）或 Claude agent 补搜。**不用 codex**——搜索路它比 cursor 慢，而追搜是串行门。最多 1 轮追搜。
+- **Yes**：构造定向 prompt（仅针对缺失 / 单源 / vendor-only / 质量不达标的具体点，**写明「最多 15 次查询」**——追搜由问题清单限定范围，不是开放检索，查询上限直接压耗时），启动 1 个异构 agent（默认 `run-cursor-agent.sh … gemini`，同步）或 Claude agent（Agent 工具 `model=sonnet`）补搜。**不用 codex**——搜索路它比 cursor 慢，而追搜是串行门。最多 1 轮追搜。
 - **No**：直接进入 Phase 3-5。
 - 决策必须显式写出（不能默默跳过）。
 

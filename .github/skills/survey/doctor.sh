@@ -396,8 +396,9 @@ if [ "$PROBE" -eq 1 ]; then
   if [ "$CURSOR_BROKEN" -eq 0 ]; then
     run_deadline 180 "$WORK/probe-gemini.log" bash "$CURSOR_RUNNER" "$WORK/probe-prompt.txt" "$WORK/probe-gemini.out" gemini &
     PID_GEMINI=$!
-    # grok 单独给 300s：该族基础延迟明显高（2026-08-15 实测 263s 跑完一个 2 问 prompt）
-    run_deadline 300 "$WORK/probe-grok.log"   bash "$CURSOR_RUNNER" "$WORK/probe-prompt.txt" "$WORK/probe-grok.out"   grok   &
+    # grok 单独给 300s：该族基础延迟明显高（2026-08-15 实测 263s 跑完一个 2 问 prompt）；
+    # 探针用 high 档（生产上红队也是 high，验的是同一档位）
+    SURVEY_CURSOR_EFFORT=high run_deadline 300 "$WORK/probe-grok.log" bash "$CURSOR_RUNNER" "$WORK/probe-prompt.txt" "$WORK/probe-grok.out" grok &
     PID_GROK=$!
   fi
   PROBE_PIDS="$PID_CODEX $PID_GEMINI $PID_GROK"

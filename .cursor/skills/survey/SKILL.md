@@ -161,7 +161,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 
 ## 提速要点（2026-07-31 加：实测 20 分钟 → 目标 ≤12 分钟）
 
-耗时结构（2026-09-09 更新）：四路搜索 5–8min（并行但等最慢——X1 codex high 档实测 302–491s）、写报告 ~5min、Phase 6 Round 1 4–15min（主评审 codex xhigh 实测 205s；关键路径通常是 grok 红队）、每追加一轮辩论 +4–10min、中途协调 ~4min。**快路径（Round 1 直接收敛）目标 ≤20min；慢路径不承诺**——旧账"Phase 6 ~5min / 总 12min"写于红队接入前，已作废。
+耗时结构（2026-09-10 更新）：四路搜索 5–8min（并行但等最慢——X1 codex high 档实测 302–491s）、写报告 ~5min、Phase 6 Round 1 ~4min 起（主评审 codex xhigh 实测 205s；grok 红队 high 档 + **软 deadline 900s**，主评审回来后最多再等 15 min，不再无上限等它）、每追加一轮辩论 +3–8min（R2/R3 降 high）、中途协调 ~4min。**快路径（Round 1 直接收敛）目标 ≤20min；慢路径不承诺**——旧账"Phase 6 ~5min / 总 12min"写于红队接入前，已作废。
 
 1. **搜索路数按重要度分档**：
    - **重大决策**（会改架构/宪法/对外承诺）：五路（Claude×3 + 异构×2）
@@ -171,6 +171,28 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 3. **减少中途汇报**：各路返回时**不逐路汇报**，全齐后一次性给用户「并集要点 + 分歧点」。逐路汇报本身要花 3-4 分钟
 4. **A 档报告不写详述**：见上方分档表
 5. **finalize 只做本档要求的产物**：A 档跳过步骤 4.5/4.6/5/6（HTML/PDF/audio），metadata 相应字段写 `skipped (档位 A)`
+6. **模型/档位路由（2026-09-10 加）**：主模型（及其全局 xhigh 档）**只做需要判断的活**；检索型与产出型任务一律下放。此前所有 Claude 子 agent 都继承主模型最高档去做搜索和转 HTML，是最大的 token 与时间浪费点
+
+   | 任务 | 执行者 | 模型 / 档位 | 为什么 |
+   |---|---|---|---|
+   | Phase 1 界定 / 澄清 / Brief | 主 agent | 主模型 | 判断 |
+   | Phase 2 Agent A / B（/ C） | Agent 工具子 agent | **sonnet** | 检索型 |
+   | Phase 2 X1 | codex | gpt · **high** | 实测 302–491s；xhigh 604s 撞窗口 |
+   | Phase 2 X2 | cursor gemini | 无档 | — |
+   | Phase 2.5 检查清单 | 主 agent | 主模型 | 判断 |
+   | Phase 2.5 追搜 | cursor gemini 同步 / sonnet 子 agent | prompt 限「最多 15 次查询」 | 定向补搜，串行门 |
+   | Phase 3–5 综合、写报告 | 主 agent | 主模型 | 核心判断 |
+   | Phase 5.5 Citation | 脚本 + 主 agent 抽样 | — | — |
+   | Phase 6 R1 主评审 | codex | **xhigh** | 全管线最难推理；实测 205s |
+   | Phase 6 R1 红队 | cursor grok | **high** + 软 deadline 900s | 增量意见，联网取证不靠推理深度 |
+   | Phase 6 R2 / R3 rebuttal | codex（复用 R1 id） | **high** | 只看非 accept 条目，范围窄 |
+   | Phase 6 判断矩阵 / 人类裁决 | 主 agent | 主模型 | 判断 |
+   | tiebreaker | cursor gemini | 无档 | 事实核查 |
+   | HTML（B/C 档） | **sonnet** 子 agent | 按 report-to-html 规范 | 产出型，几十 KB 输出 |
+   | PDF / 音频合成 | 脚本 | — | — |
+   | 完整音频口语稿（C 档） | **sonnet** 子 agent | 6k–12k 字 | 产出型 |
+
+   codex 与 cursor 的档位由脚本环境变量控制（`SURVEY_CODEX_EFFORT` / `SURVEY_CURSOR_EFFORT`），Claude 子 agent 由 Agent 工具 `model=` 参数控制。**不动的两处**：X1 与 R1 决定召回与评审深度，降档等于降质量。
 
 ---
 

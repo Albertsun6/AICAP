@@ -25,7 +25,7 @@
 | Phase 2 Agent X2 | `gemini` | `run-cursor-agent.sh … gemini` | 同步（实测 188–300s） | `prompts/agent-x2.txt` | `survey-x2-` |
 | Phase 2.5 追搜（如需） | `gemini`（或 Claude agent） | `run-cursor-agent.sh … gemini` | 同步 | 定向 prompt | `survey-x25-` |
 | Phase 6 Round 1/2/3 **主评审** | `codex`（替补链见下） | `run-agent-async.sh … codex 1800` | **异步**（xhigh 实测 205s，不赌同步窗口） | `prompts/round1.txt` / `round2-rebuttal.txt` | `survey-r1-` / `r2-` / `r3-` |
-| Phase 6 Round 1 **红队第二评审**（one-shot） | `grok` | `run-agent-async.sh … grok 1800` | **异步**（该族基础延迟高） | `prompts/round1.txt` + `prompts/round1-grok-prefix.txt` | `survey-r1g-` |
+| Phase 6 Round 1 **红队第二评审**（one-shot） | `grok` | `SURVEY_CURSOR_EFFORT=high run-agent-async.sh … grok 1800` | **异步 + 软 deadline 900s**（该族基础延迟高；主评审回来后最多再等 15 min） | `prompts/round1.txt` + `prompts/round1-grok-prefix.txt` | `survey-r1g-` |
 | Phase 6 事实 tiebreaker | `gemini`（回避/不可用时 `grok`） | `run-cursor-agent.sh … gemini\|grok` | 同步 | `prompts/tiebreak.txt` | `survey-tb-` |
 
 ### 三族分工与替补链
@@ -131,8 +131,10 @@ codex 无 `--list-models` 等价物。`run-codex.sh` 读 `codex debug models` �
 |---|---|---|
 | Phase 2 X1（codex） | **`SURVEY_CODEX_EFFORT=high`** | 检索型任务，耗时由搜索指令密度决定；实测 high 302–491s、xhigh 604s |
 | Phase 2 X2（gemini） | 无档 | gemini-3.1-pro 无 effort 后缀 |
-| Phase 6 主评审 R1–R3（codex） | 缺省 xhigh | 全管线最难的推理任务；实测 27KB prompt 205s，比 cursor-gpt 同任务 563s 快 2.7× |
-| Phase 6 红队（grok） | 缺省 xhigh | 同上；必须 async |
+| Phase 6 主评审 R1（codex） | 缺省 xhigh | 全管线最难的推理任务；实测 27KB prompt 205s，比 cursor-gpt 同任务 563s 快 2.7× |
+| Phase 6 R2/R3 rebuttal（codex） | **`SURVEY_CODEX_EFFORT=high`**（2026-09-10 改） | 只看矩阵里的非 accept 条目，范围窄；复用 R1 的 id |
+| Phase 6 红队（grok） | **`SURVEY_CURSOR_EFFORT=high`** + **软 deadline 900s**（2026-09-10 改） | 4 个红队角度靠联网取证不靠推理深度；xhigh 全文评审外推 10–20 min 曾是整个 survey 最慢的一段；必须 async，等待规则见 `phases/06-debate.md` §红队软 deadline |
+| Claude 子 agent（A/B/C 搜索、追搜、写 HTML、写口语稿） | Agent 工具 **`model=sonnet`** | 检索型与产出型任务；主模型（含其 xhigh 档）只留给综合、判断矩阵、裁决。路由总表见 SKILL.md §提速要点 |
 | tiebreaker | 无关 | 事实核查靠联网 |
 | doctor `--probe` | codex 用 low | 探针验的是"调得通"，档位无关，少烧订阅额度 |
 

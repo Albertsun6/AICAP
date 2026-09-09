@@ -22,11 +22,13 @@ Agent A（Claude，通用 + 主流）
   任务：搜索通用方案概览、官方文档、权威博客
   禁止：不看 Agent B/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
+  模型：Agent 工具 model=sonnet（检索型任务；主模型的档位留给综合与判断——见 SKILL.md §模型/档位路由）
 
 Agent B（Claude，技术 + 实现）
   任务：搜索开源项目实现、技术论文、GitHub 仓库
   禁止：不看 Agent A/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
+  模型：Agent 工具 model=sonnet（同上）
 
 Agent X1（codex · family=gpt，第一异构 lens）— 替换原 Claude Agent C
   调用：SURVEY_CODEX_EFFORT=high SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
@@ -80,7 +82,7 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 > 这条是异构评审（Gemini lens, 2026-07-21）逼出来的：它指出原来的并集规则加上"dead URL 只加 caveat"，等于给幻觉发了进正文的通行证。
 
 **并发协调**（主 Claude 必读）：
-- Agent A、B 是 Claude subagent（用 Agent/Task 工具启动）
+- Agent A、B 是 Claude subagent（用 Agent 工具启动，**`model=sonnet`**——不要让它们继承主模型的 xhigh 档去做检索）
 - Agent X1 是 codex 异步 job（`run-agent-async.sh start … codex 900`），X2 是 cursor-agent 同步 Bash（`run-cursor-agent.sh … gemini`）——两条通道、两个配额池
 - 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的同步 Bash；随后后台 `wait` X1。墙钟由最慢者决定（X1 约 5–8 min）
 - **两个 Bash 调用必须用不同的 prompt / output 文件名**（`survey-x1-*` / `survey-x2-*`），否则互相覆盖
@@ -127,7 +129,7 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 
 ### 两只都不可用时：退回 3 Claude
 
-两条通道都不可用（codex 与 cursor-agent 均未安装/未登录/额度见底）或两次调用都失败 / 超时时，**自动**退回到 3 Claude 经典并行——用户无法主动选择此路径，仅作为 fallback：
+两条通道都不可用（codex 与 cursor-agent 均未安装/未登录/额度见底）或两次调用都失败 / 超时时，**自动**退回到 3 Claude 经典并行——用户无法主动选择此路径，仅作为 fallback（三路同样用 Agent 工具 `model=sonnet`）：
 
 ```
 Agent A（通用 + 主流）

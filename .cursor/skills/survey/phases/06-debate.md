@@ -19,7 +19,7 @@
 
 ## 工作流（线性 8 步）
 
-1. **Round 1（双评审并发）**：主评审（`gpt` 族）+ 红队第二评审（`grok` 族，one-shot）**同一回合各发一个 async job** → 两份 verdict
+1. **Round 1（双评审并发）**：主评审（`gpt` 族，codex）+ 红队第二评审（`grok` 族，one-shot）**同一回合各发一个 async job** → 两份 verdict（红队有 **900s 软 deadline**，迟到不阻断，见 §Round 1）
    - 两份都 Concur → 写最小 metadata，结束
    - 任一 Refine / Dissent → 主 agent 对**两份条目的并集**做 4 档判断矩阵
 2. **收敛检查 1**：全 accept → finalize；否则进 Round 2
@@ -46,10 +46,18 @@
 |---|---|---|
 | family / 通道 | `codex`（GPT 族；替补链 `codex → grok → gemini`） | `grok`（cursor；主评审已降到 grok 时**取消本路**） |
 | 文件前缀 | `survey-r1-` | `survey-r1g-` |
-| 调用方式 | `SURVEY_REQUIRE_SECTIONS='Verdict' bash run-agent-async.sh start <prompt> <out> codex 1800`（缺省 xhigh） | `… start <prompt> <out> grok 1800` |
+| 调用方式 | `SURVEY_REQUIRE_SECTIONS='Verdict' bash run-agent-async.sh start <prompt> <out> codex 1800`（缺省 xhigh） | `SURVEY_CURSOR_EFFORT=high SURVEY_REQUIRE_SECTIONS='Verdict' bash run-agent-async.sh start <prompt> <out> grok 1800`（**high 档**：它的 4 个角度靠联网取证不靠推理深度） |
+| 等待规则 | 先 `wait` 它（codex xhigh 实测 ~3.5 min） | **软 deadline 900s**：主评审 DONE 后最多再等 15 min，到点未回先做单方矩阵，见下 |
 | 失败后果 | 按替补链换族**重试 1 次**；替补也失败才跳过整个 Phase 6 + banner | **不阻断**，§metadata 标 `red-team: unavailable (<原因>)` |
 
-- **两个 job 必须同一回合发出**——串行会白多花 8-15 分钟（两边都是 xhigh 全文评审）
+**红队软 deadline（2026-09-10 加：红队是增量意见，不该占关键路径——此前它 xhigh 全文评审外推 10–20 min，是整个 survey 最慢的一段）**：
+1. 两 job 同回合发出后，**先 `wait` 主评审**
+2. 主评审 DONE 后，红队**最多再等 900s**：`wait <job-dir> 540` → 仍 RUNNING 再 `wait <job-dir> 360`
+3. 到点仍 RUNNING → 只用主评审那份 verdict 做判断矩阵，§metadata 先标 `red-team: late (soft-deadline 900s)`；**不杀 job**（它自己的 deadline 1800s 会收尾）
+4. 之后每次进入下一步**之前**（发 Round 2 / 发 Round 3 / 第 7 步分类 / finalize）先 `status` 看一眼红队：DONE → 其非 Concur 条目以 `[R1-红队·迟到]` 并入当前矩阵按四档表态（并集规则本就允许追加；红队条目不进 rebuttal，非 accept 直接挂到第 7 步——与准时到达时的流向完全一样）；到 finalize 仍未 DONE → 改标 `red-team: unavailable (soft-deadline)`
+5. 迟到并入的条目照记进「红队增量」字段，别因为迟到就不记账
+
+- **两个 job 必须同一回合发出**——串行会白多花 5-15 分钟
 - **Round 1-3 这类全文评审必须走异步 job**：codex xhigh 实测 27KB prompt 205s（比 cursor-gpt 同任务 563s 快 2.7×），但更长的报告会触发更多搜索，不赌 570s 同步窗口；grok 族基础延迟高（263s 玩具 prompt 实测），更没有走同步的余地（见 helper §异步 job）
 - **注入内容（两路相同）**：Brief + Source Quality 评分汇总（见 `../references/source-quality.md`）+ Phase 2.5 Reflection 结果（见 `../phases/03-reflection.md`）+ Phase 5.5 Citation Health（见 `../phases/05-citation.md`）
 - 具体调用方式（exit code / timeout / prompt 文件命名规范 / 三族分工与替补链）见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)，**进入本段前必须 Read helper**
@@ -98,7 +106,7 @@
 
 仅当 Round 1 后存在**非 accept** 条目（partial / defer / refute）时触发。
 
-**调度**：Round 2 调用主评审（codex；`SURVEY_CODEX_MODEL=<R1 实际 id>` 复用同一评审者，同样走 async）；失败时**提前进入人类裁决**（带 metadata banner 标注"AI 辩论未跑满 3 轮"）。注入内容：Round 1 矩阵（仅非 accept 条目）+ 主 agent 论据。
+**调度**：Round 2 调用主评审（codex；`SURVEY_CODEX_MODEL=<R1 实际 id>` 复用同一评审者，**`SURVEY_CODEX_EFFORT=high`**——反驳轮只看矩阵里的非 accept 条目，范围窄，high 够用，R1 才需要 xhigh；同样走 async）；失败时**提前进入人类裁决**（带 metadata banner 标注"AI 辩论未跑满 3 轮"）。注入内容：Round 1 矩阵（仅非 accept 条目）+ 主 agent 论据。
 
 **Round 2 Rebuttal prompt 模板路径**：`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/prompts/round2-rebuttal.txt`（调度同 Round 1，见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)）。
 
@@ -125,7 +133,7 @@
 
 仅当 Round 2 后仍有分歧条目时触发。
 
-**调度**：Round 3 调用主评审（codex，同 Round 2 复用 R1 的 id）；失败时**提前进入人类裁决**（同 Round 2 处理）。注入内容：Round 2 后**仍分歧**的条目 + 主 agent 二轮论据。调度方式见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)。
+**调度**：Round 3 调用主评审（codex，同 Round 2 复用 R1 的 id、`SURVEY_CODEX_EFFORT=high`）；失败时**提前进入人类裁决**（同 Round 2 处理）。注入内容：Round 2 后**仍分歧**的条目 + 主 agent 二轮论据。调度方式见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)。
 
 **Round 3 主评审 prompt 与 Round 2 同结构**，但 prefix 加一句：
 
@@ -232,7 +240,7 @@
   ```
 
   **不要以为 Phase 2 的 banner 已经涵盖**——Phase 2 两只眼都成功时**根本没写 banner**，此时 Phase 6 静默跳过会让用户误以为报告过了终审。这条是异构评审（Gemini lens, 2026-07-21）指出的静默失败。
-- **Round 1 红队（grok）失败** → **不阻断**：照常用主评审那份 verdict 走判断矩阵，§metadata 标 `red-team: unavailable (<原因>)`。红队是增量意见不是质量门禁，**绝不**因为它挂了就跳过 Phase 6，也**绝不**换族顶替（换成 codex/gpt 就成了主评审自己审自己，换成 gemini 又和 tiebreaker 撞族）
+- **Round 1 红队（grok）失败或软 deadline 内未回** → **不阻断**：照常用主评审那份 verdict 走判断矩阵，§metadata 标 `red-team: unavailable (<原因>)` / `red-team: late (soft-deadline 900s)`（迟到的在后续步骤前并入，见 §Round 1 软 deadline）。红队是增量意见不是质量门禁，**绝不**因为它挂了就跳过 Phase 6，也**绝不**换族顶替（换成 codex/gpt 就成了主评审自己审自己，换成 gemini 又和 tiebreaker 撞族）
 - 主评审 Round 2 / Round 3 调用失败 → 提前结束辩论，但**仍先走 tiebreaker**（主评审挂了不代表裁判族挂了；事实性分歧该查还得查），之后剩余分歧再进人类裁决（带 metadata banner 标注"AI 辩论未跑满 3 轮"）
 - **tiebreaker 调用失败** → 先按选族规则换族重试 1 次（gemini ↔ grok）；仍失败或无可用异族 → 事实性分歧原样转人类裁决 + §metadata 标 `tiebreaker: unavailable (<原因>)`；**绝不**改用与主评审同族的模型顶替（同族自审没有增量，等于给回声室盖章）
 - **Phase 2 的 X1(codex) 挂但 X2(gemini) 活着**（或 doctor 已判 codex 通道死）→ Round 1-3 主评审按替补链改用 **grok** 族；此时红队取消（同族），tiebreaker 用 gemini。**只有 grok 也不可用时**主评审才落到 gemini，那种情况下 tiebreaker 才真的无异族可用、事实性分歧全部转人类裁决。注意 X1 挂是 codex 通道的事，与 Cursor 通道无关——不要因为 X1 挂就假定 grok/gemini 也挂
