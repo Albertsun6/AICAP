@@ -78,7 +78,7 @@ L3 不是探针能替代的——架构是否"合理"、目录是否"该这么�
 | L1 | `phases/L1-static-gates.md` + `rubric/thresholds.md` | `Read both; state "Loaded L1 + thresholds"` |
 | L2 | `phases/L2-trends.md` | `Read it; state "Loaded L2"` |
 | L3 | `phases/L3-semantic.md` + `prompts/L3-semantic-review.txt` | `Read both; state "Loaded L3 + semantic prompt"` |
-| L3 异构终审 | `prompts/heterogeneous-final.txt` + `run-cursor-agent.sh` | `Read both; state "Loaded heterogeneous review"` |
+| L3 异构终审 | `prompts/heterogeneous-final.txt` + survey 的 `references/cursor-agent-invocation.md`（`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/`） | `Read both; state "Loaded heterogeneous review"` |
 | 99 综合 | `phases/99-synthesize-and-finalize.md` + `rubric/dimensions.md` + `report-template/report-template.md` | `Read all; state "Loaded synthesis"` |
 
 **文件缺失处理**：Read 失败 → 停止该阶段并报告；不允许"演"内容继续。
@@ -105,7 +105,7 @@ L3 不是探针能替代的——架构是否"合理"、目录是否"该这么�
 
 1. **四层全覆盖**：L0/L1/L2/L3 缺一不可；某层探针全 skip 也要在报告里显式标"该层未自动覆盖 + 安装指令"，不得静默跳过。
 2. **可执行优先**：能跑工具量化的维度，报告里必须引 `probes.json` 的客观数字，不得只写 LLM 主观判断。
-3. **L3 异构终审强制**：架构/解耦/目录这类软结论必须经 cursor-agent 跨模型评审 + 主 agent 判断矩阵 + 剩余分歧人类裁决。cursor-agent 不可用 → 报告顶部 banner 标注"软维度未经异构审查，高风险结论需人工复核"，**绝不**因此让主流程失败。
+3. **L3 异构终审强制**：架构/解耦/目录这类软结论必须经外部 GPT 族 lens（复用 survey 的 `run-codex.sh` / `run-agent-async.sh`，替补 grok）跨模型评审 + 主 agent 判断矩阵 + 剩余分歧人类裁决。外部 lens 不可用 → 报告顶部 banner 标注"软维度未经异构审查，高风险结论需人工复核"，**绝不**因此让主流程失败。**不复制 runner 进本 skill**——上一份复制品烂成了零超时保护的分叉。
 4. **固化闭环**：每条 actionable 发现给出"如何变成自执行规则"（lint/fitness/ADR），否则视为未完成。
 5. **fail-closed 于安全**：探针发现 committed secret / 依赖漏洞 / 无分支保护 等，标红并要求人工确认，不静默放行。
 
@@ -134,9 +134,9 @@ project-health/
 │   └── heterogeneous-final.txt      # cursor-agent 异构终审 prompt（Read gate）
 ├── report-template/
 │   └── report-template.md           # 健康度报告模板
-├── eval/
-│   └── evaluations.md               # eval-first：≥3 场景 + 期望行为
-└── run-cursor-agent.sh              # cursor-agent 调用 helper（同 survey）
+└── eval/
+    └── evaluations.md               # eval-first：≥3 场景 + 期望行为
+（异构评审 runner 不在本目录：直接用 survey 的 run-codex.sh / run-agent-async.sh / doctor.sh）
 ```
 
 ---

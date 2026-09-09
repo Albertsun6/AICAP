@@ -7,6 +7,10 @@
 #   [reviewer] = 2026-07-21 两个异构 reviewer(gpt-5.6-sol-max / -xhigh) 给出的反例
 #   [regress]  = 实际踩过的 bug，改规则时别再踩回去
 #
+# 2026-09-09：gpt 族在 cursor 通道退役（改走 run-codex.sh，见 test-run-codex.sh）。
+# pick_strongest 的 gpt 分支保留用于下面的**通用规则**断言（排除项/版本比较/档位偏好都是
+# 族无关逻辑，用 gpt fixture 测最省事）；运行时用例改用 gemini/grok，并新增"gpt → 64 指路"。
+#
 # 跑：bash test-model-selection.sh   （全绿 exit 0；live 那几条需要已登录的 cursor-agent）
 
 set -uo pipefail
@@ -16,8 +20,7 @@ eval "$(awk '/^pick_strongest\(\) \{/,/^\}/' "$SCRIPT")"
 
 fail=0
 # 各族 FALLBACK_MODEL 常量**从实现里读出来**，不在测试里抄第二份——抄了就会出现
-# "改了实现忘了改测试"的假 FAIL（2026-08-15 grok fallback 从 4.5 升 4.6 时就是这样）。
-# 测试要守的是"回落时用的是本族 fallback"，不是"那个常量长什么样"。
+# "改了实现忘了改测试"的假 FAIL。测试要守的是"回落时用的是本族 fallback"，不是"那个常量长什么样"。
 fallback_of() { # <family> -> 该族 FALLBACK_MODEL 的当前值
   awk -v fam="$1" '$0 ~ "^  "fam"\\)" {
     if (match($0, /FALLBACK_MODEL="[^"]+"/)) {
@@ -25,8 +28,8 @@ fallback_of() { # <family> -> 该族 FALLBACK_MODEL 的当前值
     }
   }' "$SCRIPT"
 }
-FB_GPT=$(fallback_of gpt); FB_GROK=$(fallback_of grok)
-[ -n "$FB_GPT" ] && [ -n "$FB_GROK" ] || { echo "FAIL  读不到实现里的 FALLBACK_MODEL 常量（case 分支格式变了？）"; fail=1; }
+FB_GEMINI=$(fallback_of gemini); FB_GROK=$(fallback_of grok)
+[ -n "$FB_GEMINI" ] && [ -n "$FB_GROK" ] || { echo "FAIL  读不到实现里的 FALLBACK_MODEL 常量（case 分支格式变了？）"; fail=1; }
 
 assert() { # <family> <name> <expected> <input>
   got=$(printf '%s\n' "$4" | pick_strongest "$1")
@@ -34,11 +37,9 @@ assert() { # <family> <name> <expected> <input>
   else echo "FAIL  [$1] $2: expected '$3' got '$got'"; fail=1; fi
 }
 
-echo "=== live：三族各自解析 ==="
-# [regress] 断言必须**版本无关**：这里原来钉死具体 id（gpt-5.6-sol-xhigh / gemini-3.1-pro /
-# cursor-grok-4.5-high），Cursor 上新版本的当天就变成假 FAIL——2026-08-15 grok 升到 4.6 后
-# 本段红了，而解析逻辑完全正常。真正要守的不变量只有三条：属于本族、是通用推理形态、
-# 落在高 effort 档。具体版本号交给 pick_strongest 每次运行时自己跟。
+echo "=== live：cursor 两族各自解析 ==="
+# [regress] 断言必须**版本无关**：钉死具体 id 会在 Cursor 上新版本当天变成假 FAIL。
+# 真正要守的不变量只有三条：属于本族、是通用推理形态、落在高 effort 档。
 LIVE=$(cursor-agent --list-models 2>/dev/null)
 live_assert() { # <family> <ERE> <人话说明>
   got=$(printf '%s\n' "$LIVE" | pick_strongest "$1")
@@ -49,17 +50,16 @@ live_assert() { # <family> <ERE> <人话说明>
     echo "FAIL live $1: '$got' 不满足「$3」（$2）"; fail=1
   fi
 }
-live_assert gpt    '^gpt-[0-9].*-(x|extra-)?high$'      'gpt 族 + high/xhigh 档'
 live_assert gemini '^gemini-[0-9].*pro(-(x)?high)?$'    'gemini 族 + pro 线（非 flash）'
 live_assert grok   '^cursor-grok-[0-9].*-(x)?high$'     'grok 族 + high/xhigh 档'
 
-echo "=== 全族通排 ==="
+echo "=== 全族通排（用 gpt fixture 测族无关规则）==="
 assert gpt "排除 -fast" "gpt-5.6-sol-xhigh" 'gpt-5.6-sol-xhigh-fast - X
 gpt-5.6-sol-xhigh - X'
 assert gpt "排除 -codex" "gpt-5.5-high" 'gpt-5.9-codex-xhigh - X
 gpt-5.5-high - X'
 assert gpt "排除 -mini/-nano" "gpt-5.4-high" 'gpt-5.8-mini-xhigh - X
-gpt-5.8-nano-xhigh - X
+gpt-5.7-nano-high - X
 gpt-5.4-high - X'
 assert gpt "排除 none/low/medium" "gpt-5.2-high" 'gpt-5.9-sol-medium - X
 gpt-5.9-sol-low - X
@@ -69,18 +69,14 @@ assert gpt "auto 不入选" "gpt-5.6-sol-xhigh" 'auto - Auto (default)
 gpt-5.6-sol-xhigh - X'
 assert gpt "[reviewer] -lite 排除（版本更高也不要）" "gpt-5.6-sol-xhigh" 'gpt-6-lite-xhigh - X
 gpt-5.6-sol-xhigh - X'
-
-echo "=== -max 排除（实测 690s > 调用方 600s 硬上限）==="
 assert gpt "max 不入选，退而选 xhigh" "gpt-5.6-sol-xhigh" 'gpt-5.6-sol-max - X
 gpt-5.6-sol-xhigh - X'
 assert gpt "只有 max 时选不出来（触发 fallback）" "" 'gpt-5.6-sol-max - X
 gpt-5.6-sol-max-fast - X'
-
-echo "=== [reviewer] 未知形态一律拒绝 ==="
 assert gpt "gpt-6-preview 不得击败 gpt-5.6-terra-xhigh" "gpt-5.6-terra-xhigh" 'gpt-6-preview - X
 gpt-5.6-terra-xhigh - X'
 assert gpt "gpt-6-realtime / -audio 拒绝" "gpt-5.6-sol-xhigh" 'gpt-6-realtime - X
-gpt-6-audio-preview - X
+gpt-6-audio-xhigh - X
 gpt-5.6-sol-xhigh - X'
 assert gpt "裸 gpt-7（默认只是 medium 档）不得入选" "gpt-5.6-sol-xhigh" 'gpt-7 - X
 gpt-5.6-sol-xhigh - X'
@@ -171,12 +167,13 @@ MODE="$1"
 if [ "\$1" = "--list-models" ]; then
   case "$1" in
     hang)         sleep 300 ;;
-    partial-fail) echo "Available models"; echo "gpt-9.9-evil-xhigh - Evil"; exit 7 ;;
+    partial-fail) echo "Available models"; echo "gemini-9.9-evil-pro - Evil"; exit 7 ;;
     auth-fail)    echo "Error: Authentication required. Please run 'agent login' first, or set CURSOR_API_KEY environment variable." >&2
                   exit 1 ;;
     ok|quota-fail) echo "Available models"
-                  echo "gpt-5.6-sol-xhigh - Sol"
-                  echo "gemini-3.1-pro - Gemini" ;;
+                  echo "gemini-3.1-pro - Gemini"
+                  echo "gemini-3.1-pro-max - Gemini Max"
+                  echo "cursor-grok-4.6-high - Grok" ;;
   esac
   exit 0
 fi
@@ -186,7 +183,7 @@ if [ "\$MODE" = "quota-fail" ]; then
   echo "ActionRequiredError: You've hit your usage limit You've saved \$NNN on API model usage this month with <plan>. Switch to a different model or set a Spend Limit to continue with this model. Your usage limits will reset when your monthly cycle ends on 1/31/2099." >&2
   exit 1
 fi
-while [ \$# -gt 0 ]; do [ "\$1" = "--model" ] && echo "USED_MODEL=\$2"; shift; done
+while [ \$# -gt 0 ]; do [ "\$1" = "--model" ] && echo "USED_MODEL=\$2"; [ "\$1" = "--workspace" ] && echo "USED_WORKSPACE=\$2"; shift; done
 EOF
   chmod +x "$STUB/cursor-agent"
 }
@@ -195,66 +192,62 @@ check() { # <name> <expect-substr> <actual>
   case "$3" in *"$2"*) echo "PASS  $1";; *) echo "FAIL  $1: 期望含 '$2'，实得: $3"; fail=1;; esac
 }
 
+echo "=== 运行时 0：gpt 族已退役 -> exit 64 并指路 codex；族参数必须显式给 ==="
+make_stub ok
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o0.txt" gpt 2>&1); RC=$?
+[ "$RC" = "64" ] && echo "PASS  gpt -> exit 64" || { echo "FAIL  gpt 应 exit 64，实得 $RC"; fail=1; }
+check "gpt 报错指向 run-codex.sh" "run-codex.sh" "$OUT"
+PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o0b.txt" >/dev/null 2>&1
+[ "$?" = "64" ] && echo "PASS  缺族参数 -> exit 64（没有默认族）" || { echo "FAIL  缺族参数应 exit 64"; fail=1; }
+PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gpt >/dev/null 2>&1
+[ "$?" = "64" ] && echo "PASS  --resolve-only gpt -> exit 64" || { echo "FAIL  --resolve-only gpt 应 exit 64"; fail=1; }
+
 echo "=== 运行时 1：--list-models 挂起 -> deadline -> fallback ==="
 make_stub hang
 T0=$(date +%s)
-OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o1.txt" 2>&1)
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o1.txt" gemini 2>&1)
 EL=$(( $(date +%s) - T0 ))
 check "挂起时打 WARN" "取模型列表失败或超时" "$OUT"
-check "挂起时回落 fallback" "MODEL: $FB_GPT" "$OUT"
-check "实际调用用了 fallback" "USED_MODEL=$FB_GPT" "$(cat "$WORK/o1.txt")"
+check "挂起时回落 fallback" "MODEL: $FB_GEMINI" "$OUT"
+check "实际调用用了 fallback" "USED_MODEL=$FB_GEMINI" "$(cat "$WORK/o1.txt")"
 if [ "$EL" -ge 18 ] && [ "$EL" -le 32 ]; then echo "PASS  deadline 生效（${EL}s ≈ 20s）"; else echo "FAIL  deadline 未按 20s 生效: ${EL}s"; fail=1; fi
 
 echo "=== 运行时 2：列表非零退出但有部分输出 -> 必须丢弃 ==="
 make_stub partial-fail
-OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o2.txt" 2>&1)
-check "不采用残缺列表里的 gpt-9.9-evil" "MODEL: $FB_GPT" "$OUT"
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o2.txt" gemini 2>&1)
+check "不采用残缺列表里的 gemini-9.9-evil" "MODEL: $FB_GEMINI" "$OUT"
 case "$OUT" in *evil*) echo "FAIL  残缺列表被采用了"; fail=1;; *) echo "PASS  残缺列表已丢弃";; esac
 
 echo "=== 运行时 2.5：认证失效 -> fail-closed exit 67，不许洗成超时 ==="
-# 2026-08-30 的真实故障：凭据过期时旧版把 auth 失败与 deadline 超时都 return 1，
-# 于是打出"取模型列表失败或超时（>20s）"并静默回落——doctor 据此报 HEALTHY，
-# 真调用再挂。这条断言就是钉死那个洞：auth 必须自成一档，且绝不回落
 make_stub auth-fail
-OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o25.txt" 2>&1); RC=$?
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o25.txt" gemini 2>&1); RC=$?
 if [ "$RC" -eq 67 ]; then echo "PASS  认证失效 -> exit 67"; else echo "FAIL  认证失效应 exit 67，实得 $RC"; fail=1; fi
 check "认证失效打出可执行的修复指引" "cursor-agent login" "$OUT"
 check "认证失效透传 CLI 原始 stderr" "Authentication required" "$OUT"
 case "$OUT" in *取模型列表失败或超时*) echo "FAIL  auth 失败被洗成了超时文案"; fail=1;; *) echo "PASS  未把 auth 失败洗成超时";; esac
-case "$OUT" in *"MODEL: $FB_GPT"*) echo "FAIL  认证失效仍回落到 fallback（应 fail-closed）"; fail=1;; *) echo "PASS  认证失效未静默回落";; esac
-# --resolve-only 同样必须 fail-closed：它 exit 0 正是 doctor 假绿灯的上游
-OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gpt 2>&1); RC=$?
+case "$OUT" in *"MODEL: $FB_GEMINI"*) echo "FAIL  认证失效仍回落到 fallback（应 fail-closed）"; fail=1;; *) echo "PASS  认证失效未静默回落";; esac
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gemini 2>&1); RC=$?
 if [ "$RC" -eq 67 ]; then echo "PASS  --resolve-only 认证失效也 exit 67"; else echo "FAIL  --resolve-only 应 exit 67，实得 $RC"; fail=1; fi
 
 echo "=== 运行时 2.6：额度耗尽 -> exit 68 + 写状态文件，且不得与认证混淆 ==="
-# 2026-08-30 实测的第二个假绿灯：Other Models 池见底时 --list-models 仍 exit 0 返回
-# 完整列表，doctor 的 L1-L3 全绿，要到 Phase 2 真调用才炸。所以额度必须由真调用
-# 分类出来并留痕，且**不能**被 auth 的宽正则抢走（那会把用户指向"去登录"，无用）
 QSTATE_DIR="$WORK/state"
 rm -rf "$QSTATE_DIR"
 make_stub quota-fail
-OUT=$(SURVEY_STATE_DIR="$QSTATE_DIR" PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o26.txt" 2>&1); RC=$?
+OUT=$(SURVEY_STATE_DIR="$QSTATE_DIR" PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o26.txt" gemini 2>&1); RC=$?
 if [ "$RC" -eq 68 ]; then echo "PASS  额度耗尽 -> exit 68"; else echo "FAIL  额度耗尽应 exit 68，实得 $RC"; fail=1; fi
 check "额度耗尽说清是额度问题" "撞到 Cursor 月度额度上限" "$OUT"
 check "额度耗尽给出三条出路" "on-demand" "$OUT"
 case "$OUT" in *认证失效*) echo "FAIL  额度被误分类成认证失效"; fail=1;; *) echo "PASS  未与认证混淆";; esac
-# 关键回归：--list-models 成功过（模型是实时解析出来的，不是 fallback），
-# 证明"快检解析模型列表"这条路根本抓不到额度——doctor 必须另立一层
-check "额度耗尽时模型仍能实时解析（证明 list-models 抓不到额度）" "MODEL: gpt-5.6-sol-xhigh" "$OUT"
-case "$OUT" in *"实时解析失败"*) echo "FAIL  额度耗尽被误报成解析失败"; fail=1;; *) echo "PASS  未误报成解析失败";; esac
-# 留痕必须落盘，且带上族名与重置日，否则 doctor 快检读不到
+check "额度耗尽时模型仍能实时解析（证明 list-models 抓不到额度）" "MODEL: gemini-3.1-pro" "$OUT"
 if [ -s "$QSTATE_DIR/quota-state" ]; then
   echo "PASS  额度留痕已写入状态文件"
-  check "留痕含族名" "gpt" "$(cat "$QSTATE_DIR/quota-state")"
+  check "留痕含族名" "gemini" "$(cat "$QSTATE_DIR/quota-state")"
   check "留痕含重置日" "1/31/2099" "$(cat "$QSTATE_DIR/quota-state")"
 else
   echo "FAIL  额度留痕未写入 $QSTATE_DIR/quota-state"; fail=1
 fi
-
-# 成功调用必须清掉该族留痕：额度按月重置，重置后第一次成功调用就该让 doctor 立刻
-# 恢复绿灯。没有这条，doctor 会拿最多 24h 前的陈旧负面证据继续误报 DEGRADED
 make_stub ok
-OUT=$(SURVEY_STATE_DIR="$QSTATE_DIR" PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o27.txt" 2>&1); RC=$?
+OUT=$(SURVEY_STATE_DIR="$QSTATE_DIR" PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o27.txt" gemini 2>&1); RC=$?
 if [ "$RC" -eq 0 ]; then echo "PASS  额度恢复后调用成功"; else echo "FAIL  恢复后应 exit 0，实得 $RC"; fail=1; fi
 if [ -s "$QSTATE_DIR/quota-state" ]; then
   echo "FAIL  成功调用后留痕仍在（doctor 会继续误报）：$(cat "$QSTATE_DIR/quota-state")"; fail=1
@@ -262,52 +255,65 @@ else
   echo "PASS  成功调用清掉了该族留痕"
 fi
 
-echo "=== 运行时 3：family 参数 ==="
+echo "=== 运行时 3：family 参数 + 空 workspace 隔离 ==="
 make_stub ok
 OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o3.txt" gemini 2>&1)
 check "family=gemini 选 gemini" "MODEL: gemini-3.1-pro (family=gemini)" "$OUT"
-OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o4.txt" 2>&1)
-check "缺省 family=gpt" "MODEL: gpt-5.6-sol-xhigh (family=gpt)" "$OUT"
+check "调用带 --workspace（空目录，不把 cwd 的 rules/AGENTS.md 注入 lens）" "USED_WORKSPACE=" "$(cat "$WORK/o3.txt")"
 OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o5.txt" grok 2>&1)
-check "该族无候选 -> 用该族 fallback" "MODEL: $FB_GROK (family=grok)" "$OUT"
+check "family=grok 选 grok" "MODEL: cursor-grok-4.6-high (family=grok)" "$OUT"
 PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o6.txt" llama >/dev/null 2>&1
 [ "$?" = "64" ] && echo "PASS  非法 family -> exit 64" || { echo "FAIL  非法 family 未 exit 64"; fail=1; }
 
-echo "=== 运行时 4：[reviewer] 跨族钉值必须被硬拦（否则 tiebreaker 变 GPT 自审）==="
-OUT=$(SURVEY_CURSOR_MODEL='gpt-5.6-sol-xhigh' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/ox.txt" gemini 2>&1)
-check "gpt 钉值带到 gemini 调用 -> 被拒" "不属于 family=gemini" "$OUT"
+echo "=== 运行时 3.5：幽灵 id fail-closed（gemini 的 fallback 就是它要保护的单点）==="
+cat > "$STUB/cursor-agent" <<'EOF'
+#!/usr/bin/env bash
+if [ "$1" = "--list-models" ]; then echo "Available models"; echo "gemini-4.0-flash-high - only flash left"; exit 0; fi
+echo "SHOULD-NOT-BE-CALLED"
+EOF
+chmod +x "$STUB/cursor-agent"
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o35.txt" gemini 2>&1); RC=$?
+[ "$RC" = "65" ] && echo "PASS  fallback 不在实时列表 -> exit 65，不烧调用" || { echo "FAIL  期望 65 实得 $RC"; fail=1; }
+check "说明是'不在实时列表'" "不在实时列表" "$OUT"
+[ -f "$WORK/o35.txt" ] && grep -q SHOULD-NOT-BE-CALLED "$WORK/o35.txt" && { echo "FAIL  幽灵 id 仍发起了调用"; fail=1; } || echo "PASS  未发起调用"
+OUT=$(PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gemini 2>"$WORK/ro35.err"); RC=$?
+[ "$RC" = "0" ] && echo "PASS  --resolve-only 仍 exit 0 打 id（由 doctor 复核并给修复建议）" || { echo "FAIL  resolve-only 期望 0 实得 $RC"; fail=1; }
+check "resolve-only 的 stderr 带'不在实时列表' WARN" "不在实时列表" "$(cat "$WORK/ro35.err")"
+
+echo "=== 运行时 4：[reviewer] 跨族钉值必须被硬拦（否则 tiebreaker 变红队自审）==="
+make_stub ok
+OUT=$(SURVEY_CURSOR_MODEL='cursor-grok-4.6-high' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/ox.txt" gemini 2>&1)
+check "grok 钉值带到 gemini 调用 -> 被拒" "不属于 family=gemini" "$OUT"
 check "被拒后改用 gemini 自动解析" "MODEL: gemini-3.1-pro (family=gemini)" "$OUT"
-case "$(cat "$WORK/ox.txt")" in *gpt-*) echo "FAIL  实际调用仍是 GPT——异族裁决失效"; fail=1;; *) echo "PASS  实际调用未串到 GPT";; esac
-OUT=$(SURVEY_CURSOR_MODEL='gemini-3.1-pro' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/oy.txt" gemini 2>&1)
-check "同族钉值正常生效" "MODEL: gemini-3.1-pro (family=gemini)" "$OUT"
+case "$(cat "$WORK/ox.txt")" in *grok*) echo "FAIL  实际调用仍是 grok——异族裁决失效"; fail=1;; *) echo "PASS  实际调用未串到 grok";; esac
+OUT=$(SURVEY_CURSOR_MODEL='gemini-3.1-pro-max' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/oy.txt" gemini 2>&1)
+check "同族钉值正常生效（可强上 max）" "MODEL: gemini-3.1-pro-max (family=gemini)" "$OUT"
 
 echo "=== 运行时 5：SURVEY_CURSOR_MODEL 校验 ==="
-OUT=$(SURVEY_CURSOR_MODEL='gpt-5.6-sol-max' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o7.txt" 2>&1)
-check "合法覆盖生效（可强上 max）" "MODEL: gpt-5.6-sol-max" "$OUT"
 OUT=$(SURVEY_CURSOR_MODEL='bad;rm -rf /
-x' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o8.txt" 2>&1)
+x' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o8.txt" gemini 2>&1)
 check "非法字符被拒" "含非法字符" "$OUT"
-check "拒绝后回到自动解析" "MODEL: gpt-5.6-sol-xhigh" "$OUT"
-OUT=$(SURVEY_CURSOR_MODEL='' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o9.txt" 2>&1)
-check "空值走自动解析" "MODEL: gpt-5.6-sol-xhigh" "$OUT"
+check "拒绝后回到自动解析" "MODEL: gemini-3.1-pro" "$OUT"
+OUT=$(SURVEY_CURSOR_MODEL='' PATH="$STUB:$PATH" bash "$SCRIPT" "$WORK/p.txt" "$WORK/o9.txt" gemini 2>&1)
+check "空值走自动解析" "MODEL: gemini-3.1-pro" "$OUT"
 
 echo "=== 运行时 6：[reviewer] 正式调用挂起 -> 内置 watchdog 兜底（不依赖系统 timeout）==="
 cat > "$STUB/cursor-agent" <<'EOF'
 #!/usr/bin/env bash
-if [ "$1" = "--list-models" ]; then echo "gpt-5.6-sol-xhigh - Sol"; exit 0; fi
+if [ "$1" = "--list-models" ]; then echo "gemini-3.1-pro - G"; exit 0; fi
 sleep 300   # 模拟正式调用挂死
 EOF
 chmod +x "$STUB/cursor-agent"
 T0=$(date +%s)
-( PATH="$STUB:$PATH" SURVEY_TIMEOUT_SEC=5 bash "$SCRIPT" "$WORK/p.txt" "$WORK/oz.txt" ) >/dev/null 2>"$WORK/wd.err"
+( PATH="$STUB:$PATH" SURVEY_TIMEOUT_SEC=5 bash "$SCRIPT" "$WORK/p.txt" "$WORK/oz.txt" gemini ) >/dev/null 2>"$WORK/wd.err"
 WD_EXIT=$?
 EL=$(( $(date +%s) - T0 ))
 [ "$WD_EXIT" = "124" ] && echo "PASS  挂死被 watchdog 杀掉，exit 124" || { echo "FAIL  期望 124 实得 $WD_EXIT"; fail=1; }
 if [ "$EL" -le 20 ]; then echo "PASS  watchdog 及时触发（${EL}s）"; else echo "FAIL  watchdog 过慢: ${EL}s"; fail=1; fi
 
 echo "=== 运行时 7：临时文件不残留 ==="
-LEFT=$(ls "${TMPDIR:-/tmp}"/survey-models.* "${TMPDIR:-/tmp}"/survey-cursor-agent-stderr.* 2>/dev/null | wc -l | tr -d ' ')
-[ "$LEFT" = "0" ] && echo "PASS  无临时文件残留" || { echo "FAIL  残留 $LEFT 个临时文件"; fail=1; }
+LEFT=$(ls -d "${TMPDIR:-/tmp}"/survey-models.* "${TMPDIR:-/tmp}"/survey-cursor-agent.* 2>/dev/null | wc -l | tr -d ' ')
+[ "$LEFT" = "0" ] && echo "PASS  无临时文件残留" || { echo "FAIL  残留 $LEFT 个临时文件/目录"; fail=1; }
 
 echo "=== 运行时 8：--resolve-only（doctor.sh 复用生产解析逻辑的探针模式）==="
 make_stub ok
@@ -317,26 +323,26 @@ case "$OUT" in *USED_MODEL*) echo "FAIL  resolve-only 竟发起了正式调用";
 check "stderr 仍打 MODEL 行（doctor 靠 WARN 有无区分 fallback）" "MODEL: gemini-3.1-pro (family=gemini)" "$(cat "$WORK/ro.err")"
 PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only llama >/dev/null 2>&1
 [ "$?" = "64" ] && echo "PASS  resolve-only 非法 family -> exit 64" || { echo "FAIL  resolve-only 非法 family 未 exit 64"; fail=1; }
-PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gpt extra >/dev/null 2>&1
+PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gemini extra >/dev/null 2>&1
 [ "$?" = "64" ] && echo "PASS  resolve-only 多余参数 -> exit 64" || { echo "FAIL  resolve-only 多余参数未 exit 64"; fail=1; }
-OUT=$(SURVEY_CURSOR_MODEL='gpt-5.6-sol-max' PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gpt 2>/dev/null)
-check "resolve-only 尊重同族钉值" "gpt-5.6-sol-max" "$OUT"
+OUT=$(SURVEY_CURSOR_MODEL='gemini-3.1-pro-max' PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gemini 2>/dev/null)
+check "resolve-only 尊重同族钉值" "gemini-3.1-pro-max" "$OUT"
 cat > "$STUB/cursor-agent" <<'EOF'
 #!/usr/bin/env bash
 if [ "$1" = "--list-models" ]; then
-  echo "gpt-5.6-sol-xhigh - Sol XH"; echo "gpt-5.6-sol-high - Sol H"; exit 0
+  echo "cursor-grok-4.6-xhigh - Grok XH"; echo "cursor-grok-4.6-high - Grok H"; exit 0
 fi
 EOF
 chmod +x "$STUB/cursor-agent"
-OUT=$(SURVEY_CURSOR_EFFORT=high PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gpt 2>/dev/null)
-check "SURVEY_CURSOR_EFFORT=high 端到端生效" "gpt-5.6-sol-high" "$OUT"
-OUT=$(SURVEY_CURSOR_EFFORT=banana PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only gpt 2>&1 >/dev/null)
+OUT=$(SURVEY_CURSOR_EFFORT=high PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only grok 2>/dev/null)
+check "SURVEY_CURSOR_EFFORT=high 端到端生效" "cursor-grok-4.6-high" "$OUT"
+OUT=$(SURVEY_CURSOR_EFFORT=banana PATH="$STUB:$PATH" bash "$SCRIPT" --resolve-only grok 2>&1 >/dev/null)
 check "非法 effort 打 WARN 回落 xhigh" "SURVEY_CURSOR_EFFORT" "$OUT"
 LEFT=$(ls "${TMPDIR:-/tmp}"/survey-models.* 2>/dev/null | wc -l | tr -d ' ')
 [ "$LEFT" = "0" ] && echo "PASS  resolve-only 无临时文件残留" || { echo "FAIL  resolve-only 残留 $LEFT 个临时文件"; fail=1; }
 
-echo "=== 运行时 9：async job（start/status/wait 三段式，nohup 脱离进程树）==="
-ASYNC="$(cd "$(dirname "$0")" && pwd)/run-cursor-agent-async.sh"
+echo "=== 运行时 9：async job（start/status/wait 三段式，nohup 脱离进程树，按族路由）==="
+ASYNC="$(cd "$(dirname "$0")" && pwd)/run-agent-async.sh"
 make_stub ok
 # 9a: 正常 job 走完 → DONE，输出落盘
 JOB=$(PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-out.txt" gemini 60)
@@ -345,22 +351,28 @@ OUT=$(bash "$ASYNC" wait "$JOB" 30); WEXIT=$?
 check "async 正常完成 -> DONE" "DONE" "$OUT"
 [ "$WEXIT" = "0" ] && echo "PASS  wait 完成 exit 0" || { echo "FAIL  wait 期望 0 实得 $WEXIT"; fail=1; }
 check "async 输出落盘（stub 记录了实际模型）" "USED_MODEL=gemini-3.1-pro" "$(cat "$WORK/async-out.txt" 2>/dev/null)"
+check "job.meta 记录了路由到的 runner" "runner=run-cursor-agent.sh" "$(cat "$JOB/job.meta")"
+# 9a': gpt 族在 async 入口同样拒绝；族参数缺失拒绝
+PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-gpt.txt" gpt 60 >/dev/null 2>&1
+[ "$?" = "64" ] && echo "PASS  async start gpt -> exit 64" || { echo "FAIL  async gpt 应 exit 64"; fail=1; }
+PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-nofam.txt" >/dev/null 2>&1
+[ "$?" = "64" ] && echo "PASS  async start 缺族 -> exit 64" || { echo "FAIL  async 缺族应 exit 64"; fail=1; }
 # 9b: 挂死 job 被 deadline 杀 → FAILED exit=124
 cat > "$STUB/cursor-agent" <<'EOF'
 #!/usr/bin/env bash
-if [ "$1" = "--list-models" ]; then echo "gpt-5.6-sol-xhigh - Sol"; exit 0; fi
+if [ "$1" = "--list-models" ]; then echo "gemini-3.1-pro - G"; exit 0; fi
 sleep 300
 EOF
 chmod +x "$STUB/cursor-agent"
 T0=$(date +%s)
-JOB=$(PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-oz.txt" gpt 6)
+JOB=$(PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-oz.txt" gemini 6)
 OUT=$(bash "$ASYNC" wait "$JOB" 40); WEXIT=$?
 EL=$(( $(date +%s) - T0 ))
 check "挂死 job 被 deadline 杀 -> FAILED exit=124" "FAILED exit=124" "$OUT"
 [ "$WEXIT" = "4" ] && echo "PASS  wait 对失败 job exit 4" || { echo "FAIL  期望 4 实得 $WEXIT"; fail=1; }
 if [ "$EL" -le 30 ]; then echo "PASS  deadline 及时触发（${EL}s）"; else echo "FAIL  deadline 过慢: ${EL}s"; fail=1; fi
 # 9c: wait 波次到点未完 -> exit 3（RUNNING），再等最终完成
-JOB=$(PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-o3.txt" gpt 25)
+JOB=$(PATH="$STUB:$PATH" bash "$ASYNC" start "$WORK/p.txt" "$WORK/async-o3.txt" gemini 25)
 OUT=$(bash "$ASYNC" wait "$JOB" 5); WEXIT=$?
 check "波次到点未完 -> RUNNING" "RUNNING" "$OUT"
 [ "$WEXIT" = "3" ] && echo "PASS  未完波次 exit 3（可续杯）" || { echo "FAIL  期望 3 实得 $WEXIT"; fail=1; }

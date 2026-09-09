@@ -1,10 +1,10 @@
 # Phase 2：多源研究
 
-> **强制异构搜索**：Phase 2 始终是 2 Claude + **2 个不同族的 cursor-agent**，无用户可控的 opt-out。两只眼各自独立降级（见下方 §自动降级矩阵）。
+> **强制异构搜索**：Phase 2 始终是 2 Claude + **2 个不同族的外部 lens（X1=GPT 族经 codex，X2=Gemini 族经 cursor-agent）**，无用户可控的 opt-out。两只眼走两条独立通道（各自的凭据与配额池），各自独立降级（见下方 §自动降级矩阵）。
 
 ## 路数分档（2026-07-31 加）
 
-**异构两路（X1 gpt + X2 gemini）任何档位都不可省**——那是本 skill 的立身之本。可调的只有 Claude 路数：
+**异构两路（X1 codex-gpt + X2 cursor-gemini）任何档位都不可省**——那是本 skill 的立身之本。可调的只有 Claude 路数：
 
 | 档 | Claude 路数 | 判据 |
 |---|---|---|
@@ -13,9 +13,9 @@
 
 **轻量事实核实不要用 /survey**（如"某 API 现在还支持吗""某工具最新版本行为"）——直接 WebSearch/WebFetch，几秒就够，用 survey 是杀鸡用牛刀。
 
-## 默认模式（2 Claude + 2 cursor-agent，四路并行）
+## 默认模式（2 Claude + X1 codex + X2 cursor，四路并行）
 
-Phase 1.5 Brief 完成后，启动 4 个并行 agent——其中 2 个是 cursor-agent，**分属不同模型家族**（模型不钉版本，运行时按家族各自解析当前最强，见 `../references/cursor-agent-invocation.md` §模型选择）：
+Phase 1.5 Brief 完成后，启动 4 个并行 agent——其中 2 个是外部 lens，**分属不同模型家族、走不同通道**（X1=codex/GPT 族、X2=cursor-agent/Gemini 族；模型不钉版本，运行时各自解析，见 `../references/cursor-agent-invocation.md` §模型选择）：
 
 ```
 Agent A（Claude，通用 + 主流）
@@ -28,14 +28,17 @@ Agent B（Claude，技术 + 实现）
   禁止：不看 Agent A/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
 
-Agent X1（cursor-agent · family=gpt，第一异构 lens）— 替换原 Claude Agent C
-  调用：SURVEY_CURSOR_EFFORT=high bash run-cursor-agent.sh <prompt> <out> gpt
-        （high 档：搜索是检索型任务，xhigh 的深推理徒增等待，见 helper §档位配置）
+Agent X1（codex · family=gpt，第一异构 lens）— 替换原 Claude Agent C
+  调用：SURVEY_CODEX_EFFORT=high SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
+          bash run-agent-async.sh start <prompt> <out> codex 900
+        → 拿 JOB_DIR 后 Bash(run_in_background) 跑 `run-agent-async.sh wait <job-dir> 540`
+        （**异步**：high 档实测 302–491s，贴着 570s 同步窗口，不赌；high 档理由见 helper §档位配置）
   任务：4 类 **Claude 盲区**针对性搜索
   prompt：prompts/agent-x.txt
 
 Agent X2（cursor-agent · family=gemini，第二异构 lens）
-  调用：bash run-cursor-agent.sh <prompt> <out> gemini（gemini 无 effort 档）
+  调用：SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
+          bash run-cursor-agent.sh <prompt> <out> gemini（同步，Bash timeout=600000；gemini 无 effort 档）
   任务：4 类 **Claude+GPT 共同盲区**针对性搜索（搜索引擎可见性偏差 / 非美系英文文档
         生态 / 学术已解决工业未流行 / 已废弃被取代的方案）
   prompt：prompts/agent-x2.txt
@@ -78,8 +81,8 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 
 **并发协调**（主 Claude 必读）：
 - Agent A、B 是 Claude subagent（用 Agent/Task 工具启动）
-- Agent X1、X2 是外部 Bash subprocess（各调一次 `run-cursor-agent.sh`，family 参数不同）
-- 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + 2 个 Bash 工具调用；X1/X2 并行，墙钟基本不变（各约 5 min）
+- Agent X1 是 codex 异步 job（`run-agent-async.sh start … codex 900`），X2 是 cursor-agent 同步 Bash（`run-cursor-agent.sh … gemini`）——两条通道、两个配额池
+- 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的同步 Bash；随后后台 `wait` X1。墙钟由最慢者决定（X1 约 5–8 min）
 - **两个 Bash 调用必须用不同的 prompt / output 文件名**（`survey-x1-*` / `survey-x2-*`），否则互相覆盖
 - 主 Claude 在收到四方返回后再启动综合 agent；不要串行启动 X1/X2，会白白多花 ~5 min
 
@@ -109,22 +112,22 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 
 ## 自动降级矩阵（X1 / X2 各自可能失败）
 
-两只异构眼**各自独立降级**，一只挂不影响另一只：
+两只异构眼走**两条独立通道**（X1=codex/ChatGPT 订阅，X2=cursor-agent/Cursor 订阅），**各自独立降级**——一条通道的凭据或额度故障只灭它自己那只眼，这正是 2026-09-09 把 gpt 族迁到 codex 的收益（此前三族共一个 Cursor 池，额度见底=双眼齐灭）：
 
 | 情况 | 行为 | banner |
 |---|---|---|
 | X1、X2 都成功 | 正常四路并集 | 无 |
-| X1 挂、X2 成功 | 继续（3 路：A+B+X2）；Phase 6 主评审按替补链改用 **grok** 族（grok 也不可用才退 gemini），此时红队取消 | `⚠️ HETEROGENEOUS LENS PARTIAL: GPT lens 缺失` + 原因 |
-| X2 挂、X1 成功 | 继续（3 路：A+B+X1）；Phase 6 主评审仍用 gpt，**tiebreaker 改用 grok**（不再直接判不可用） | `⚠️ HETEROGENEOUS LENS PARTIAL: Gemini lens 缺失` + 原因 |
+| X1(codex) 挂、X2 成功 | 继续（3 路：A+B+X2）；Phase 6 主评审按替补链改用 **grok** 族（grok 也不可用才退 gemini），此时红队取消 | `⚠️ HETEROGENEOUS LENS PARTIAL: GPT lens (codex) 缺失` + 原因 |
+| X2(gemini) 挂、X1 成功 | 继续（3 路：A+B+X1）；Phase 6 主评审仍用 codex，**tiebreaker 改用 grok**（Cursor 整体挂时 grok 也死 → tiebreaker unavailable） | `⚠️ HETEROGENEOUS LENS PARTIAL: Gemini lens 缺失` + 原因 |
 | 两只都挂 | 退到 3 Claude 经典并行（见下），**Phase 6 整段跳过** | `⚠️ HETEROGENEOUS REVIEW: SKIPPED` |
 
-**判定依据**：各自的 exit code（见 `../references/cursor-agent-invocation.md` §exit code）。**绝不**因为一只眼挂了就放弃另一只。
+**判定依据**：各自的 exit code（见 `../references/cursor-agent-invocation.md` §exit code）；doctor 提前判死的通道按同样规则处理。**绝不**因为一只眼挂了就放弃另一只。
 
 > **grok 族为什么不在这张表里**：grok 不做搜索眼（2026-08-15 实测该族基础延迟高，263s 玩具 prompt，完整搜索任务会撞同步窗口），它只在 Phase 6 出场——红队第二评审 + 主评审/tiebreaker 的替补族。所以 Phase 2 的降级判定仍然只看 X1/X2 两只眼；grok 的可用性由 `doctor.sh` 单独报一行，死了只 WARN 不改 Phase 2 的档位。
 
 ### 两只都不可用时：退回 3 Claude
 
-cursor-agent CLI 不可用（`command -v cursor-agent` 失败）或两次调用都失败 / 超时（>570s）时，**自动**退回到 3 Claude 经典并行——用户无法主动选择此路径，仅作为 fallback：
+两条通道都不可用（codex 与 cursor-agent 均未安装/未登录/额度见底）或两次调用都失败 / 超时时，**自动**退回到 3 Claude 经典并行——用户无法主动选择此路径，仅作为 fallback：
 
 ```
 Agent A（通用 + 主流）
@@ -148,8 +151,8 @@ Agent C（社区 + 经验）
 
 ```markdown
 > ⚠️ **HETEROGENEOUS REVIEW: SKIPPED**
-> Reason: <cursor-agent not found | timeout >570s | auth failure | quota exhausted | empty output>
-> Implication: 所有 source 来自 Claude lens，训练数据盲区未被独立模型审查；高风险决策建议安装 cursor-agent 后重跑（cursor.com/cli）
+> Reason: <codex/cursor-agent not found | timeout | auth failure | quota exhausted | empty output>（两条通道各写各的）
+> Implication: 所有 source 来自 Claude lens，训练数据盲区未被独立模型审查；高风险决策建议修复通道后重跑（codex: `npm i -g @openai/codex && codex login`；cursor-agent: cursor.com/cli）
 ```
 
 一只眼挂时用 PARTIAL banner（**别用 SKIPPED**，那会误导成"完全没异构"）：
@@ -162,10 +165,10 @@ Agent C（社区 + 经验）
 
 **绝不**因异构失败让主流程失败。
 
-## cursor-agent 调度（最小硬约束）
+## 异构调度（最小硬约束）
 
 - **启动 X1/X2 前先跑一次自检**：`bash doctor.sh`（秒级快检，不耗配额；exit 0=HEALTHY / 1=DEGRADED / 2=BROKEN）。非 0 时**提前**把即将发生的降级与修复建议告知用户（doctor 已给出确切命令），不要等 Phase 2 跑到一半才用 banner 揭晓；能自动修的（脚本执行位）doctor 会当场修掉。**doctor 结果绝不阻塞主流程**——BROKEN 也照走降级矩阵
-- **必须调用 cursor-agent 跑 X1（gpt）与 X2（gemini）两只眼**（异构 lens 是 Phase 2 设计核心）
+- **必须跑 X1（codex，GPT 族）与 X2（cursor-agent，Gemini 族）两只眼**（异构 lens 是 Phase 2 设计核心）
 - **两只眼各自独立降级**；两只都不可用才退到 3 Claude（Agent X 换 Agent C）+ 报告顶部 banner（见上方 §自动降级矩阵）
 - **失败不阻塞主流程**——降级是设计目标，不是异常
 

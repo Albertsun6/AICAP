@@ -39,8 +39,8 @@
 - **setup**：跑完整流程到 L3。
 - **expected_behavior**：
   1. 架构/目录/解耦/历史 4 个软维度的每条结论都带 file:line 证据（无证据结论不接受）。
-  2. 走了 cursor-agent 异构终审；主 agent 对每条意见有 accept/partial/defer/refute 表态。
-  3. cursor-agent 不可用时：报告顶部出现 banner，软维度标高风险，**主流程不失败**。
+  2. 走了外部 GPT 族 lens（survey 的 codex runner，替补 grok）异构终审；主 agent 对每条意见有 accept/partial/defer/refute 表态。
+  3. 外部 lens 不可用时：报告顶部出现 banner，软维度标高风险，**主流程不失败**。
   4. 3 轮辩论后仍分歧 → 触发 AskUserQuestion 人类裁决。
 
 ## E5 — 固化闭环
@@ -64,4 +64,4 @@
 - [ ] E2 churn_hotspots.py 在 git / 非 git 两种输入都正确
 - [ ] probes.json 是合法 JSON（`jq . probes.json` 不报错）
 - [ ] 所有 Read gate 文件存在（phases/* rubric/* prompts/*）
-- [ ] cursor-agent 不可用路径有 banner、不 crash
+- [ ] 外部异构 lens 不可用路径有 banner、不 crash（先 `bash <survey>/doctor.sh` 看两条通道状态）
