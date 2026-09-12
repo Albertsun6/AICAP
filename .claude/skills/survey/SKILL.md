@@ -2,7 +2,7 @@
 name: survey
 description: |
   针对任意话题，系统性地调研网上别人的做法、结构化比较方案、评估优劣、给出建议。
-  比 borrow-open-source 更通用——不限于开源代码，适用于任何选型、方案研究、最佳实践调查。
+  适用于任何选型、方案研究、最佳实践调查，不限于开源代码。
 
   Use when the user says:
   "了解一下别人怎么做X" / "调研X方案" / "网上有哪些做X的方式" / "比较X和Y"
@@ -239,8 +239,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 | Skill | 适用场景 |
 |---|---|
 | `/survey` | 任意话题调研，通用，重研究+比较+建议 |
-| `/borrow-open-source` | 专门研究开源代码，目标是借鉴到自己的项目 |
-| `/harness-review-workflow` | 你已有方案/设计，需要多 AI 评审 |
+| `/debate-review` | 已拿到外部 AI 的评审反馈，需要逐条裁决（接受 / 部分接受 / 反驳）并把改动落到原文件 |
 
 ---
 

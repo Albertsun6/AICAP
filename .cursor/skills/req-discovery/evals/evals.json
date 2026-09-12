@@ -25,7 +25,7 @@
         "至少有 1 条 User Story 的边界说明中提到不包含实时协作或@mention",
         "输出至少 3 条 User Story",
         "每条 User Story 包含 Given/When/Then 验收标准",
-        "Phase 4 结束后询问了是否需要写入文件或衔接 feature-fullstack"
+        "Phase 4 结束后询问了是否需要写入文件，以及是否进入实施（由用户指定实施方式，不自行挑某个 skill）"
       ]
     },
     {

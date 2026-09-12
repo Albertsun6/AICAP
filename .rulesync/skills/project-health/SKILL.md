@@ -10,7 +10,7 @@ description: |
   / "查冗余文件和死代码" / "看看耦合解耦怎么样" / "代码精简度评估" / "/project-health" /
   "这个项目健康吗" / "技术债在哪" / "architecture / code quality audit"。
   适用对象是一个 git 仓库（默认 cwd）。不是写代码、不是单 PR 评审（那用 /code-review / pre-land-review）。
-recommends: ["debate-review", "feature-fullstack", "pre-land-review"]
+recommends: ["debate-review", "pre-land-review"]
 ---
 
 # /project-health — 仓库健康度评估（分层 · 可执行探针 · 异构兜底）
@@ -140,7 +140,7 @@ project-health/
 **触发**（任意命中）："评估项目健康度" / "repo / codebase health" / "审一下这个仓库" / "查死代码冗余文件" / "解耦/耦合怎么样" / "技术债在哪" / "/project-health"。
 
 **边界（不做）**：
-- **不写业务代码、不重构**——只评估 + 给固化建议；实施交给 /feature-fullstack 或用户。
+- **不写业务代码、不重构**——只评估 + 给固化建议；实施交给用户指定的实施流程。
 - **不是单 PR 评审**——那是 `/code-review`、`pre-land-review`、`/security-review` 的活；本 skill 评的是**整仓库**的健康度。
 - **不替你定义"什么叫健康"**——阈值在 `rubric/thresholds.md` 可调；跑前用 Phase 0 eval-first 对齐。
 - **不无脑装工具**——探针缺失就给安装指令，是否装由用户决定。

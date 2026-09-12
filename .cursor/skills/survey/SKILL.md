@@ -1,6 +1,6 @@
 ---
 name: survey
-description: '针对任意话题，系统性地调研网上别人的做法、结构化比较方案、评估优劣、给出建议。 比 borrow-open-source 更通用——不限于开源代码，适用于任何选型、方案研究、最佳实践调查。 Use when the user says: "了解一下别人怎么做X" / "调研X方案" / "网上有哪些做X的方式" / "比较X和Y" "X的最佳实践" / "benchmark X" / "别人怎么解决X问题" / "/survey X" Phase 2 用 2 个 Claude agent + 2 个不同族的外部 lens（GPT 族经 codex CLI、Gemini 族经 cursor-agent，两条独立通道/配额池）四路并行异构搜索，发现取并集不投票；综合后 Phase 6 由 GPT 族主评审（codex）与 Grok 族红队第二评审（cursor）**并发**终审（红队 one-shot、条目并集 不投票），最多 3 轮辩论，剩余分歧里的事实争议交 Gemini（回避时 Grok）实查裁决、判断分歧 由人类裁决。族=训练实验室，换 CLI 不构成换族。对抗 Claude 训练数据集体盲区与 Claude↔GPT 回声室。某条通道不可用时自动降级并在报告顶部 banner 提示——但用户不能主动跳过任何阶段。 Phase 1 遇 blocking unknown（研究对象/优先级/关键约束/排除范围拿不准）时先启动 多轮澄清提问（Phase 1.2，AskUserQuestion，≤3 轮）再冷冻 Brief；无 blocking unknown 零打扰。 /survey 的**质量门禁无 flag 可跳**（异构搜索/Reflection/Citation Health/异构终审都是硬约束）； 但**产物按消费者分三档**（A 内部输入=仅 md / B 给人阅读=+HTML+PDF / C 要听=+audio）， Claude 搜索路数按重要度分两档（重大决策 3 路 / 常规 2 路，异构两路任何档都不可省）。'
+description: '针对任意话题，系统性地调研网上别人的做法、结构化比较方案、评估优劣、给出建议。 适用于任何选型、方案研究、最佳实践调查，不限于开源代码。 Use when the user says: "了解一下别人怎么做X" / "调研X方案" / "网上有哪些做X的方式" / "比较X和Y" "X的最佳实践" / "benchmark X" / "别人怎么解决X问题" / "/survey X" Phase 2 用 2 个 Claude agent + 2 个不同族的外部 lens（GPT 族经 codex CLI、Gemini 族经 cursor-agent，两条独立通道/配额池）四路并行异构搜索，发现取并集不投票；综合后 Phase 6 由 GPT 族主评审（codex）与 Grok 族红队第二评审（cursor）**并发**终审（红队 one-shot、条目并集 不投票），最多 3 轮辩论，剩余分歧里的事实争议交 Gemini（回避时 Grok）实查裁决、判断分歧 由人类裁决。族=训练实验室，换 CLI 不构成换族。对抗 Claude 训练数据集体盲区与 Claude↔GPT 回声室。某条通道不可用时自动降级并在报告顶部 banner 提示——但用户不能主动跳过任何阶段。 Phase 1 遇 blocking unknown（研究对象/优先级/关键约束/排除范围拿不准）时先启动 多轮澄清提问（Phase 1.2，AskUserQuestion，≤3 轮）再冷冻 Brief；无 blocking unknown 零打扰。 /survey 的**质量门禁无 flag 可跳**（异构搜索/Reflection/Citation Health/异构终审都是硬约束）； 但**产物按消费者分三档**（A 内部输入=仅 md / B 给人阅读=+HTML+PDF / C 要听=+audio）， Claude 搜索路数按重要度分两档（重大决策 3 路 / 常规 2 路，异构两路任何档都不可省）。'
 ---
 # /survey — 调研·比较·建议
 
@@ -221,8 +221,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 | Skill | 适用场景 |
 |---|---|
 | `/survey` | 任意话题调研，通用，重研究+比较+建议 |
-| `/borrow-open-source` | 专门研究开源代码，目标是借鉴到自己的项目 |
-| `/harness-review-workflow` | 你已有方案/设计，需要多 AI 评审 |
+| `/debate-review` | 已拿到外部 AI 的评审反馈，需要逐条裁决（接受 / 部分接受 / 反驳）并把改动落到原文件 |
 
 ---
 

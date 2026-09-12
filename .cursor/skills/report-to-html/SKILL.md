@@ -1,6 +1,6 @@
 ---
 name: report-to-html
-description: '把一份长 Markdown 报告(调研/方案/设计文档,通常 200+ 行,含表格/流程图/引用链接) 转成单文件交互式 HTML 网页:粘性目录、Mermaid 流程图、可折叠 Accordion、Pill 状态徽章、 打印友好。零构建——Tailwind + Alpine + Mermaid 全 CDN,双击即开,邮件可发。 Use when the user says: "把这个报告转成 HTML" / "做成交互式网页" / "可视化展示这份文档" / "/report-to-html xxx.md" "把这个 md 做个网页" / "生成一个能浏览的 HTML 版本" / "做成单页可交互的" 适用:长调研报告、架构设计文档、方案对比、研究 brief。 不适用:多文档站(那是 Docusaurus/Nextra 的活)、PPT 演示(用 pptx skill)、 单页 landing page(直接写 HTML)、需要后端的应用。 设计上参考 Anthropic 官方 web-artifacts-builder + frontend-design skill 的理念: 避免 "AI slop"(居中紫渐变 / Inter 字体 / 大量 emoji),走稳重排版 + 信息密度优先。'
+description: '把一份长 Markdown 报告(调研/方案/设计文档,通常 200+ 行,含表格/流程图/引用链接) 转成单文件交互式 HTML 网页:粘性目录、Mermaid 流程图、可折叠 Accordion、Pill 状态徽章、 打印友好。零构建——Tailwind + Alpine + Mermaid 全 CDN,双击即开,邮件可发。 Use when the user says: "把这个报告转成 HTML" / "做成交互式网页" / "可视化展示这份文档" / "/report-to-html xxx.md" "把这个 md 做个网页" / "生成一个能浏览的 HTML 版本" / "做成单页可交互的" 适用:长调研报告、架构设计文档、方案对比、研究 brief。 不适用:多文档站(那是 Docusaurus/Nextra 的活)、PPT 演示(另行处理)、 单页 landing page(直接写 HTML)、需要后端的应用。 设计上参考 Anthropic 官方 web-artifacts-builder + frontend-design skill 的理念: 避免 "AI slop"(居中紫渐变 / Inter 字体 / 大量 emoji),走稳重排版 + 信息密度优先。'
 ---
 # /report-to-html — Markdown 长报告 → 交互式单页 HTML
 
@@ -115,7 +115,7 @@ open "<output>.html"
 ## 与其他 skill 的关系
 
 - **不要和 `survey` skill 混用调用栈** —— survey 出 markdown 报告,本 skill 是后续可视化层
-- **不要替代 `pptx` skill** —— 要演示就用 pptx,要浏览阅读才用本 skill
+- **不做 PPT 演示** —— 要演示稿另行处理,要浏览阅读才用本 skill
 - **如果需要复杂 React 组件** —— 升级到 Anthropic 官方 [web-artifacts-builder](https://github.com/anthropics/skills/blob/main/skills/web-artifacts-builder/SKILL.md)(需 Node/npm 环境)
 
 ---
