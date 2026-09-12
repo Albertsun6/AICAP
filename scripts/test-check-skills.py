@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -62,10 +63,13 @@ def make_fixture(root: Path) -> None:
     (root / "SKILLS.md").write_text(CLEAN_SKILLS_MD, encoding="utf-8")
 
 
-def run(root: Path, *, ssot_only: bool = True, config_dir: Path | None = None) -> tuple[int, str]:
+def run(root: Path, *, ssot_only: bool = True, config_dir: Path | None = None,
+        strict: bool = False) -> tuple[int, str]:
     argv = [sys.executable, str(root / "scripts" / "check-skills.py")]
     if ssot_only:
         argv.append("--ssot-only")
+    if strict:
+        argv.append("--strict-global")
     env = os.environ.copy()
     if config_dir is not None:
         env["CLAUDE_CONFIG_DIR"] = str(config_dir)
@@ -189,6 +193,57 @@ def v_block_scalar_not_leaking(root: Path) -> None:
         encoding="utf-8")
 
 
+def v_s10(root: Path) -> None:
+    """正文点名一个不存在的 skill —— PR #1 手工修的正是这一类，当时门禁没抓到。"""
+    (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+        skill("alpha", body="写完需求可以直接衔接 `/no-such-skill` 进入实施。"),
+        encoding="utf-8")
+
+
+def v_s10_desc(root: Path) -> None:
+    """description 里点名的同样算 —— 那是唯一进模型上下文的字段。"""
+    (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+        skill("alpha", desc="做某件事，完事后交给 /no-such-skill 收尾。"), encoding="utf-8")
+
+
+def v_s10_ok(root: Path) -> None:
+    """点名 SKILLS.md 已登记的本地专用 skill：可解析，不该红、也不该警。"""
+    (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+        skill("alpha", body="详见 `/local-only` 的说明。"), encoding="utf-8")
+
+
+def v_s10_known_missing(root: Path) -> None:
+    """点名已登记的缺失能力：可解析、不红，但必须 WARN 留痕（与 S5 同待遇）。"""
+    (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+        skill("alpha", body="研究阶段先用 `/gone-missing` 出一份带引用的报告。"),
+        encoding="utf-8")
+
+
+def v_s10_external(root: Path) -> None:
+    """Claude Code 内置 skill 不在本仓库宇宙里，但点名它是对的，不该红。"""
+    (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+        skill("alpha", body="单个 PR 的逐行评审是 `/code-review` 的活，不是本 skill。"),
+        encoding="utf-8")
+
+
+def v_s10_no_false_positive(root: Path) -> None:
+    """路径 / shell 展开 / URL / `A/B` 都不是 skill 引用 —— S10 的假阳性回归。
+
+    仓库里真实存在这些写法：`survey` 把中间产物写到 /tmp、`install-skill` 用
+    `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills` 定位全局目录、正文里到处是 GitHub URL。
+    匹配器一旦放宽（不要求连字符、或忘了排除路径上下文），它们就会变成一片红，
+    而唯一的"修法"是去改无辜的正文 —— 那时这条规则就从资产变成了负债。
+    """
+    body = "\n".join([
+        "中间产物写到 /tmp，prompt 文件是 `/tmp/survey-x1-prompt.txt`。",
+        'GLOBAL_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills"',
+        "见 https://github.com/anthropics/skills/blob/main/skills/web-artifacts-builder/SKILL.md",
+        "对照 A/B-test 与 读/写 分离；相对路径 ./rel-path/x-y 也不算引用。",
+    ])
+    (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+        skill("alpha", body=body), encoding="utf-8")
+
+
 def check_g5() -> list[str]:
     """全局层 G5：声明了 scope: project 却仍在全局发现面 → 必须红；回收后 → 绿。
 
@@ -218,6 +273,59 @@ def check_g5() -> list[str]:
     return problems
 
 
+def check_g6() -> list[str]:
+    """全局层 G6：本机 `skillOverrides` 把被引用的 skill 关到模型看不见。
+
+    这是 S6 的盲区 —— S6 只读 frontmatter 的 `disable-model-invocation`，而
+    `skillOverrides` 住在 `~/.claude/settings.json`。六种情形都要钉住，其中最关键的
+    是最后一条：**读不到 settings 必须安静跳过**。CI 里根本没有这个文件，一报错就等于
+    把门禁绑死在某台机器的个人配置上。
+    """
+    problems: list[str] = []
+    cases = [
+        # (说明, alpha 的 frontmatter, skillOverrides（None = 不写 settings.json）,
+        #  是否 --strict-global, 期望出现的 G6 行；None = 不该出现 G6)
+        ("invokes 指向被设为 off 的 skill",
+         'invokes: ["beta"]\n', {"beta": "off"}, False, "WARN  [G6]"),
+        ("同一情形加 --strict-global 升为错误",
+         'invokes: ["beta"]\n', {"beta": "off"}, True, "ERROR [G6]"),
+        ("invokes 指向 user-invocable-only（模型照样调不动）",
+         'invokes: ["beta"]\n', {"beta": "user-invocable-only"}, False, "WARN  [G6]"),
+        ("recommends 指向 user-invocable-only（人还能打 /name，不该报）",
+         'recommends: ["beta"]\n', {"beta": "user-invocable-only"}, False, None),
+        ("被降档的 skill 没人引用（用户自己的选择，不该唠叨）",
+         "", {"beta": "off"}, False, None),
+        ("没有 settings.json（CI 环境）必须安静跳过",
+         'invokes: ["beta"]\n', None, False, None),
+    ]
+    for label, extra, overrides, strict, expect in cases:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td) / "repo"
+            root.mkdir()
+            make_fixture(root)
+            (root / ".rulesync" / "skills" / "alpha" / "SKILL.md").write_text(
+                skill("alpha", extra=extra), encoding="utf-8")
+            cfg = Path(td) / "cfg"
+            (cfg / "skills").mkdir(parents=True)
+            if overrides is not None:
+                (cfg / "settings.json").write_text(
+                    json.dumps({"skillOverrides": overrides}), encoding="utf-8")
+            code, out = run(root, ssot_only=False, config_dir=cfg, strict=strict)
+
+        if expect is None:
+            if "[G6]" in out:
+                problems.append(f"G6「{label}」：不该报 G6 却报了\n{out}")
+                print(f"  ✗ G6 {label} → 误报")
+            else:
+                print(f"  ✓ G6 {label} → 未报，exit={code}")
+        elif expect not in out:
+            problems.append(f"G6「{label}」：期望出现 `{expect}`，实际没有\n{out}")
+            print(f"  ✗ G6 {label} → 缺 `{expect.strip()}`")
+        else:
+            print(f"  ✓ G6 {label} → {expect.strip()}，exit={code}")
+    return problems
+
+
 CASES: list[tuple[str, callable, str | None]] = [
     # (名称, 注入函数, 期望的规则码；None = 期望通过)
     ("S1 name 与目录名不一致",              v_s1,           "S1"),
@@ -237,15 +345,25 @@ CASES: list[tuple[str, callable, str | None]] = [
     ("(应通过带警告) description 过警戒线未超限", v_s9_warn, None),
     ("(应通过) scope: project 合法声明",    v_s8_ok,        None),
     ("(应通过) 块标量后的其他键不被算进 description", v_block_scalar_not_leaking, None),
+    ("S10 正文点名不存在的 skill",             v_s10,          "S10"),
+    ("S10 description 点名不存在的 skill",    v_s10_desc,     "S10"),
+    ("(应通过) 正文点名本地专用 skill",        v_s10_ok,       None),
+    ("(应通过带警告) 正文点名已登记的缺失能力", v_s10_known_missing, None),
+    ("(应通过) 正文点名 Claude Code 内置 skill", v_s10_external, None),
+    ("(应通过) 路径/shell/URL 不被当成 skill 引用", v_s10_no_false_positive, None),
 ]
 
 # 期望通过、但必须留下 WARN 的用例（登记 ≠ 修好，不能静默放行）
 MUST_WARN = {"(应通过带警告) 引用已登记的缺失能力",
-             "(应通过带警告) description 过警戒线未超限"}
+             "(应通过带警告) description 过警戒线未超限",
+             "(应通过带警告) 正文点名已登记的缺失能力"}
 
 # 期望通过、且**不许**出现某规则告警的用例。少了这一档，"解析多算了长度"
 # 只会表现为一条多余的 WARN——exit 仍是 0，测试照样绿，洞就留住了。
-MUST_NOT_WARN = {"(应通过) 块标量后的其他键不被算进 description": "S9"}
+MUST_NOT_WARN = {"(应通过) 块标量后的其他键不被算进 description": "S9",
+                 "(应通过) 正文点名本地专用 skill": "S10",
+                 "(应通过) 正文点名 Claude Code 内置 skill": "S10",
+                 "(应通过) 路径/shell/URL 不被当成 skill 引用": "S10"}
 
 
 def main() -> int:
@@ -294,13 +412,19 @@ def main() -> int:
         else:
             print(f"  ✓ {name} → {expect} 触发，exit={code}")
 
+    # 全局层：G5 / G6 各自起一个临时 CLAUDE_CONFIG_DIR 做「声明 vs 实际」的对账。
+    # 它们不走 CASES（需要伪造 ~/.claude，不只是改仓库内容）。
+    failures += check_g5()
+    failures += check_g6()
+
     print()
     if failures:
         print(f"✗ {len(failures)} 项未通过\n")
         for f in failures:
             print(f + "\n")
         return 1
-    print(f"✓ 全部 {len(CASES) + 1} 项通过：每条规则都被证明能红，且不误报")
+    print(f"✓ 全部 {len(CASES) + 1} 项 + 全局层 G5/G6 对账通过："
+          f"每条规则都被证明能红，且不误报")
     return 0
 
 
