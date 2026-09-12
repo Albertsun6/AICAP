@@ -141,7 +141,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 ---
 
 ### `/req-discovery`
-**用途**：需求发掘与 User Story 生成——通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，可选择直接衔接 `/feature-fullstack` 进入实施。
+**用途**：需求发掘与 User Story 生成——通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，最后询问是否进入实施、由用户指定实施方式。
 
 触发："发掘需求" / "需求访谈" / "帮我写 user story" / "整理需求" / "我有个功能想法"
 
@@ -332,8 +332,9 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 | `user-invocable-only` | 隐藏 | 有 |
 | `off` | 隐藏 | 隐藏 |
 
-当前设为 `name-only` 的：`ios-e2e-test`、`feature-fullstack`（Seaidea / claude-web 项目
-全盘未搜到）、`fedex-tracker`（低频个人工具）。要彻底隐藏就改 `off`。
+当前设为 `off` 的：`ios-e2e-test`、`feature-fullstack`（Seaidea / claude-web 项目全盘未搜到，
+已对模型和 `/` 菜单双向隐藏）；`name-only`：`fedex-tracker`（低频个人工具）；
+`user-invocable-only`：`sync-aicap`（有副作用，会开 PR）、`archi-strategy-decode`。
 
 > `skillOverrides` 比 frontmatter 的 `disable-model-invocation` 更合适做这件事：
 > 不用改 SKILL.md（不污染 SSOT）、可按项目在 `.claude/settings.local.json` 里单独覆盖、
