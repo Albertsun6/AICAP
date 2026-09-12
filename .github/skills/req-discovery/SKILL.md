@@ -2,7 +2,7 @@
 name: req-discovery
 description: >
   需求发掘与 User Story 生成。通过多轮结构化访谈，将模糊的产品想法转化为完整的 User Story 列表（含 Given/When/Then
-  验收标准和 MoSCoW 优先级），可选择直接衔接 /feature-fullstack 进入实施。
+  验收标准和 MoSCoW 优先级），最后询问是否进入实施、由用户指定实施方式。
 
 
   Use when the user says:
@@ -33,7 +33,7 @@ Phase 2  结构化访谈      ← 最多 3 轮，每轮聚焦一个维度
   每轮后：Reflection Gate — 自检信息是否充足
 Phase 3  提炼 User Stories
 Phase 4  用户确认 & 写入文件
-Phase 4.5 询问是否衔接 /feature-fullstack
+Phase 4.5 询问是否进入实施      ← 由用户指定实施方式，本 skill 不自行挑
 ```
 
 用户随时可以说「够了，直接输出」跳到 Phase 3。
@@ -162,16 +162,16 @@ Phase 4.5 询问是否衔接 /feature-fullstack
 
 ---
 
-## Phase 4.5 — 衔接 /feature-fullstack（可选）
+## Phase 4.5 — 询问是否进入实施（可选）
 
 写入文件后，询问：
 
-> "需求文档已保存到 `[文件名].md`。是否直接进入实施？（输入「是」我会启动 /feature-fullstack）"
+> "需求文档已保存到 `[文件名].md`。是否现在进入实施？如果要，请告诉我用哪种方式（某个 skill / 直接开工 / 交给别的工具），我按你指定的方式接着做。"
 
-如果用户同意：
+如果用户要进入实施：
 1. 读取刚生成的 stories.md
-2. 告知用户：将以 stories.md 的内容作为 /feature-fullstack 的输入
-3. 触发 /feature-fullstack 技能
+2. 按用户指定的实施方式继续，以 stories.md 的内容作为输入
+3. 用户没指定方式时不要自行挑一个——先问清楚再动手
 
 ---
 
