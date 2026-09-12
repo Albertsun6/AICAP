@@ -3,7 +3,7 @@
 > 面向人的操作手册。**只收录在本仓库里才生效的东西**；全局约定看 `~/.claude/USAGE.md`。
 > 能力本身的定义在 `.rulesync/`（SSOT），skill 清单在 `SKILLS.md`。
 >
-> 最近更新：2026-07-30
+> 最近更新：2026-09-12
 
 ## 速查
 
@@ -11,7 +11,7 @@
 |---|---|
 | `pnpm run ai:generate` | 从 `.rulesync/` 生成四个工具的产物（改完 SSOT 必跑） |
 | `pnpm run ai:check` | generate 后比对，有漂移就非零退出（CI drift gate 同款） |
-| `pnpm run ai:check-skills` | skill 门禁：断链 / 索引一致性 / 硬编码路径 |
+| `pnpm run ai:check-skills` | skill 门禁：断链 / 索引一致性 / 硬编码路径 / 正文点名的 skill 是否还存在 |
 | `pnpm run ai:check-orphans` | 查「入库了但 generate 不再产出」的孤儿产物（drift gate 的盲区） |
 | `pnpm run ai:eval:trigger` | skill 触发准确度 eval，**走 Claude Code 订阅，不需要 API key** |
 | `pnpm run ai:eval:arena` | **竞技场 eval**：真跑 `claude -p`，看全 SSOT skill 同场竞争时实际触发了谁 |
@@ -93,12 +93,17 @@ python3 scripts/check-skills.py --strict-global    # 把全局层的收录差异
 
 分两层：**SSOT 层**只看仓库、CI 可跑、违规一律红；**全局层**需要本机 `~/.claude/`，CI 上自动跳过，断链 symlink 是红、收录差异是黄（队友机器上的本地 skill 天然不同，不该因此挡 PR）。
 
-规则表见 `.rulesync/rules/skills.md`（S1–S9 / G1–G5）。
+规则表见 `.rulesync/rules/skills.md`（S1–S10 / G1–G6）。
 
 其中 **S9**（description ≤1024 字符）防的是一类静默失效：你发现某 skill 漏触发 → 在 description 末尾追加触发词 → 总长超限 → **新加的那句正好在尾部被截掉** → 以为修好了，实际模型压根没看到。官方文档那句 *Put the key use case first* 就是在暗示这件事。
 
 当前最长的是 `learning-loop` **496 字符 = 上限的 48%**，无人触碰 800 警戒线——它原本 891 字符（87%），
 精简时把实现细节移进正文、23 个触发词一个没删。门禁现存的 3 个警告全是 S5（指向「已知缺失的能力」），与长度无关。
+
+**S10**（正文/`description` 点名的 skill 必须存在）与 **G6**（本机 `skillOverrides` 把被引用的 skill 关掉了）补的是同一个盲区的两半：**skill 存在但已失效**。S5/S6 只看 frontmatter 声明的调用图，于是「目录在、`SKILLS.md` 也登记了，但正文承诺的那个 skill 其实早没了、或已被 `skillOverrides` 关到模型看不见」这一类，此前一路绿灯——`borrow-open-source`（正文点名，SSOT 与本机都查无此物）和 `feature-fullstack`（设为 `off`）都是这么漏过去的，最后靠人眼审计才发现。
+
+- **S10 是红**，纯静态、CI 里独立成立。只认 `/kebab-case` 这一种无歧义写法：`/tmp`、`${…}/skills`、`A/B-test`、URL 路径段都不算引用（假阳性回归用例在自检里）。Claude Code 内置（`/code-review`、`/security-review`）与上游家族里没引进的成员走脚本里的 `EXTERNAL_SLASH_REFS` 白名单，每条注明理由；确实想保留一个不存在的名字，就登记进 `SKILLS.md`「已知缺失的能力」降为 WARN。
+- **G6 是黄**（`--strict-global` 升红）。`~/.claude/settings.json` 是**个人文件**，CI 里不存在、队友机器也各不相同，所以读不到就安静跳过、绝不报错；读到才对账。`invokes` 碰上 `off` / `user-invocable-only` 都算断（模型都调不动），`recommends` 只有 `off` 才算断——菜单还在的话，那条给人的路由依然成立。
 
 **门禁自己怎么被验证**：`python3 scripts/test-check-skills.py` —— 为每条规则造一个合成违规，断言必须红在正确的规则码上；再断言干净基线绿、合法用法不误报。CI 里**先跑这个，再跑门禁**：一个坏掉的门禁会安静地放行一切。
 

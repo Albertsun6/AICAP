@@ -169,11 +169,18 @@ SSOT 层（CI 强制，违规 = 红）：
 | S7 | SSOT 正文不得写死本机路径（`/Users/...`、`~/Desktop/...`）；`~/.claude` 除外 |
 | S8 | `scope` 只认 `global`（默认）与 `project`；拼错必须红，否则会静默退化成全局 |
 | S9 | `description` ≤ **1024** 字符（>800 报 WARN）。两个上限取严者：1024 是 Agent Skills 开放标准 spec，1536 是 Claude Code 对 `description` + `when_to_use` 的 listing 截断阈值。**超出静默丢失**——不报错、generate 照常 exit=0，而丢掉的往往正是你最后追加的触发词 |
+| S10 | 正文 / `description` 里以 `/kebab-case` 点名的 skill 必须存在（SSOT / 本地专用 / 插件 / 已知缺失四类之一）。与 S5 的分工：**S5 判会不会跑**（语义，只认显式声明），**S10 判这个名字还在不在**（字面，静态可判）。只认带连字符的斜杠写法——`/tmp`、`${…}/skills`、`A/B-test`、URL 路径段都不算引用；Claude Code 内置与上游家族里没引进的成员走脚本里的 `EXTERNAL_SLASH_REFS` 白名单（每条都注明理由） |
 
 全局层（需本机 `~/.claude/`，CI 自动跳过）：断链 symlink 是红；
 本机 skill 与 `SKILLS.md` 的收录差异是黄（队友机器天然不同，不该因此挡 PR）。
 **G5**：声明了 `scope: project` 却仍出现在 `~/.claude/skills/` 是红——没有这条对账，
 `scope: project` 就只是一句没人执行的注释。
+**G6**：`~/.claude/settings.json` 的 `skillOverrides` 把被 `invokes` / `recommends` 指向的
+skill 降到模型看不见（`off` / `user-invocable-only`）是黄，`--strict-global` 下升为红。
+S6 只读 frontmatter 的 `disable-model-invocation`，读不到 settings——于是「skill 目录在、
+`SKILLS.md` 也登记了，但本机已经把它关掉」这一类失效此前没人管，`feature-fullstack`
+就是这么一路绿灯到人眼审计的。settings 是**个人文件**：CI 里不存在、队友机器也各不相同，
+所以读不到就安静跳过、绝不报错。
 
 S7 存在的原因是这仓库搬过一次家（`Desktop/AICAP` → `Desktop/AIProject/AICAP`），
 写死的路径悄悄失效了很久没人发现。

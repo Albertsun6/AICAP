@@ -11,6 +11,11 @@
 这两个字段只存在于 .rulesync/ SSOT 源；rulesync 8.18.0 会把未知 frontmatter
 字段从产物里剥掉，所以它们不进任何工具的上下文，也不影响 drift gate。
 
+显式声明管的是「会不会跑」。名字还在不在是另一回事，由两条规则分别兜住：
+    S10 正文 / description 里以 `/kebab-case` 点名的 skill 必须存在（字面，静态可判）
+    G6  本机 skillOverrides 把被引用的 skill 关到模型看不见（S6 只读 frontmatter，
+        读不到 settings，所以「skill 存在但已失效」这一类此前没人管）
+
 分两层跑：
   SSOT 层  —— 只看仓库内容，CI 可跑，违规一律 ERROR
   全局层  —— 需要本机 ~/.claude/，CI 上自动跳过；断链是 ERROR，收录差异是 WARN
@@ -146,6 +151,27 @@ def parse_frontmatter(path: Path) -> dict:
 # 指向"某台机器上某个 checkout"的路径。~/.claude 是标准位置，不在此列。
 MACHINE_PATH_RE = re.compile(r"(?:/Users/[\w.-]+|~/Desktop)(?!/\.claude\b)/[^\s`'\"）)]*")
 
+# 正文 / description 里以 `/kebab-case` 点名的 skill。只认这一种**无歧义**写法：
+#   · 必须带连字符 —— 单词型 `/tmp`、`/skills`、`/qa` 绝大多数是路径或内置命令
+#   · 前面不能是 词字符 . / ~ $ } 引号 - —— 排除路径段、shell 展开、`A/B`、`读/写`
+#   · 后面不能是 词字符 / . -    —— 排除 `/tmp/survey-x`、`/foo.md`
+# 这条不与「不靠正文 grep 推断调用图」矛盾，两者判的是不同的事：
+#   S5  判**会不会跑**（语义 —— 必须显式声明，grep 假阳性压倒真信号）
+#   S10 判**这个名字还在不在**（字面 —— 可静态判定，与是否触发无关）
+# 正文里写 `/foo-bar` 就是在告诉读者「有个叫 foo-bar 的 skill」；它不存在就是事实错误。
+SKILL_REF_RE = re.compile(r"(?<![\w./~$}'\"-])/([a-z][a-z0-9]*(?:-[a-z0-9]+)+)(?![\w/.-])")
+
+# 不在本仓库「已声明宇宙」里、但 S10 不该拦的 `/kebab-case`。
+# 每条都必须写清为什么 —— 否则这个集合会变成静默放行一切的后门。
+EXTERNAL_SLASH_REFS = {
+    # Claude Code 内置 skill，不经 SSOT、也不该进 SKILLS.md 的收录集合
+    "code-review", "security-review",
+    # 上游 skill 家族里本仓库没引进的成员。SKILLS.md「已知缺失的能力」已就
+    # plan-design-review / design-review-lite 立过规矩：**不改上游 skill 的正文**，
+    # 避免与上游分叉。这几个同理，只出现在 zhao-lei007 / anthropics 的原文里。
+    "design-review", "qa-only", "document-release", "skill-test",
+}
+
 SECTION_RE = re.compile(r"^##\s+(.+?)\s*$", re.M)
 ENTRY_RE = re.compile(r"^###\s+`/?([a-z0-9][a-z0-9-]*)`", re.M)
 # 「按项目分发」章节用表格而不是 ### 小节列条目，单独提取首列。
@@ -183,10 +209,10 @@ def find_section(sections: dict, keyword: str) -> tuple[str | None, dict]:
 
 # ---------------------------------------------------------------- SSOT 层
 
-def check_ssot() -> tuple[set[str], set[str]]:
+def check_ssot() -> tuple[set[str], set[str], set[str], dict[str, dict]]:
     if not SSOT_DIR.is_dir():
         err("S0", f"找不到 SSOT 目录 {SSOT_DIR}")
-        return set(), set()
+        return set(), set(), set(), {}
 
     dirs = {p.name for p in sorted(SSOT_DIR.iterdir()) if (p / "SKILL.md").is_file()}
     metas = {n: parse_frontmatter(SSOT_DIR / n / "SKILL.md") for n in dirs}
@@ -275,8 +301,34 @@ def check_ssot() -> tuple[set[str], set[str]]:
                       f"（{shown}）——SSOT 要跨机器可用，改成仓库相对路径或"
                       f"运行时定位（git rev-parse --show-toplevel）")
 
+    # S10 正文 / description 里点名的 skill 必须真的存在。
+    # S5 只看 frontmatter 声明的调用图，而「承诺一个不存在的衔接」几乎总是写在正文里：
+    # survey 的对比表曾长期列着 borrow-open-source 与 harness-review-workflow，
+    # req-discovery 的 Phase 4.5 曾写「衔接 /feature-fullstack」——门禁一条都没抓到，
+    # 最后靠人眼审计才发现。承诺一个不会发生的衔接，比不承诺更坏。
+    for name in sorted(dirs):
+        meta = metas[name]
+        seen: dict[str, str] = {}
+        for label, text in (("description", meta.get("description") or ""),
+                            ("正文", meta.get("_body") or "")):
+            for ln, line in enumerate(text.splitlines(), 1):
+                for m in SKILL_REF_RE.finditer(line):
+                    seen.setdefault(m.group(1),
+                                    label if label == "description" else f"正文 L{ln}")
+        for target, where in sorted(seen.items()):
+            if target == name or target in EXTERNAL_SLASH_REFS:
+                continue
+            if target in known_missing:
+                warn("S10", f"{name} 的{where} 点名 `/{target}`，它已登记在 SKILLS.md"
+                            f"「已知缺失的能力」——引用可解析，但该能力当前并不存在")
+            elif target not in universe:
+                err("S10", f"{name} 的{where} 点名 `/{target}`，但它不是任何已声明的 skill"
+                           f"（SSOT / 本地专用 / 插件 / 已知缺失里都没有）——正文承诺一个"
+                           f"不存在的衔接比不承诺更坏。确实要保留这个名字，就登记进 "
+                           f"SKILLS.md「已知缺失的能力」（降为 WARN 留痕）")
+
     project_scoped = {n for n in dirs if metas[n].get("scope") == "project"}
-    return dirs, local_sec["entries"], project_scoped
+    return dirs, local_sec["entries"], project_scoped, metas
 
 
 # ---------------------------------------------------------------- 全局层
@@ -336,6 +388,51 @@ def check_global(ssot_dirs: set[str], declared_local: set[str],
         soft("G4", f"SKILLS.md 声明了但本机不存在的本地 skill：{', '.join(sorted(ghost))}")
 
 
+def check_overrides(metas: dict[str, dict], strict: bool) -> None:
+    """G6 本机 `skillOverrides` 把被引用的 skill 关到模型看不见。
+
+    S6 只读 frontmatter 的 `disable-model-invocation`，读不到 settings 里的
+    `skillOverrides`——于是「目录在、SKILLS.md 也登记了、但本机已经把它关掉」
+    这一类失效，S5 / S6 / S10 全部绿灯。`feature-fullstack` 正是这样一路绿到
+    2026-09-12 人眼审计才被发现的：它既硬编码了已不存在的项目路径，又早被设为 `off`。
+
+    `~/.claude/settings.json` 是**个人文件**：CI 里不存在，队友机器也各不相同。
+    所以读不到就安静跳过、绝不报错；读到才对账，且默认是黄不是红。
+    """
+    path = GLOBAL_HOME / "settings.json"
+    if not path.is_file():
+        print(f"  (跳过 G6：{path} 不存在——CI 环境正常)")
+        return
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        print(f"  (跳过 G6：{path} 读不动或不是合法 JSON——个人文件，不因此报错)")
+        return
+    overrides = (data or {}).get("skillOverrides")
+    if not isinstance(overrides, dict) or not overrides:
+        return
+
+    soft = err if strict else warn
+    print(f"  G6：读到 {len(overrides)} 条 skillOverrides")
+
+    # `off` = 模型和 `/` 菜单都没有；`user-invocable-only` = 对模型隐藏但人还能打 `/name`。
+    # 所以 `invokes`（模型硬调用）碰上两者都算断；`recommends`（给人的路由）只有
+    # `off` 才算断——菜单还在的话，这条路由对人依然成立。
+    hidden = {"off": "模型与 `/` 菜单双向隐藏", "user-invocable-only": "对模型隐藏"}
+    for name in sorted(metas):
+        for field in ("invokes", "recommends"):
+            for target in metas[name].get(field, []):
+                level = overrides.get(target)
+                if level not in hidden:
+                    continue
+                if field == "recommends" and level != "off":
+                    continue
+                soft("G6", f"{name} 的 `{field}` 指向 `{target}`，但本机 skillOverrides "
+                           f"把 `{target}` 设成了 `{level}`（{hidden[level]}）——"
+                           f"这类失效 S6 抓不到（S6 只读 frontmatter）。"
+                           f"要么改 settings，要么把这条引用去掉")
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> int:
@@ -344,13 +441,14 @@ def main() -> int:
 
     print("skill 门禁")
     print(f"  仓库：{REPO}")
-    ssot_dirs, declared_local, project_scoped = check_ssot()
+    ssot_dirs, declared_local, project_scoped, metas = check_ssot()
     scoped = f"，其中 {len(project_scoped)} 个项目级不入全局" if project_scoped else ""
     print(f"  SSOT 层：{len(ssot_dirs)} 个 skill 已检查{scoped}")
     if ssot_only:
         print("  (--ssot-only：跳过全局层)")
     else:
         check_global(ssot_dirs, declared_local, project_scoped, strict)
+        check_overrides(metas, strict)
 
     print()
     for w in warnings:
