@@ -23,7 +23,7 @@
 | 调用点 | family | 脚本 | 同步/异步 | prompt 模板 | 文件名前缀 |
 |---|---|---|---|---|---|
 | Phase 2 Agent X1 | `gpt` | `SURVEY_CURSOR_EFFORT=high run-agent-async.sh … gpt 900` | **异步**（high 档 2026-11-19 实测约 4 min，贴同步窗口） | `prompts/agent-x.txt` | `survey-x1-` |
-| Phase 2 Agent X2 | `gemini` | `SURVEY_CURSOR_EFFORT=high run-cursor-agent.sh … gemini` | 同步（gemini-3.1-pro 时代实测 188–300s；Gemini 4 Neon high 档的同步耗时尚未实测，撞 124 就改走 async） | `prompts/agent-x2.txt` | `survey-x2-` |
+| Phase 2 Agent X2 | `gemini` | `SURVEY_CURSOR_EFFORT=high run-agent-async.sh start … gemini 900` | **异步**（2026-11-20 改，便于与其余三路同一条消息发出）；原为同步（gemini-3.1-pro 时代实测 188–300s） | `prompts/agent-x2.txt` | `survey-x2-` |
 | Phase 2.5 追搜（如需） | `gemini`（或 Claude agent） | `SURVEY_CURSOR_EFFORT=high run-cursor-agent.sh … gemini` | 同步 | 定向 prompt | `survey-x25-` |
 | Phase 6 Round 1/2/3 **主评审** | `gpt`（替补链见下） | `run-agent-async.sh … gpt 1800`（R1 缺省 xhigh；R2/R3 加 `SURVEY_CURSOR_EFFORT=high`） | **异步**（xhigh 全文评审 2026-11-19 实测 5–10 min） | `prompts/round1.txt` / `round2-rebuttal.txt` | `survey-r1-` / `r2-` / `r3-` |
 | Phase 6 Round 1 **红队第二评审**（one-shot） | `grok` | `SURVEY_CURSOR_EFFORT=high run-agent-async.sh … grok 1800` | **异步 + 软 deadline 900s**（该族基础延迟高；主评审回来后最多再等 15 min） | `prompts/round1.txt` + `prompts/round1-grok-prefix.txt` | `survey-r1g-` |
@@ -46,8 +46,8 @@
    - 不内联 bash（避免变量展开 / ARG_MAX / 临时文件清理出错）
 2. **prompt 必须用 Write 工具生成**到 `/tmp/survey-<前缀><unix-ts>-<4位随机>.txt`（前缀见上表）；**禁用 heredoc / cat 内联**。**X1 与 X2 并发跑，文件名前缀必须不同**；加随机段是因为用户常同开多窗跑 survey，秒级时间戳会跨窗口撞名互相覆盖
 3. **同步/异步按上表，都不许裸调**：
-   - **同步**（X2 / 追搜 / tiebreaker）：Bash 工具 timeout 参数固定 `600000`（600s 是工具硬上限，`BASH_MAX_TIMEOUT_MS` 有已知 bug 调不动）。脚本内层 watchdog 默认 **570s**，**内层必须比外层小**
-   - **异步**（X1 / Phase 6 全部评审轮次）：**必须走 `run-agent-async.sh`**（见 §异步 job）。X1 在 gpt high 档 2026-11-19 实测约 4 min（搜索指令密度决定耗时，不是 prompt 大小），同步窗口太贴；主评审 xhigh 全文评审实测 5–10 min，同步窗口装不下
+   - **同步**（追搜 / tiebreaker）：Bash 工具 timeout 参数固定 `600000`（600s 是工具硬上限，`BASH_MAX_TIMEOUT_MS` 有已知 bug 调不动）。脚本内层 watchdog 默认 **570s**，**内层必须比外层小**
+   - **异步**（X1 / X2 / Phase 6 全部评审轮次）：**必须走 `run-agent-async.sh`**（见 §异步 job）。X1 在 gpt high 档 2026-11-19 实测约 4 min（搜索指令密度决定耗时，不是 prompt 大小），同步窗口太贴；主评审 xhigh 全文评审实测 5–10 min，同步窗口装不下
    - **段落校验交给脚本**：启动 X1/X2 时设 `SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory'`，Phase 6 评审设 `SURVEY_REQUIRE_SECTIONS='Verdict'`，缺段在 job 内按 66 判掉
 4. **exit code → 降级路径完整映射**（两个 runner 同一张表）：
 
@@ -96,7 +96,7 @@
    （schema/段名只管形状不管实质：实测存在段落齐全但内容是占位符的情况）
 ```
 
-**Phase 2 的 X1/X2 必须在同一回合并发发出**（2 个 Agent 工具调用 + X1 的 async start + X2 的同步 Bash）。
+**Phase 2 的 X1/X2 必须在同一回合并发发出**（2 个 Agent 工具调用 + X1 的 async start + X2 的 async start）。
 **Phase 6 的 Round 1 主评审与红队同理**：同一回合发 2 个 async job（前缀 `survey-r1-` / `survey-r1g-`），串行会白多花 5–15 min。
 
 ## 模型选择
@@ -117,7 +117,7 @@
   - gemini：`neon carbon hydrogen argon`——Neon 与 Carbon 在独立评测上只差 1 分，厂商口径仍称 Carbon 最强；调研建议搜索用 Neon、全文评审用 Carbon（Neon xhigh 是几乎等价的备选）。文件每族只有一条顺序，评审想用 Carbon 就在那条命令前加 `SURVEY_SERIES_GEMINI="carbon neon"`
   - grok：无系列，只按版本（4.7 > 4.6 > 4.5；4.7 对 4.6 的证据互相矛盾，详见文件注释）
   - 单次覆盖：`SURVEY_SERIES_GPT` / `SURVEY_SERIES_GEMINI`（优先于文件）。文件缺失或读不出该族清单 → 用脚本内保底顺序并打 WARN
-- **新模型必须核实**：检测排在全部筛选**之前**（筛选只决定选不选）。该族每个 id 去掉 `-fast` / 档位 / `-preview` / `-exp` 后得到「版本[-系列]」，不在该族 `verified` 清单里（**不论版本高低**）→ runner 在 stderr 打 `NEW-MODEL: [族] <名字> 未在排名文件中核实…`，doctor 汇总成 WARN（不改 verdict），异步 job 的 `status` / `wait` 在状态行下面回显。所以裸 id、只有 `-max` 或低档、`-preview` 首发的下一代模型也会提示（写明「形态不在选型规则内，本次未选用」）；版本低于最高版本、又被筛掉的名字（如 `gpt-5.5-nova-max`）同样提示；被选中的未核实候选写明「本次已选用」（钉值生效时写的是钉值的实际情况）；只有小模型与专用形态（`-mini -codex -flash` 等）要版本超过最高版本才提示；名字里有族名但形态认不出来的（`xai-grok-5` / `gpt6` / `grok-code-5`）也提示，核实后把提示里的名字原样写进 `verified` 即可消掉。**盲区**：名字里不含族名的（如 `o5`）检测不到，靠 60 天复查覆盖。选型不因提示改变：版本更高的新候选照样胜出，同版本的新系列排在已核实系列之后。看到提示后先查官方模型页和厂商发布说明，更新排名文件的顺序、清单、依据 URL 和核对日期，再继续（SKILL.md 硬约束）；查不到就在报告 §metadata 写 `模型排名: 未核实（<原因>）`。核对日期超过 60 天 doctor 也报 WARN
+- **新模型必须核实**：检测排在全部筛选**之前**（筛选只决定选不选）。该族每个 id 去掉 `-fast` / 档位 / `-preview` / `-exp` 后得到「版本[-系列]」，不在该族 `verified` 清单里（**不论版本高低**）→ runner 在 stderr 打 `NEW-MODEL: [族] <名字> 未在排名文件中核实…`，doctor 汇总成 WARN（不改 verdict），异步 job 的 `status` / `wait` 在状态行下面回显。所以裸 id、只有 `-max` 或低档、`-preview` 首发的下一代模型也会提示（写明「形态不在选型规则内，本次未选用」）；版本低于最高版本、又被筛掉的名字（如 `gpt-5.5-nova-max`）同样提示；被选中的未核实候选写明「本次已选用」（钉值生效时写的是钉值的实际情况）；只有小模型与专用形态（`-mini -codex -flash` 等）要版本超过最高版本才提示；名字里有族名但形态认不出来的（`xai-grok-5` / `gpt6` / `grok-code-5`）也提示，核实后把提示里的名字原样写进 `verified` 即可消掉。**盲区**：名字里不含族名的（如 `o5`）检测不到，靠 60 天复查覆盖。选型不因提示改变：版本更高的新候选照样胜出，同版本的新系列排在已核实系列之后。看到提示时**不阻塞调研**：照当前解析结果继续，报告 §metadata 写 `模型排名: 未核实（检测到 <名字>，交付后单独核实）`；交付后把核实作为独立任务提给用户，在那里查官方模型页和厂商发布说明，更新排名文件的顺序、清单、依据 URL 和核对日期（SKILL.md 硬约束）。核对日期超过 60 天 doctor 也报 WARN
 - **排名文件自检**：键名 / 段名 / 值不分大小写。`series` / `verified` / `checked` 的行尾注释（空白 + `#`）会剥掉。不认识的键（如把 `series` 拼成 `serise`）、同一版本核实了两个以上名字而其中的系列不在 `series` 顺序里、`verified` 带系列却没有 `series` 行（此时改用脚本内保底顺序）、顺序里名字重复（以第一次出现为准）→ 各打一行 `WARN: [族] 排名文件 …` / `WARN: [族] 系列顺序里…`，doctor 同样汇总。`SURVEY_SERIES_*` 里写了排名文件没核实过的系列名也打 WARN（多半是拼错）
 - **改源不改镜像**：排名文件的源是 `.rulesync/skills/survey/model-ranking.conf`；`.claude/skills/survey/`（`~/.claude/skills/survey` 指向它）是 `pnpm run ai:generate` 的生成物，直接改会被覆盖。doctor 在镜像目录里跑时，修复建议给出的是源文件路径
 - 全族通排：`-fast` / `-none -low -medium` / `-max`（太慢，必超时）/ `-codex -mini -nano -lite -flash` / `-preview -exp -experimental -realtime -audio -image -embed -tts`；排除项**按完整分段匹配**（前有 `-`，后面是 `-` 或结尾；`-fast` 在中段也算）——裸 `mini` 会误杀 ge-**mini**，只锚前导 `-` 会误杀 `gpt-6-minimal`
@@ -143,7 +143,7 @@ codex 无 `--list-models` 等价物。`run-codex.sh` 读 `codex debug models` �
 | 调用点 | effort | 为什么 |
 |---|---|---|
 | Phase 2 X1（gpt） | **`SURVEY_CURSOR_EFFORT=high`** | 检索型任务，耗时由搜索指令密度决定；2026-11-19 实测 high 约 4 min |
-| Phase 2 X2 / Phase 2.5 追搜（gemini） | **`SURVEY_CURSOR_EFFORT=high`** | 检索型任务，同步窗口 570s |
+| Phase 2 X2（异步）/ Phase 2.5 追搜（同步，gemini） | **`SURVEY_CURSOR_EFFORT=high`** | 检索型任务；追搜受同步窗口 570s 约束 |
 | Phase 6 主评审 R1（gpt） | 缺省 xhigh | 全管线最难的推理任务；2026-11-19 实测全文评审 5–10 min，必须 async |
 | Phase 6 R2/R3 rebuttal（gpt） | **`SURVEY_CURSOR_EFFORT=high`** | 只看矩阵里的非 accept 条目，范围窄；与 R1 同版本同系列，只降档 |
 | Phase 6 红队（grok） | **`SURVEY_CURSOR_EFFORT=high`** + **软 deadline 900s**（2026-09-10 改） | 4 个红队角度靠联网取证不靠推理深度；xhigh 全文评审外推 10–20 min 曾是整个 survey 最慢的一段；必须 async，等待规则见 `phases/06-debate.md` §红队软 deadline |

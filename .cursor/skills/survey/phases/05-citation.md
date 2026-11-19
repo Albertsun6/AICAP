@@ -11,11 +11,10 @@
 ## Layer B：Claim-Support Verification（抽样）
 
 - 抽样 **30% 关键 claim**（最少 5 条；关键 claim = 综合报告 §推荐 + §方案对比 表格中带置信度 high 的）
-- 对每条 claim：
-  1. 取它引用的 URL（优先 ok，其次 wayback）
-  2. WebFetch 该 URL 内容
-  3. 由主 agent（或 LLM call）判定页面内容是否实际支持声明
-  4. 三档评分：`supported` / `partial` / `not-supported`
+- **分工**（2026-11-20 改：11-12 实跑主 agent 自己逐条 WebFetch 占了约 5 min 关键路径）：**取原文**交给**一个** Agent 工具子 agent（`model=haiku`），**判定**留给主 agent。Layer A 脚本（约 1 min）跑完后立刻发出，URL 按 Layer A 结果给（ok 用原址，dead 用 wayback 快照）
+- 子 agent 对每条 claim：WebFetch 对应 URL，摘出与该 claim 相关的原文段落（带上下文，含限定条件如地区、版本、适用范围）；取不到就写明原因。**只摘不判**
+- 主 agent 先核对返回条数等于抽样数（缺条按 `not-supported` 计），再对照摘录逐条判三档：`supported` / `partial` / `not-supported`
+- 改稿：要改的地方攒齐后一次改完，不逐条 Edit
 - 输出 JSON：每条抽样 claim + 评分 + 引用页面摘录
 
 ## 失败阈值

@@ -40,7 +40,9 @@ Agent X1（cursor-agent · family=gpt，第一异构 lens）— 替换原 Claude
 
 Agent X2（cursor-agent · family=gemini，第二异构 lens）
   调用：SURVEY_CURSOR_EFFORT=high SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
-          bash run-cursor-agent.sh <prompt> <out> gemini（同步，Bash timeout=600000）
+          bash run-agent-async.sh start <prompt> <out> gemini 900
+        → 拿 JOB_DIR 后 Bash(run_in_background) 跑 `run-agent-async.sh wait <job-dir> 540`
+        （**异步**，2026-11-20 改：原来是同步 Bash，会把同一条消息里的 Agent 结果一起卡住最长 10 min，也逼得 X2 晚于 Claude 路发出）
   任务：4 类 **Claude+GPT 共同盲区**针对性搜索（搜索引擎可见性偏差 / 非美系英文文档
         生态 / 学术已解决工业未流行 / 已废弃被取代的方案）
   prompt：prompts/agent-x2.txt
@@ -83,8 +85,8 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 
 **并发协调**（主 Claude 必读）：
 - Agent A、B 是 Claude subagent（用 Agent 工具启动，**`model=sonnet`**——不要让它们继承主模型的 xhigh 档去做检索）
-- Agent X1 是异步 job（`run-agent-async.sh start … gpt 900`），X2 是同步 Bash（`run-cursor-agent.sh … gemini`）——都经 cursor-agent，共用一套 Cursor 凭据（额度是否按族分开未实测）
-- 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的同步 Bash；随后后台 `wait` X1。墙钟由最慢者决定（X1 gpt high 档 2026-11-19 实测一次约 4 min，上限未实测；X2 的 Gemini 4 Neon high 档未实测）
+- Agent X1、X2 都是异步 job（`run-agent-async.sh start … gpt 900` / `… gemini 900`）——都经 cursor-agent，共用一套 Cursor 凭据（额度是否按族分开未实测）
+- 四者**并发启动**——先在上一条消息里 Write 好 X1/X2 两份 prompt 文件，再在**同一条 message** 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的 `start`；随后后台分别 `wait` X1、X2。墙钟由最慢者决定（X1 gpt high 档 2026-11-19 实测一次约 4 min，上限未实测；X2 的 Gemini 4 Neon high 档未实测）
 - **两个 Bash 调用必须用不同的 prompt / output 文件名**（`survey-x1-*` / `survey-x2-*`），否则互相覆盖
 - 主 Claude 在收到四方返回后再启动综合 agent；不要串行启动 X1/X2，会白白多花 ~5 min
 
@@ -169,7 +171,7 @@ Agent C（社区 + 经验）
 
 ## 异构调度（最小硬约束）
 
-- **启动 X1/X2 前先跑一次自检**：`bash doctor.sh`（秒级快检，不耗配额；exit 0=HEALTHY / 1=DEGRADED / 2=BROKEN）。非 0 时**提前**把即将发生的降级与修复建议告知用户（doctor 已给出确切命令），不要等 Phase 2 跑到一半才用 banner 揭晓；能自动修的（脚本执行位）doctor 会当场修掉。**exit 0 也要看 L3.2「模型排名」一节**：有 `NEW-MODEL:` 行、`排名文件` 自检 WARN 或核对日期超过 60 天的 WARN 时（它们不改 verdict），按 SKILL.md 硬约束「模型排名要查证」先上网核实并更新排名文件，再启动 X1/X2；查不到就照当前解析结果继续，并在报告 §metadata 写 `模型排名: 未核实（<原因>）`。异步 job 的 `status` / `wait` 输出里状态行下面若有缩进的 `NEW-MODEL:` 行，同样处理。除这一条外，**doctor 结果绝不阻塞主流程**——BROKEN 也照走降级矩阵
+- **启动 X1/X2 前先跑一次自检**：`bash doctor.sh`（秒级快检，不耗配额；exit 0=HEALTHY / 1=DEGRADED / 2=BROKEN）。非 0 时**提前**用一句话把即将发生的降级与修复建议告知用户（doctor 已给出确切命令），不要等 Phase 2 跑到一半才用 banner 揭晓——**只告知、不提问**：不发 AskUserQuestion、不等回复，照降级矩阵直接继续（进入 Phase 6 前重跑一次 doctor，用户中途修好就恢复通道，见 SKILL.md）；能自动修的（脚本执行位）doctor 会当场修掉。**exit 0 也要看 L3.2「模型排名」一节**：有 `NEW-MODEL:` 行、`排名文件` 自检 WARN 或核对日期超过 60 天的 WARN 时（它们不改 verdict），**不停下来核实**：记下提示行原文，照当前解析结果启动 X1/X2，报告 §metadata 写 `模型排名: 未核实（检测到 <名字>，交付后单独核实）`，交付后按 SKILL.md 硬约束「模型排名要查证」把核实作为独立任务提给用户。异步 job 的 `status` / `wait` 输出里状态行下面若有缩进的 `NEW-MODEL:` 行，同样处理。除这一条外，**doctor 结果绝不阻塞主流程**——BROKEN 也照走降级矩阵
 - **必须跑 X1（GPT 族）与 X2（Gemini 族）两只眼，均经 cursor-agent**（异构 lens 是 Phase 2 设计核心）
 - **两只眼各自独立降级**；两只都不可用才退到 3 Claude（Agent X 换 Agent C）+ 报告顶部 banner（见上方 §自动降级矩阵）
 - **失败不阻塞主流程**——降级是设计目标，不是异常

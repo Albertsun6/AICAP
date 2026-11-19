@@ -32,7 +32,7 @@ Phase 1 问题界定
 
 **三族都走 Cursor（2026-11-19 起）**：`gpt` / `gemini` / `grok` 都经 `cursor-agent` 调用。搜索眼固定 `gpt`(X1) + `gemini`(X2)；Phase 6 主评审 `gpt`（异步 job）、红队第二评审 `grok`、事实裁判 `gemini`。**族 = 训练实验室，换 CLI 不构成换族**：`codex` CLI 是**可选备用通道**（默认流程、doctor 判定都不依赖它），它与 `gpt` 同族，所以绝不当红队或 tiebreaker。2026-09-09 曾因"OpenAI 将于 11-12 切断 Cursor"把 gpt 族迁去 codex；2026-11-19 实测 Cursor 侧 gpt 仍可用，遂迁回。**grok 不做搜索眼**——实测该族基础延迟高（263s 玩具 prompt），放进 Phase 2 会撞同步窗口。完整的替补链与选族规则见 `references/cursor-agent-invocation.md` §通道与族 / §三族分工与替补链。
 
-**自动降级**：两只异构眼按族各自降级——一只挂了另一只继续；两只都不可用才退回 3 Claude（详见 `phases/02-research.md` §自动降级矩阵）。三族共用 Cursor 一套凭据，Cursor 登录失效时三族同灭；额度见底（68）按族处理。Phase 6 主评审按 `gpt → grok → gemini` 替补链换族重试；红队挂了**不阻断**（增量意见不是质量门禁）。用户无法主动选择跳过任何阶段。
+**自动降级**：两只异构眼按族各自降级——一只挂了另一只继续；两只都不可用才退回 3 Claude（详见 `phases/02-research.md` §自动降级矩阵）。三族共用 Cursor 一套凭据，Cursor 登录失效时三族同灭；额度见底（68）按族处理。Phase 6 主评审按 `gpt → grok → gemini` 替补链换族重试；红队挂了**不阻断**（增量意见不是质量门禁）。用户无法主动选择跳过任何阶段。**降级只通知、不提问**：doctor 非 0 或通道中途失效时，用一句话告知用户降级情况和修复命令（如需用户本人登录），**不发 AskUserQuestion、不等回复**，照降级矩阵继续跑（2026-11-20 加：两次实跑都因为停下来问而白等 17 min 和 3 min）。降级原因是用户能自己修的（如登录失效），进入 Phase 6 前重跑一次 `doctor.sh`：用户已修好就恢复该通道参加终审；仍未修好则照降级走，报告顶部 banner 照常标明，不算完整通过异构门禁。
 
 **异构自检前置**：Phase 2 启动 X1/X2 前先跑 `bash doctor.sh`（秒级，不耗配额）——文件/执行位/cursor-agent 的安装与登录（用 `--list-models` 实打服务端，不信 CLI 自述：过期凭据下 `cursor-agent status` 照样自称 Logged in）/三 lens 模型解析（模型列表临时缩水时会明说"疑似缩水，稍后重试"，不判该族下架）/模型排名（L3.2：汇总 `NEW-MODEL:` 与排名文件自检的提示、核对日期是否超过 60 天；只报 WARN，不改 verdict）/额度留痕（读真调用留下的痕迹——额度见底时快检全绿，只有真调用会撞）逐层检查，执行位问题当场自动修复，其余给出确切修复命令；非 0 verdict 时**提前**告知用户即将发生的降级，而不是等中途 banner。**grok 族死只报 WARN 不降 verdict**（它只是替补 + 红队，不是搜索眼）；codex 备用通道未装/未登录只打一行 INFO，同样不影响 verdict。详见 `references/cursor-agent-invocation.md` §自检 + 自修复。
 
@@ -81,7 +81,7 @@ Phase 1 问题界定
 - Phase 6 多轮辩论 + 人类裁决强制（高质量 only，无 opt-out）
 - **红队是增量不是门禁**：Round 1 红队（grok，one-shot）挂了不阻断 Phase 6，标 metadata 即可；但**主评审与 tiebreaker 必须异族**这条是硬的，绝不允许同族自审自签
 - 任一族或 cursor-agent 整体不可用时自动降级 + banner（fallback contract）
-- **模型排名要查证，不许沿用旧排名**：三族选哪个模型由 `model-ranking.conf` 决定（上网查证后的顺序 + 已核实清单 + 依据 URL + 核对日期）。出现 `NEW-MODEL:` 行（实时列表里有清单之外的模型，含选型规则不收的形态：裸 id / 只有 `-max` 或低档 / `-preview` / 认不出的命名）或 `WARN: … 排名文件 …` 行时，主 agent **必须先**查官方模型页和厂商发布说明（有独立评测一并查），更新排名文件的顺序、清单、依据 URL 和核对日期，跑 `bash test-model-selection.sh`，**再继续**；doctor 报核对日期超过 60 天时同样处理。**去哪看**：`doctor.sh` 的 L3.2 一节（**exit 0 / HEALTHY 也要看**，这类提示不改 verdict）；同步调用 runner 的 stderr；异步 job 的 `status` / `wait` 输出里状态行下面缩进的行。**改哪一份**：`.rulesync/skills/survey/model-ranking.conf`（源），改完在仓库根跑 `pnpm run ai:generate` 并给镜像里的 `.sh` 补执行位——直接改 `.claude/skills/survey/` 下的镜像会在下次生成时被覆盖（doctor 的修复建议会给出源文件路径）。通道不通或查不到时不许装作查过：照当前解析结果继续。报告 §metadata 的 `模型排名:` 字段必填：`已核实 <核对日期>` 或 `未核实（<原因>）`。**盲区**：名字里不含族名的新模型（如 OpenAI 的 `o5`）脚本检测不到，靠 60 天复查时对照实时列表全量看一遍
+- **模型排名要查证，但不占调研关键路径**：三族选哪个模型由 `model-ranking.conf` 决定（上网查证后的顺序 + 已核实清单 + 依据 URL + 核对日期）。出现 `NEW-MODEL:` 行（实时列表里有清单之外的模型，含选型规则不收的形态：裸 id / 只有 `-max` 或低档 / `-preview` / 认不出的命名）或 `WARN: … 排名文件 …` 行时，**本次调研不停下来核实**：照当前解析结果继续跑，报告 §metadata 写 `模型排名: 未核实（检测到 <名字>，交付后单独核实）`；提示行写着「本次已选用」时（未核实的新模型被选中参与了本次调研），§metadata 还要写明哪一席用了它，读者据此判断可信度。报告交付后，主 agent 把核实作为**独立任务**提给用户（有新开会话的工具就开一个待启动的会话，没有就在最终回复里单列一行待办，写清提示行原文）——在那个任务里查官方模型页和厂商发布说明（有独立评测一并查），更新排名文件的顺序、清单、依据 URL 和核对日期，跑 `bash test-model-selection.sh`（约 4 min）。doctor 报核对日期超过 60 天时同样处理（2026-11-20 改：原来要求先核实再继续，查证 + 测试会给调研加 10–30 min）。**去哪看**：`doctor.sh` 的 L3.2 一节（**exit 0 / HEALTHY 也要看**，这类提示不改 verdict）；同步调用 runner 的 stderr；异步 job 的 `status` / `wait` 输出里状态行下面缩进的行。**改哪一份**：`.rulesync/skills/survey/model-ranking.conf`（源），改完在仓库根跑 `pnpm run ai:generate` 并给镜像里的 `.sh` 补执行位——直接改 `.claude/skills/survey/` 下的镜像会在下次生成时被覆盖（doctor 的修复建议会给出源文件路径）。通道不通或查不到时不许装作查过：照当前解析结果继续。报告 §metadata 的 `模型排名:` 字段必填：`已核实 <核对日期>` 或 `未核实（<原因>）`。**盲区**：名字里不含族名的新模型（如 OpenAI 的 `o5`）脚本检测不到，靠 60 天复查时对照实时列表全量看一遍
 - 信源排除（不搜中文社区）
 - 每个 phase / prompt 进入前的强制 Read gate
 
@@ -196,6 +196,10 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
    | 完整音频口语稿（C 档） | **sonnet** 子 agent | 6k–12k 字 | 产出型 |
 
    三族的档位都由 `SURVEY_CURSOR_EFFORT=high|xhigh` 控制（逐条命令前缀设置，不要 export），Claude 子 agent 由 Agent 工具 `model=` 参数控制。**不动的两处**：X1 与 R1 决定召回与评审深度，降档等于降质量。
+
+7. **五路一条消息发出（2026-11-20 加）**：先 Write 好 X1/X2 两份 prompt，再在**同一条消息**里发 Agent A/B（/C）+ X1 `start` + X2 `start`（X2 也走异步 job），然后后台 `wait`。11-19 实跑 X1/X2 比 Claude 路晚发 4 min，白等
+8. **核实交给子 agent，改稿攒齐一次改（2026-11-20 加）**：Phase 5.5 Layer B 与 Phase 6 核对 reviewer 事实，取原文都打包给**一个** haiku 子 agent（只摘不判，判定仍归主 agent）；主 agent 不自己逐条 WebFetch。改初稿时把要改的地方攒齐后一次 Write，不逐条 Edit。11-12 实跑主 agent 自己核对 + 18 次逐条 Edit 用了约 8 min
+9. **子 agent 不为提速而减（2026-11-20 实测）**：各路搜索并行，Claude 路 1–3 min、不在关键路径上，少一路几乎不省时间。三次实跑里每一路都在最终报告里贡献了别人没找到的引用（Claude 每路 2–16 条、X1 1–7 条、X2 1–10 条，各路重叠很小），红队每次贡献 5–7 条被采纳的独有意见。减路数只省 token，代价是丢引用
 
 ---
 

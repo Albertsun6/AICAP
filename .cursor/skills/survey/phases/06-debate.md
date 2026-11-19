@@ -94,6 +94,8 @@
 - **defer**：建议可能成立但证据强度不够支撑强表述 → 不 incorporate 为事实，放入 §待验证风险 或低置信度备注（典型例子：Series A 公告"采用"声明、未独立验证的产品宣传数据）
 - **refute**：不 incorporate。必须标 `reason: unsupported`（reviewer 证据不足）或 `reason: contradicted`（主 agent 有反证，必附 URL / 引文）
 
+**核对 reviewer 给的事实**（2026-11-20 加）：需要看原文才能表态的条目，把取原文打包交给**一个** Agent 工具子 agent（`model=haiku`，同 Phase 5.5 Layer B：只摘不判、主 agent 核对条数后自己表态）；主 agent 不自己逐条 WebFetch。这一步只服务于四档表态，**不替代**第 7 步的事实性分歧 tiebreaker。判断矩阵定完后，把要改的地方攒齐一次改稿。
+
 **禁止**：
 - 不要 refute 仅因"我不同意"——必须给 reason
 - 不要 accept 仅因"权威给的"——必须给独立证据支持
