@@ -3,8 +3,8 @@
 #
 # 为什么要有这个文件：Claude Code Bash 工具单次调用硬上限 600s 且不可调
 # （BASH_MAX_TIMEOUT_MS 有已知 bug 不生效，issue #34138/#25881 均 not planned），
-# 同步 570s watchdog 因此被钉死。但 Phase 6 全文评审（xhigh 常要 4-15 分钟）、
-# Phase 2 X1 搜索（gpt high 档实测约 4-8 分钟，贴着窗口）这类活同步窗口装不下，
+# 同步 570s watchdog 因此被钉死。但 Phase 6 全文评审（gpt xhigh 经 cursor 2026-11-19 实测 5-10 分钟）、
+# Phase 2 X1 搜索（gpt high 档 2026-11-19 实测一次约 4 分钟，上限未实测，贴着窗口）这类活同步窗口装不下，
 # 超时=白烧配额+整段丢失（实测踩过）。
 # 解法：nohup 把任务脱离 Claude Code 进程树，deadline 想设多长设多长；
 # 主 Claude 用**有界 wait 波次**（每波 <570s，可反复续杯）拿完成通知，期间照常干别的活。
@@ -66,7 +66,7 @@ if [ "$CMD" = start ]; then
   esac
   case "$DEADLINE" in *[!0-9]*|"") echo "ERROR: deadline 必须是秒数" >&2; exit 64 ;; esac
   [ "$DEADLINE" -gt 7200 ] && { echo "ERROR: deadline 上限 7200s" >&2; exit 64; }
-  [ -f "$PROMPT_FILE" ] || { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 66; }
+  [ -f "$PROMPT_FILE" ] || { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 64; }
   [ -f "$RUNNER" ] || { echo "ERROR: runner 缺失: $RUNNER" >&2; exit 65; }
 
   JOB_DIR=$(mktemp -d "${TMPDIR:-/tmp}/survey-job.XXXXXX")

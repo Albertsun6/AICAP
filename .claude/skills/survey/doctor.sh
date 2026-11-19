@@ -56,7 +56,9 @@ AGENT_COMMON_REQUIRE=1
 GPT_LENS=ok
 GEMINI_LENS=ok
 GROK_LENS=ok
-CURSOR_BROKEN=0     # cursor-agent 未装/未登录 → 三族齐灭（同通道）
+CURSOR_BROKEN=0     # cursor-agent 未装/未登录/连不上 → 三族齐灭（同通道）
+CURSOR_UNREACH=0    # 1 = 上面那个 1 的原因是"连不上"（没验证成，不是确认坏了）——只影响结论措辞
+NM_UNCHECKED=""     # 本次没跑成新模型检测的族（L3.2 据此不报「没有未核实的新模型」）
 WARN_COUNT=0
 FIX_COUNT=0
 REPAIRS=""          # 攒到最后统一打印的人工修复建议（每行一条）
@@ -220,9 +222,12 @@ else
     repair "重新登录 Cursor: cursor-agent login（会话硬 60 天上限、不可续期，到期需重登）"
     CURSOR_BROKEN=1
   elif [ "$LM_EXIT" -eq 124 ] || grep -qiE "failed to load models|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up|fetch failed|network|proxy|tls|certificate" "$LM_ERR" 2>/dev/null; then
-    # 连不上 != 未登录：把网络抖动误报成未登录，会让用户白跑一次浏览器 login
-    warn "连不上 Cursor 服务（$([ "$LM_EXIT" -eq 124 ] && printf '>25s 超时' || printf 'exit %s' "$LM_EXIT")）——登录态无法验证，正式调用可能失败"
-    repair "检查网络/代理后重试: cursor-agent --list-models"
+    # 连不上 != 未登录：把网络抖动误报成未登录，会让用户白跑一次浏览器 login。
+    # 但也不能只记 WARN：三族同走这一条通道，列表取不到 = 一族都没验证过，报 HEALTHY 就是静默放行
+    fail "连不上 Cursor 服务（$([ "$LM_EXIT" -eq 124 ] && printf '>25s 超时' || printf 'exit %s' "$LM_EXIT")）——登录态与三族模型都无法验证，按不可用处理"
+    repair "检查网络/代理后重试: cursor-agent --list-models（不必重新登录；通了以后重跑 bash $SKILL_DIR/doctor.sh）"
+    CURSOR_BROKEN=1
+    CURSOR_UNREACH=1
   else
     # 没见过的失败形态：fail-closed。静默放行正是本 skill 一直在防的东西
     fail "cursor-agent --list-models 以未识别的方式失败（exit ${LM_EXIT}）——按不可用处理"
@@ -257,7 +262,10 @@ say "── L3 模型解析（gpt 搜索眼 / gemini 搜索眼 / grok 替补族�
 if [ "$CURSOR_BROKEN" -eq 0 ]; then
   [ "$LIVE_OK" -eq 1 ] || warn "实时模型列表取不到——cursor 侧解析结果无法复核存在性"
   for FAM in gpt gemini grok; do
-    if run_deadline 40 "$WORK/resolve-$FAM.txt" bash "$CURSOR_RUNNER" --resolve-only "$FAM"; then
+    # 把 L2 的快照交给 runner：全程只看一份实时列表（各取各的会出现"拿完整列表复核缩水列表的解析结果"）
+    if SURVEY_MODEL_LIST_SNAPSHOT="$([ "$LIVE_OK" -eq 1 ] && printf '%s' "$LIVE_LIST")" run_deadline 40 "$WORK/resolve-$FAM.txt" bash "$CURSOR_RUNNER" --resolve-only "$FAM"; then
+      # 新模型检测只在 runner 拿到完整列表时才跑——没跑的族记下来，L3.2 不许替它报"没有新模型"
+      grep -qE "取模型列表失败|疑似临时缩水" "$WORK/resolve-$FAM.txt.err" 2>/dev/null && NM_UNCHECKED="$NM_UNCHECKED $FAM"
       MODEL_ID=$(tail -1 "$WORK/resolve-$FAM.txt")
       # 空串/非法字符 = 解析隐式崩溃，fail-closed，绝不当合法 id 放行
       case "$MODEL_ID" in
@@ -268,18 +276,24 @@ if [ "$CURSOR_BROKEN" -eq 0 ]; then
       SRC=live
       grep -qE "WARN: .*(回落到|取模型列表失败)" "$WORK/resolve-$FAM.txt.err" 2>/dev/null && SRC=fallback
       [ -n "${SURVEY_CURSOR_MODEL:-}" ] && [ "$MODEL_ID" = "$SURVEY_CURSOR_MODEL" ] && SRC=pinned
+      # 缩水是临时的，别让人去改 FALLBACK。先于存在性复核判：runner 对缩水列表一律不选型、正式调用
+      # exit 65，回落 id 碰巧还在缩水列表里（grok）也一样调不了
+      if grep -q "疑似临时缩水" "$WORK/resolve-$FAM.txt.err" 2>/dev/null; then
+        lens_bad "$FAM" "[$FAM] 模型列表疑似临时缩水——现在调用会 fail-closed 跳过，通常不到一小时恢复"
+        repair "[$FAM] 稍后重跑 bash $SKILL_DIR/doctor.sh（列表恢复前不要改 FALLBACK_MODEL，也不要判定该族已下架）"
+        continue
+      fi
       # 首列精确等值匹配，不用 grep 正则：id 里的 . 会被当通配符
       if [ "$LIVE_OK" -eq 1 ] && ! awk -v id="$MODEL_ID" '$1 == id {f=1} END {exit !f}' "$LIVE_LIST"; then
-        # runner 在"列表取到了但该族无候选"时会说明是缩水还是下架——缩水是临时的，别让人去改 FALLBACK
-        if grep -q "疑似临时缩水" "$WORK/resolve-$FAM.txt.err" 2>/dev/null; then
-          lens_bad "$FAM" "[$FAM] 模型列表疑似临时缩水（实时列表里暂时没有该族）——现在调用会 fail-closed 跳过，通常不到一小时恢复"
-          repair "[$FAM] 稍后重跑 bash $SKILL_DIR/doctor.sh（列表恢复前不要改 FALLBACK_MODEL，也不要判定该族已下架）"
-          continue
-        fi
         lens_bad "$FAM" "[$FAM] ${SRC} 模型 ${MODEL_ID} 不在实时列表——正式调用会 fail-closed 跳过$(grep -q "可能已下架" "$WORK/resolve-$FAM.txt.err" 2>/dev/null && printf '（列表完整却没有该族候选：可能已下架或命名已变）')"
         case "$SRC" in
           pinned) repair "unset SURVEY_CURSOR_MODEL，或钉一个 cursor-agent --list-models 里存在的 id" ;;
-          *)      repair "更新 run-cursor-agent.sh 中 [$FAM] 的 FALLBACK_MODEL，并跑 bash $SKILL_DIR/test-model-selection.sh 校准解析规则" ;;
+          *)      if grep -q "可能已下架" "$WORK/resolve-$FAM.txt.err" 2>/dev/null; then
+                    # 整族没有候选：列表里没有任何该族 id 可填进 FALLBACK_MODEL，让人去改它修不好
+                    repair "[$FAM] 先确认 cursor-agent --list-models 里该族是否改名（改名就更新 model-ranking.conf 与选型规则）；确已下架则$([ "$FAM" = gpt ] && printf ' gpt 族可临时启用 codex 备用通道（需自行 codex login）' || printf '按降级矩阵走，等该族恢复')"
+                  else
+                    repair "更新 run-cursor-agent.sh 中 [$FAM] 的 FALLBACK_MODEL，并跑 bash $SKILL_DIR/test-model-selection.sh 校准解析规则"
+                  fi ;;
         esac
         continue
       fi
@@ -291,11 +305,13 @@ if [ "$CURSOR_BROKEN" -eq 0 ]; then
       esac
     else
       lens_bad "$FAM" "[$FAM] 模型解析超时/崩溃（>40s）"
+      NM_UNCHECKED="$NM_UNCHECKED $FAM"
     fi
   done
 else
   say "（cursor 侧跳过——L2a 已判该通道不可用）"
   GPT_LENS=dead; GEMINI_LENS=dead; GROK_LENS=dead
+  NM_UNCHECKED=" gpt gemini grok"
 fi
 
 # ═══ L3.2 模型排名文件（新模型提示 + 核对日期；只 WARN，不改 verdict）════
@@ -326,7 +342,7 @@ if [ -z "${SURVEY_RANKING_FILE:-}" ]; then
 fi
 RANK_REPAIR="上网核实后更新 model-ranking.conf 的顺序、清单和核对日期（查官方模型页、厂商发布说明、独立评测；要改的文件: ${RANK_EDIT}${RANK_REGEN}），改完跑 bash $SKILL_DIR/test-model-selection.sh"
 
-if [ ! -r "$RANK_FILE" ]; then
+if [ ! -f "$RANK_FILE" ] || [ ! -r "$RANK_FILE" ]; then      # 指向目录也算：-r 对目录为真，awk 读它会报错
   # 不并入上面 runner 的同类 WARN（每族一行，共三行说的是同一件事）
   warn "排名文件 ${RANK_FILE} 缺失或不可读——系列顺序用脚本内保底顺序，新模型检测不生效"
   repair "恢复 model-ranking.conf（到 skill 所在 git 仓库 checkout），或按文件头格式重建"
@@ -342,32 +358,46 @@ $(grep -E '^NEW-MODEL: |^WARN: .*排名文件' "$WORK/resolve-$FAM.txt.err" 2>/d
 EOF
   done
   # 日期差用 awk 按儒略日算：BSD date 与 GNU date 的解析参数不通用
-  STALE=$(awk -v today="$(date +%Y-%m-%d)" -v max="$RANK_MAX_AGE_DAYS" '
-    function jdn(s,  a, y, m, d) {
+  # 输出两行：S<过期或写错的族>、F<核对日期晚于今天的族>（年份敲错一位时差值为负，永远不会"过期"）
+  DATE_OUT=$(awk -v today="$(date +%Y-%m-%d)" -v max="$RANK_MAX_AGE_DAYS" '
+    function jdn(s,  a, y, m, d, dim) {
       if (s !~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) return -1
       split(s, a, "-"); y = a[1] + 0; m = a[2] + 0; d = a[3] + 0
+      # 只验形状不够：2026-13-45 / 2026-02-30 这类不存在的日子也要归入"格式不对"
+      if (m < 1 || m > 12 || d < 1) return -1
+      dim = (m == 2) ? ((y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) ? 29 : 28) : ((m == 4 || m == 6 || m == 9 || m == 11) ? 30 : 31)
+      if (d > dim) return -1
       if (m <= 2) { y--; m += 12 }
       return int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d - 1524
     }
     { sub(/\r$/, ""); $0 = tolower($0) }     # 与 runner 一致：键名 / 段名不分大小写
     /^[ \t]*\[/ { sec = $0; gsub(/[^a-z]/, "", sec); next }
-    /^[ \t]*checked[ \t]*=/ { v = $0; sub(/^[^=]*=[ \t]*/, "", v); sub(/[ \t]+$/, "", v); c[sec] = v }
+    /^[ \t]*checked[ \t]*=/ { v = $0; sub(/^[^=]*=[ \t]*/, "", v); sub(/(^|[ \t]+)#.*$/, "", v); sub(/[ \t]+$/, "", v); c[sec] = v }   # 行尾注释与 runner 一样剥掉
     END {
       n = split("gpt gemini grok", f, " ")
       for (i = 1; i <= n; i++) {
         if (!(f[i] in c) || jdn(c[f[i]]) < 0) out = out " " f[i] "(核对日期缺失或格式不对)"
+        else if (jdn(c[f[i]]) > jdn(today)) fut = fut " " f[i] "(" c[f[i]] ")"
         else if (jdn(today) - jdn(c[f[i]]) > max) out = out " " f[i] "(" c[f[i]] "，已 " jdn(today) - jdn(c[f[i]]) " 天)"
       }
-      print out
+      print "S" out; print "F" fut
     }' "$RANK_FILE")
+  STALE=$(printf '%s\n' "$DATE_OUT" | sed -n 's/^S//p')
+  FUTURE=$(printf '%s\n' "$DATE_OUT" | sed -n 's/^F//p')
   if [ -n "$STALE" ]; then
     warn "模型排名的核对日期超过 ${RANK_MAX_AGE_DAYS} 天:${STALE}——排名可能已过时"
     RANK_WARNS=$((RANK_WARNS + 1))
   fi
+  if [ -n "$FUTURE" ]; then
+    warn "模型排名的核对日期晚于今天:${FUTURE}——多半是手误（这样写 ${RANK_MAX_AGE_DAYS} 天复查永远不会提醒），请改成真实的核对日期"
+    RANK_WARNS=$((RANK_WARNS + 1))
+  fi
+  # 检测没跑 != 检测过、没有：通道不通 / 列表缩水时 runner 根本没做选型，stderr 里不可能有 NEW-MODEL 行
+  [ -n "$NM_UNCHECKED" ] && warn "本次没有对${NM_UNCHECKED} 检测新模型（实时模型列表没取到或疑似缩水）——不能据此认为没有新模型，列表恢复后重跑 doctor"
   if [ "$RANK_WARNS" -gt 0 ]; then
     repair "$RANK_REPAIR"
-  elif [ "$CURSOR_BROKEN" -eq 1 ]; then
-    pass "三族核对日期均在 ${RANK_MAX_AGE_DAYS} 天内（cursor 通道不通，本次没有检测新模型）"
+  elif [ -n "$NM_UNCHECKED" ]; then
+    pass "三族核对日期均在 ${RANK_MAX_AGE_DAYS} 天内"
   else
     pass "没有未核实的新模型；三族核对日期均在 ${RANK_MAX_AGE_DAYS} 天内"
   fi
@@ -464,11 +494,21 @@ if [ "$FILES_BROKEN" -eq 1 ]; then
   say "VERDICT: BROKEN — skill 文件不完整（对应 Read gate 会硬停）；lens 状态: gpt=$GPT_LENS gemini=$GEMINI_LENS grok=$GROK_LENS"
 elif [ "$GPT_LENS" = dead ] && [ "$GEMINI_LENS" = dead ]; then
   VERDICT=BROKEN; CODE=2
-  say "VERDICT: BROKEN — 两只搜索 lens 均不可用；/survey 将退 3 Claude + SKIPPED banner"
+  if [ "$CURSOR_UNREACH" -eq 1 ]; then
+    say "VERDICT: BROKEN — 连不上 Cursor 服务，三族均未验证（按不可用处理，网络恢复后重跑）；现在跑 /survey 将退 3 Claude + SKIPPED banner"
+  else
+    say "VERDICT: BROKEN — 两只搜索 lens 均不可用；/survey 将退 3 Claude + SKIPPED banner"
+  fi
 elif [ "$GPT_LENS" = dead ] || [ "$GEMINI_LENS" = dead ]; then
   VERDICT=DEGRADED; CODE=1
   DEAD=$([ "$GPT_LENS" = dead ] && printf 'GPT' || printf 'Gemini')
-  say "VERDICT: DEGRADED — $DEAD lens 不可用；/survey 将走 PARTIAL banner 降级$([ "$GPT_LENS" = dead ] && printf '（Phase 6 主评审按替补链改用 grok）' || printf '（tiebreaker 改用 grok）')"
+  # 替补去向要看 grok 活没活（下面那行会如实说 grok 不可用，两行不能打架）：见 phases/06-debate.md 失败处理
+  if [ "$GPT_LENS" = dead ]; then
+    NOTE=$([ "$GROK_LENS" = dead ] && printf '（Phase 6 主评审按替补链改用 gemini）' || printf '（Phase 6 主评审按替补链改用 grok）')
+  else
+    NOTE=$([ "$GROK_LENS" = dead ] && printf '（tiebreaker 无族可用，事实性分歧转人类裁决）' || printf '（tiebreaker 改用 grok）')
+  fi
+  say "VERDICT: DEGRADED — $DEAD lens 不可用；/survey 将走 PARTIAL banner 降级$NOTE"
 else
   VERDICT=HEALTHY; CODE=0
   EXTRA=""

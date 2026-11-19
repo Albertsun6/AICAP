@@ -29,7 +29,7 @@ bash "$SCRIPT" >/dev/null 2>&1;                                    expect_rc "�
 bash "$SCRIPT" "$WORK/p.txt" "$WORK/o.txt" gemini >/dev/null 2>&1;  expect_rc "非 codex lens" 64 $?
 bash "$SCRIPT" --auth-check extra >/dev/null 2>&1;                 expect_rc "--auth-check 多余参数" 64 $?
 bash "$SCRIPT" --resolve-only codex extra >/dev/null 2>&1;         expect_rc "--resolve-only 多余参数" 64 $?
-bash "$SCRIPT" "$WORK/missing.txt" "$WORK/o.txt" >/dev/null 2>&1;   expect_rc "prompt 文件缺失" 66 $?
+bash "$SCRIPT" "$WORK/missing.txt" "$WORK/o.txt" >/dev/null 2>&1;   expect_rc "prompt 文件缺失" 64 $?
 
 echo "=== 2. 未安装 -> 69（PATH 里没有 codex）==="
 mkdir -p "$WORK/emptybin"

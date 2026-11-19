@@ -20,14 +20,16 @@
 #   bash run-codex.sh --auth-check             # 零配额认证实打（doctor 用；**不解析模型**）
 #
 # 环境变量：
-#   SURVEY_CODEX_EFFORT=low|medium|high|xhigh   缺省 xhigh。X1 搜索用 high（检索型任务，实测
-#                                               302-491s；xhigh 604s 会撞同步窗口），Phase 6 评审用 xhigh
+#   SURVEY_CODEX_EFFORT=low|medium|high|xhigh   缺省 xhigh。本脚本现在只是备用通道（默认流程的 X1 / 主评审走
+#                                               run-cursor-agent.sh 的 gpt 族）；手动启用时的建议档位：搜索用 high
+#                                               （2026-09 codex 当主通道时实测 302-491s；xhigh 604s 会撞同步窗口），
+#                                               全文评审用 xhigh
 #   SURVEY_CODEX_MODEL=<id>                     钉模型（跳过目录解析；仍做存在性复核）
 #   SURVEY_TIMEOUT_SEC=<秒>                     内层 watchdog，缺省 570（同步窗口）；async 由 runner 传入
 #   SURVEY_REQUIRE_SECTIONS='## A|## B'         `|` 分隔的必含段落；缺段按 exit 66
 #
 # Exit codes（与 run-cursor-agent.sh 同一张表）：
-#   0 成功 / 64 参数错或 CLI 契约变了 / 65 调用失败或认证判不出(fail-closed) / 66 空输出或缺段
+#   0 成功 / 64 参数错（含 prompt 文件不存在）或 CLI 契约变了 / 65 调用失败或认证判不出(fail-closed) / 66 空输出或缺段
 #   67 认证失效 / 68 配额耗尽 / 69 未安装 / 124 超时
 #
 # 与 cursor 版的**三处客观差异**（不是风格差异）：
@@ -73,7 +75,7 @@ esac
 
 case "$FAMILY" in
   codex) ;;
-  *) echo "ERROR: run-codex.sh 只有一个 lens 'codex'（收到 '$FAMILY'）——gemini/grok 走 run-cursor-agent.sh" >&2; exit 64 ;;
+  *) echo "ERROR: run-codex.sh 只有一个 lens 'codex'（收到 '$FAMILY'）——gpt/gemini/grok 走 run-cursor-agent.sh" >&2; exit 64 ;;
 esac
 
 command -v codex >/dev/null 2>&1 || {
@@ -83,7 +85,7 @@ command -v codex >/dev/null 2>&1 || {
 }
 command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 缺失（事件流分类与目录解析都依赖它）" >&2; exit 65; }
 
-[ "$MODE" = run ] && [ ! -f "$PROMPT_FILE" ] && { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 66; }
+[ "$MODE" = run ] && [ ! -f "$PROMPT_FILE" ] && { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 64; }
 
 # ══ 认证实打：零配额、零模型推理 ═══════════════════════════════════════
 # 打 codex 自己刷模型目录用的端点（原文来自 codex 报错行：

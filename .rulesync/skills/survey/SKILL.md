@@ -52,7 +52,7 @@ Phase 1 问题界定
 
 **自动降级**：两只异构眼按族各自降级——一只挂了另一只继续；两只都不可用才退回 3 Claude（详见 `phases/02-research.md` §自动降级矩阵）。三族共用 Cursor 一套凭据，Cursor 登录失效时三族同灭；额度见底（68）按族处理。Phase 6 主评审按 `gpt → grok → gemini` 替补链换族重试；红队挂了**不阻断**（增量意见不是质量门禁）。用户无法主动选择跳过任何阶段。
 
-**异构自检前置**：Phase 2 启动 X1/X2 前先跑 `bash doctor.sh`（秒级，不耗配额）——文件/执行位/cursor-agent 的安装与登录（用 `--list-models` 实打服务端，不信 CLI 自述：过期凭据下 `cursor-agent status` 照样自称 Logged in）/三 lens 模型解析（模型列表临时缩水时会明说"疑似缩水，稍后重试"，不判该族下架）/额度留痕（读真调用留下的痕迹——额度见底时快检全绿，只有真调用会撞）逐层检查，执行位问题当场自动修复，其余给出确切修复命令；非 0 verdict 时**提前**告知用户即将发生的降级，而不是等中途 banner。**grok 族死只报 WARN 不降 verdict**（它只是替补 + 红队，不是搜索眼）；codex 备用通道未装/未登录只打一行 INFO，同样不影响 verdict。详见 `references/cursor-agent-invocation.md` §自检 + 自修复。
+**异构自检前置**：Phase 2 启动 X1/X2 前先跑 `bash doctor.sh`（秒级，不耗配额）——文件/执行位/cursor-agent 的安装与登录（用 `--list-models` 实打服务端，不信 CLI 自述：过期凭据下 `cursor-agent status` 照样自称 Logged in）/三 lens 模型解析（模型列表临时缩水时会明说"疑似缩水，稍后重试"，不判该族下架）/模型排名（L3.2：汇总 `NEW-MODEL:` 与排名文件自检的提示、核对日期是否超过 60 天；只报 WARN，不改 verdict）/额度留痕（读真调用留下的痕迹——额度见底时快检全绿，只有真调用会撞）逐层检查，执行位问题当场自动修复，其余给出确切修复命令；非 0 verdict 时**提前**告知用户即将发生的降级，而不是等中途 banner。**grok 族死只报 WARN 不降 verdict**（它只是替补 + 红队，不是搜索眼）；codex 备用通道未装/未登录只打一行 INFO，同样不影响 verdict。详见 `references/cursor-agent-invocation.md` §自检 + 自修复。
 
 ---
 
@@ -126,7 +126,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 │   ├── brief-template.txt         # Phase 1.5 Brief 模板
 │   ├── agent-x.txt                # Phase 2 Agent X1 模板（gpt 族经 cursor·查 Claude 盲区）
 │   ├── agent-x2.txt               # Phase 2 Agent X2 模板（gemini 族经 cursor·查 Claude+GPT 共同盲区）
-│   ├── round1.txt                 # Phase 6 Round 1 主评审 prompt（gpt 族经 cursor·7 个常规评审角度）
+│   ├── round1.txt                 # Phase 6 Round 1 主评审 prompt（默认 gpt 族经 cursor，替补族用同一份·7 个常规评审角度）
 │   ├── round1-grok-prefix.txt     # Phase 6 Round 1 红队 prefix（grok 族·4 个红队角度，拼在 round1.txt 前）
 │   ├── round2-rebuttal.txt        # Phase 6 Round 2 rebuttal prompt
 │   └── tiebreak.txt               # Phase 6 事实核查 tiebreaker prompt（gemini 族，回避时 grok）
@@ -136,7 +136,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 ├── run-agent-async.sh             # 重活异步 job（nohup 脱离 600s 窗口；按族路由到上面两个 runner；X1 与 Phase 6 评审必走这里）
 ├── doctor.sh                      # 异构链路自检+自修复（Phase 2 前必跑快检；--probe 加端到端探针）
 ├── test-model-selection.sh        # cursor 侧模型选择逻辑 + runner 契约的可执行断言（Cursor 改命名时先跑这个）
-├── fixtures/                      # test-model-selection.sh 的模型列表夹具（完整列表 + 临时缩水形态）
+├── fixtures/                      # test-model-selection.sh 的夹具：模型列表（完整列表 + 临时缩水形态）+ 测试用排名文件
 ├── model-ranking.conf             # 三族的模型排名：系列强弱顺序 + 已核实清单 + 依据 URL + 核对日期（出现 NEW-MODEL 时先查证再改它）
 ├── test-run-codex.sh              # codex runner + lib 的可执行断言（codex CLI 升级时先跑这个）
 ├── generate-audio.sh              # Audio 主脚本 (edge-tts/say；-o OUT；-t 传口语稿=完整音频模式)
@@ -180,9 +180,9 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 
 ---
 
-## 提速要点（2026-07-31 加：实测 20 分钟 → 目标 ≤12 分钟）
+## 提速要点（2026-07-31 加）
 
-耗时结构（2026-09-10 更新）：四路搜索 5–8min（并行但等最慢——X1 gpt high 档约 4–8 min）、写报告 ~5min、Phase 6 Round 1 ~4min 起（主评审 gpt xhigh 经 cursor 实测 5–10 min；grok 红队 high 档 + **软 deadline 900s**，主评审回来后最多再等 15 min，不再无上限等它）、每追加一轮辩论 +3–8min（R2/R3 降 high）、中途协调 ~4min。**快路径（Round 1 直接收敛）目标 ≤20min；慢路径不承诺**——旧账"Phase 6 ~5min / 总 12min"写于红队接入前，已作废。
+耗时结构（2026-11-19 更新；三族迁到 Cursor 后**端到端总耗时未实测**，有实测的分段写明日期，其余标「未实测」）：四路搜索并行、等最慢的一路——X1 gpt high 档 2026-11-19 实测一次约 4 min（只测过这一次，上限未实测；deadline 900s），X2 的 Gemini 4 Neon high 档未实测。写报告 ~5min（旧估计）。Phase 6 Round 1：主评审 gpt xhigh 经 cursor 2026-11-19 实测 5–10 min；grok 红队 high 档未实测，有**软 deadline 900s**，主评审回来后最多再等 15 min，不再无上限等它。每追加一轮辩论 +3–8min（R2/R3 降 high；经 cursor 未实测，沿用旧估计）、中途协调 ~4min（旧估计）。**快路径（Round 1 直接收敛）目标 ≤20min，未实测；慢路径不承诺**——标题里原来的"实测 20 分钟 → 目标 ≤12 分钟"与旧账"Phase 6 ~5min / 总 12min"都写于红队接入前，已作废。start 异步 job 后向用户报预计耗时，以 `references/cursor-agent-invocation.md` §异步 job 第 1 步的口径为准。
 
 1. **搜索路数按重要度分档**：
    - **重大决策**（会改架构/宪法/对外承诺）：五路（Claude×3 + 异构×2）

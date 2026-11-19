@@ -84,7 +84,7 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 **并发协调**（主 Claude 必读）：
 - Agent A、B 是 Claude subagent（用 Agent 工具启动，**`model=sonnet`**——不要让它们继承主模型的 xhigh 档去做检索）
 - Agent X1 是异步 job（`run-agent-async.sh start … gpt 900`），X2 是同步 Bash（`run-cursor-agent.sh … gemini`）——都经 cursor-agent，共用一套 Cursor 凭据（额度是否按族分开未实测）
-- 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的同步 Bash；随后后台 `wait` X1。墙钟由最慢者决定（X1 约 5–8 min）
+- 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的同步 Bash；随后后台 `wait` X1。墙钟由最慢者决定（X1 gpt high 档 2026-11-19 实测一次约 4 min，上限未实测；X2 的 Gemini 4 Neon high 档未实测）
 - **两个 Bash 调用必须用不同的 prompt / output 文件名**（`survey-x1-*` / `survey-x2-*`），否则互相覆盖
 - 主 Claude 在收到四方返回后再启动综合 agent；不要串行启动 X1/X2，会白白多花 ~5 min
 
@@ -162,7 +162,7 @@ Agent C（社区 + 经验）
 ```markdown
 > ⚠️ **HETEROGENEOUS LENS PARTIAL: <GPT | Gemini> lens 缺失**
 > Reason: <exit code 对应原因>
-> Implication: 仍有一只异构眼覆盖，但 <该族> 视角的盲区未被审查<；且事实性分歧 tiebreaker 不可用，全部转人类裁决——仅 Gemini 缺失时加这句>
+> Implication: 仍有一只异构眼覆盖，但 <该族> 视角的盲区未被审查<；且事实性分歧 tiebreaker 改用 grok 族——仅 Gemini 缺失时加这句；grok 也不可用时改写成「事实性分歧 tiebreaker 不可用，全部转人类裁决」>
 ```
 
 **绝不**因异构失败让主流程失败。

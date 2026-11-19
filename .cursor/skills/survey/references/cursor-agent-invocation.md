@@ -32,7 +32,8 @@
 ### 三族分工与替补链
 
 - **搜索眼**：X1=`gpt`、X2=`gemini`。grok **不做搜索眼**——2026-08-15 实测它跑一个只有 2 问的玩具 prompt 就要 263s，完整搜索任务大概率撞同步窗口
-- **主评审替补链**：`gpt → grok → gemini`。gpt 不可用（65/66/124，或 doctor 判死）→ 换 grok（红队取消，同族没增量）→ grok 也不可用才落到 gemini（此时 tiebreaker 无异族可用，事实性分歧全部转人类）
+- **主评审替补链**：`gpt → grok → gemini`。gpt 不可用（65/66/68/124，或 doctor 判死；68 额度见底按族处理，替补族照常尝试）→ 换 grok（红队取消，同族没增量）→ grok 也不可用才落到 gemini（此时 tiebreaker 无异族可用，事实性分歧全部转人类）
+- **67 不走替补链**：认证失效是 Cursor 整体故障，三族同灭，换族也救不了
 - **红队第二评审**：固定 `grok`，**one-shot**（只在 Round 1 出场）。它是增量意见不是质量门禁，挂了不阻断主流程
 - **tiebreaker 选族**：**必须与当轮主评审异族**，在存活族里**优先 `gemini`**；gemini 不可用、或触发利益回避（争议 source 来自 X2）时改用 `grok`。**绝不**用 gpt 或备用通道 codex（都与主评审同族）。只有「所有非主评审族都不可用」才标 `tiebreaker: unavailable`
 - **主评审已降到 grok 时**：红队取消，tiebreaker 只能用 `gemini`
@@ -53,11 +54,11 @@
    | code | 含义 | 降级行为 |
    |---|---|---|
    | `0` | 成功 | Read 输出文件 |
-   | `64` | 参数错（含非法族 / codex CLI flag 契约变了） | 主 Claude 修正调用或改脚本，**不是降级场景**，fail-loud |
+   | `64` | 参数错（含非法族 / prompt 文件不存在 / codex CLI flag 契约变了；`run-agent-async.sh start` 同） | 主 Claude 修正调用或改脚本，**不是降级场景**，fail-loud |
    | `69` | CLI 未安装 | + banner "cursor-agent not found" |
    | `124` | timeout（同步 >570s / 异步 >deadline） | + banner "timeout" |
    | `67` | **认证失效** | + banner "auth failure"，Reason 写 `auth failure`；**不回落、不降级重试**，先让用户 `cursor-agent login` |
-   | `68` | **用量/额度耗尽**（Cursor 月度额度，按族记账） | + banner "quota exhausted"。撞墙写状态文件供 doctor L3.5 读取 |
+   | `68` | **用量/额度耗尽**（Cursor 月度额度，按族记账） | + banner "quota exhausted"。撞墙写状态文件供 doctor L3.5 读取。**按族降级**：主评审撞 68 按替补链换族重试，搜索眼撞 68 只灭它自己那只，其它族照常尝试 |
    | `65` | 调用失败（network / 模型不在实时列表——含列表临时缩水与该族下架，stderr 会说是哪种） | + banner "error" |
    | `66` | 空输出或缺约定段落 | + banner "returned empty output" |
 
@@ -107,24 +108,24 @@
 | family | 前缀 | 入选条件 | 2026-11-19 实测（xhigh / high） |
 |---|---|---|---|
 | `gpt` | `gpt-` | 带 `-high`/`-xhigh`（`-extra-high` 视同 xhigh） | `gpt-5.6-sol-xhigh` / `gpt-5.6-sol-high` |
-| `gemini` | `gemini-` | 主版本 ≥4：系列名 + `-high`/`-xhigh`；主版本 <4：名字含 `pro`（可无档位） | `gemini-4-neon-xhigh` / `gemini-4-neon-high` |
+| `gemini` | `gemini-` | 主版本 ≥4：系列名 + `-high`/`-xhigh`；主版本 <4：名字里有完整的 `-pro` 段（可无档位；`gemini-3.5-proto` 不算） | `gemini-4-neon-xhigh` / `gemini-4-neon-high` |
 | `grok` | `grok-` 或 `cursor-grok-` | 带 `-high`/`-xhigh` | `grok-4.7-xhigh` / `grok-4.7-high` |
 
 - **比较顺序**：主版本 → 次版本 → 修订号 → 系列顺位 → 档位匹配度（偏好档 > 另一档）→ 列表先出现者。版本优先，所以 Gemini 4 在列表里就必胜 `gemini-3.1-pro`、`grok-4.7` 必胜 `cursor-grok-4.6`
-- **系列顺位来自排名文件 `model-ranking.conf`**（靠前的强；未列出的系列一律低于已列出的，彼此按列表先后）。文件按族写 `series`（顺序）、`verified`（已核实的「版本[-系列]」清单）、`checked`（核对日期）、`evidence`（依据 URL），证据矛盾或置信度低的地方写在注释里。2026-11-19 的内容：
+- **系列顺位来自排名文件 `model-ranking.conf`**（靠前的强；已列出系列的变体如 `sol-1m` 紧跟在该系列正牌之后、高于下一档系列；未列出的系列一律低于已列出的，彼此先比档位匹配度、再按列表先后）。版本号用连字符写的 id（`gpt-5-7-sol-xhigh`）按点号写法（5.7）解析。文件按族写 `series`（顺序）、`verified`（已核实的「版本[-系列]」清单）、`checked`（核对日期）、`evidence`（依据 URL），证据矛盾或置信度低的地方写在注释里。2026-11-19 的内容：
   - gpt：`sol terra luna`——依据 Artificial Analysis 指数（Sol 59 / Terra 55 / Luna 51），厂商与 Cursor 文档口径一致
   - gemini：`neon carbon hydrogen argon`——Neon 与 Carbon 在独立评测上只差 1 分，厂商口径仍称 Carbon 最强；调研建议搜索用 Neon、全文评审用 Carbon（Neon xhigh 是几乎等价的备选）。文件每族只有一条顺序，评审想用 Carbon 就在那条命令前加 `SURVEY_SERIES_GEMINI="carbon neon"`
   - grok：无系列，只按版本（4.7 > 4.6 > 4.5；4.7 对 4.6 的证据互相矛盾，详见文件注释）
   - 单次覆盖：`SURVEY_SERIES_GPT` / `SURVEY_SERIES_GEMINI`（优先于文件）。文件缺失或读不出该族清单 → 用脚本内保底顺序并打 WARN
-- **新模型必须核实**：检测排在全部筛选**之前**（筛选只决定选不选）。该族每个 id 去掉 `-fast` / 档位 / `-preview` 后得到「版本[-系列]」，不在该族 `verified` 清单里、且版本高于清单里的最高版本，或同为最高版本但系列没见过 → runner 在 stderr 打 `NEW-MODEL: [族] <名字> 未在排名文件中核实…`，doctor 汇总成 WARN（不改 verdict），异步 job 的 `status` / `wait` 在状态行下面回显。所以裸 id、只有 `-max` 或低档、`-preview` 首发的下一代模型也会提示（写明「形态不在选型规则内，本次未选用」）；小模型与专用形态（`-mini -codex -flash` 等）只在版本超过最高版本时提示；通过筛选的候选只要不在清单里就提示；名字里有族名但形态认不出来的（`xai-grok-5` / `gpt6` / `grok-code-5`）也提示，核实后把提示里的名字原样写进 `verified` 即可消掉。**盲区**：名字里不含族名的（如 `o5`）检测不到，靠 60 天复查覆盖。选型不因提示改变：版本更高的新候选照样胜出，同版本的新系列排在已核实系列之后。看到提示后先查官方模型页和厂商发布说明，更新排名文件的顺序、清单、依据 URL 和核对日期，再继续（SKILL.md 硬约束）；查不到就在报告 §metadata 写 `模型排名: 未核实（<原因>）`。核对日期超过 60 天 doctor 也报 WARN
-- **排名文件自检**：键名 / 段名 / 值不分大小写。不认识的键（如把 `series` 拼成 `serise`）、`verified` 里的系列不在 `series` 顺序里、`verified` 带系列却没有 `series` 行（此时改用脚本内保底顺序）→ 各打一行 `WARN: [族] 排名文件 …`，doctor 同样汇总
+- **新模型必须核实**：检测排在全部筛选**之前**（筛选只决定选不选）。该族每个 id 去掉 `-fast` / 档位 / `-preview` / `-exp` 后得到「版本[-系列]」，不在该族 `verified` 清单里（**不论版本高低**）→ runner 在 stderr 打 `NEW-MODEL: [族] <名字> 未在排名文件中核实…`，doctor 汇总成 WARN（不改 verdict），异步 job 的 `status` / `wait` 在状态行下面回显。所以裸 id、只有 `-max` 或低档、`-preview` 首发的下一代模型也会提示（写明「形态不在选型规则内，本次未选用」）；版本低于最高版本、又被筛掉的名字（如 `gpt-5.5-nova-max`）同样提示；被选中的未核实候选写明「本次已选用」（钉值生效时写的是钉值的实际情况）；只有小模型与专用形态（`-mini -codex -flash` 等）要版本超过最高版本才提示；名字里有族名但形态认不出来的（`xai-grok-5` / `gpt6` / `grok-code-5`）也提示，核实后把提示里的名字原样写进 `verified` 即可消掉。**盲区**：名字里不含族名的（如 `o5`）检测不到，靠 60 天复查覆盖。选型不因提示改变：版本更高的新候选照样胜出，同版本的新系列排在已核实系列之后。看到提示后先查官方模型页和厂商发布说明，更新排名文件的顺序、清单、依据 URL 和核对日期，再继续（SKILL.md 硬约束）；查不到就在报告 §metadata 写 `模型排名: 未核实（<原因>）`。核对日期超过 60 天 doctor 也报 WARN
+- **排名文件自检**：键名 / 段名 / 值不分大小写。`series` / `verified` / `checked` 的行尾注释（空白 + `#`）会剥掉。不认识的键（如把 `series` 拼成 `serise`）、同一版本核实了两个以上名字而其中的系列不在 `series` 顺序里、`verified` 带系列却没有 `series` 行（此时改用脚本内保底顺序）、顺序里名字重复（以第一次出现为准）→ 各打一行 `WARN: [族] 排名文件 …` / `WARN: [族] 系列顺序里…`，doctor 同样汇总。`SURVEY_SERIES_*` 里写了排名文件没核实过的系列名也打 WARN（多半是拼错）
 - **改源不改镜像**：排名文件的源是 `.rulesync/skills/survey/model-ranking.conf`；`.claude/skills/survey/`（`~/.claude/skills/survey` 指向它）是 `pnpm run ai:generate` 的生成物，直接改会被覆盖。doctor 在镜像目录里跑时，修复建议给出的是源文件路径
-- 全族通排：`-fast` / `-none -low -medium` / `-max`（太慢，必超时）/ `-codex -mini -nano -lite -flash` / `-preview -realtime -audio -image -embed -tts`；排除项**必须带前导 `-` 按分段匹配**（裸 `mini` 会误杀 ge-**mini**）
+- 全族通排：`-fast` / `-none -low -medium` / `-max`（太慢，必超时）/ `-codex -mini -nano -lite -flash` / `-preview -exp -experimental -realtime -audio -image -embed -tts`；排除项**按完整分段匹配**（前有 `-`，后面是 `-` 或结尾；`-fast` 在中段也算）——裸 `mini` 会误杀 ge-**mini**，只锚前导 `-` 会误杀 `gpt-6-minimal`
 - 取列表失败 / 超时 / 无候选 → 回落 `FALLBACK_MODEL`（WARN；`gpt-5.6-sol-high` / `gemini-4-neon-high` / `grok-4.7-high`）；**认证失效 exit 67 不回落**
 - **幽灵 id fail-closed**：解析结果（含钉值/回落值）不在实时列表 → run 模式 exit 65 跳过调用，不烧一次必失败的请求；`--resolve-only` 仍打 id 并 WARN 供 doctor 复核
-- **缩水 vs 下架**：列表取到了但该族一个候选都没有时，列表非空行数 <100（`SHRUNK_LIST_MAX_LINES`；完整列表约 288 行、缩水时约 40 行）→ 报"模型列表疑似临时缩水，稍后重试"；否则报"该族可能已下架或命名已变"。两种都 fail-closed
+- **缩水 vs 下架**：取到列表后先数非空行数，<100（`SHRUNK_LIST_MAX_LINES`；完整列表约 288 行、缩水时约 40 行）→ 报"模型列表疑似临时缩水，稍后重试"，**不做选型**（该族在缩水列表里还有型号、或钉了模型也一样，run 模式 exit 65；`--resolve-only` 仍 exit 0 打回落 id 并带这条 WARN）。行数正常却没有该族候选 → 报"该族可能已下架或命名已变"。两种都 fail-closed
 - 手动钉：`SURVEY_CURSOR_MODEL=<id>`（前缀必须匹配 family——gpt 需 `gpt-`、gemini 需 `gemini-`、grok 需 `grok-` 或 `cursor-grok-`，否则忽略回自动解析——防 export 后忘 unset 导致 tiebreaker 偷偷串族）；`SURVEY_CURSOR_EFFORT=high|xhigh`（三族都生效，缺省 xhigh；钉值时不生效，档位在 id 里）
-- 改规则前先跑 `bash test-model-selection.sh`（夹具在 `fixtures/`）
+- 改规则前先跑 `bash test-model-selection.sh`（夹具在 `fixtures/`；机制断言读 `fixtures/model-ranking-test.conf`，真实排名文件只验格式）。测试只用假的 cursor-agent 桩，临时文件与额度留痕都落在自己的临时目录，不碰 `~/.cache/survey`；开头几条 live 断言会真调一次 `cursor-agent --list-models`（不耗额度），取不到列表记 SKIP
 
 ### 备用通道 codex：读本地目录，**不保证"最新最强"**
 
@@ -166,7 +167,7 @@ wait   <job-dir> [max-wait≤560]                      → 阻塞到结束或到
 ```
 
 **主 Claude 标准流程（⑥.5 后台长任务纪律）**：
-1. `start` 拿 JOB_DIR → **当场告知用户**：预计多久（X1 4–8 min；xhigh 评审 5–15 min）、多久查一次（每波 wait ≤9 min）、超时怎么办（deadline 到点 job 自杀 exit 124 → 走降级矩阵）
+1. `start` 拿 JOB_DIR → **当场告知用户**：预计多久（X1 gpt high 档 2026-11-19 实测一次约 4 min，上限未实测；主评审 xhigh 2026-11-19 实测 5–10 min；红队 high 档未实测，按软 deadline 900s 报）、多久查一次（每波 wait ≤9 min）、超时怎么办（deadline 到点 job 自杀 exit 124 → 走降级矩阵）
 2. `Bash(run_in_background:true)` 跑 `wait <job-dir> 540` —— 完成时 harness 自动通知，**期间继续干别的活**
 3. wait 返回 3（波次到点未完）→ 把 RUNNING 行**主动报给用户** → 续发下一波 wait；**绝不**只回一句"还在跑"
 4. DONE → Read 输出文件；FAILED/DIED → 按 exit code 映射降级 + banner，fail-loud
@@ -179,13 +180,14 @@ Phase 2 启动 X1/X2 **前**主 Claude 必须先跑 `bash doctor.sh`（秒级，
 | 层 | 查什么 | 能否自动修 |
 |---|---|---|
 | L1 | 21 个 Read-gate / 运行时依赖文件齐全（含 `lib/agent-common.sh`、两个 runner、async runner）；`.sh` 执行位 | 执行位缺失 → **当场 chmod +x** |
-| L2a | cursor-agent 安装；登录态用 `--list-models` 实打服务端（25s deadline） | 否——打印确切修复命令 |
+| L2a | cursor-agent 安装；登录态用 `--list-models` 实打服务端（25s deadline）。取到的实时列表存成快照，L3 直接用它，**全程只请求一次** | 否——打印确切修复命令 |
 | L2b | 备用通道 codex：未装 / 未登录 / 可用，各打一行 `[INFO]`（认证用 `run-codex.sh --auth-check` 实打服务端，零配额）。**不影响 verdict** | 否 |
-| L3 | gpt/gemini/grok 经 `run-cursor-agent.sh --resolve-only` + 实时列表存在性复核；列表缩水时报"疑似临时缩水"并建议稍后重跑，不建议改 FALLBACK | 否 |
+| L3 | gpt/gemini/grok 经 `run-cursor-agent.sh --resolve-only`（喂 L2a 的快照）+ 存在性复核；列表缩水时三族都报"疑似临时缩水"并建议稍后重跑，不建议改 FALLBACK；整族下架时先让人确认是否改名 | 否 |
+| L3.2 | 模型排名：汇总 runner 打出的 `NEW-MODEL:` / `WARN: … 排名文件 …` 行；核对日期缺失、不是真实日期、晚于今天或超过 60 天都报 WARN；连不上 Cursor 或列表缩水时写明"本次没有检测新模型"。**只 WARN，不改 verdict**——exit 0 也要看这一节 | 否——给出要改的源文件路径 |
 | L3.5 | 额度留痕：读 runner 撞墙时写的状态文件（24h 内判该 lens dead） | 否——给出出路 |
 | L4 | `--probe` 才跑：gpt/gemini/grok 各经 cursor 实跑一次 tiny prompt（high 档；耗少量 Cursor 额度） | 否 |
 
-exit code：`0` HEALTHY（gpt + gemini 两只搜索眼可解析；codex 未装/未登录不影响）｜`1` DEGRADED（一只死，survey 走 PARTIAL）｜`2` BROKEN（双眼死或文件缺失，survey 退 3 Claude + SKIPPED）。**grok 死只 WARN 不降 verdict**。结果绝不阻塞主流程。
+exit code：`0` HEALTHY（gpt + gemini 两只搜索眼可解析；codex 未装/未登录不影响）｜`1` DEGRADED（一只死，survey 走 PARTIAL）｜`2` BROKEN（双眼死、连不上 Cursor 服务导致三族均未验证、或文件缺失，survey 退 3 Claude + SKIPPED）。**grok 死只 WARN 不降 verdict**。结果绝不阻塞主流程。
 
 ## 备用通道 codex 的已知污染与注意事项
 
