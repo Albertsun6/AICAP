@@ -153,7 +153,7 @@ Agent C（社区 + 经验）
 
 ```markdown
 > ⚠️ **HETEROGENEOUS REVIEW: SKIPPED**
-> Reason: <cursor-agent not found | timeout | auth failure | quota exhausted | empty output>（两只眼各写各的）
+> Reason: <cursor-agent not found | timeout | auth failure | quota exhausted | empty output | error（exit 65：模型列表缩水、该族下架等调用失败）>（两只眼各写各的）
 > Implication: 所有 source 来自 Claude lens，训练数据盲区未被独立模型审查；高风险决策建议修复通道后重跑（cursor-agent: cursor.com/cli，`cursor-agent login`）
 ```
 

@@ -78,14 +78,15 @@ case "$FAMILY" in
   *) echo "ERROR: run-codex.sh 只有一个 lens 'codex'（收到 '$FAMILY'）——gpt/gemini/grok 走 run-cursor-agent.sh" >&2; exit 64 ;;
 esac
 
+# 先查参数再查 CLI，与 run-cursor-agent.sh 同序：prompt 缺失是调用方写错，不该被报成「未安装」
+[ "$MODE" = run ] && [ ! -f "$PROMPT_FILE" ] && { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 64; }
+
 command -v codex >/dev/null 2>&1 || {
   echo "ERROR: codex not in PATH" >&2
   echo "Install: npm i -g @openai/codex && codex login" >&2
   exit 69
 }
 command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 缺失（事件流分类与目录解析都依赖它）" >&2; exit 65; }
-
-[ "$MODE" = run ] && [ ! -f "$PROMPT_FILE" ] && { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 64; }
 
 # ══ 认证实打：零配额、零模型推理 ═══════════════════════════════════════
 # 打 codex 自己刷模型目录用的端点（原文来自 codex 报错行：

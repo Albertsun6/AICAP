@@ -1326,6 +1326,8 @@ run_doctor "$WORK/fresh.conf"; RC=$?
 [ "$RC" != "0" ] && echo "PASS  doctor：连不上 Cursor -> exit 非 0（实得 ${RC}）" || { echo "FAIL  doctor：连不上 Cursor 仍 exit 0"; fail=1; }
 doc_hasnt "doctor：连不上 Cursor -> 不报 HEALTHY" "VERDICT: HEALTHY"
 doc_has   "doctor：连不上 Cursor -> 结论写明是没验证，不是确认坏了" "三族均未验证"
+doc_hasnt "doctor：三族都不可用时 grok 附注不说「只剩 gemini」" "只剩 gemini"
+doc_has   "doctor：三族都不可用时写明 Phase 6 整段跳过" "Phase 6 整段跳过"
 doc_hasnt "doctor：连不上 Cursor -> L3.2 不报「没有未核实的新模型」" "没有未核实的新模型"
 doc_has   "doctor：连不上 Cursor -> L3.2 写明新模型检测没跑" "[WARN]  本次没有对 gpt gemini grok 检测新模型"
 doc_has   "doctor：连不上 Cursor -> 修复建议是查网络" "检查网络/代理后重试"
@@ -1381,6 +1383,7 @@ for BAD in 2026-13-45 9999-99-99 2026-00-00 2026-02-30 2025-02-29; do
   set_checked "$WORK/baddate.conf" "$TODAY" "$BAD" "$TODAY"
   run_doctor "$WORK/baddate.conf"
   doc_has   "doctor：checked = ${BAD}（不是真实日期）-> 归入格式不对" "gemini(核对日期缺失或格式不对)"
+  doc_has   "doctor：日期写错时句首不只说超过 60 天" "天，或缺失、写错:"
   doc_hasnt "doctor：checked = $BAD -> 不报「均在 60 天内」" "三族核对日期均在 60 天内"
 done
 set_checked "$WORK/leap.conf" "$TODAY" "$TODAY" "2024-02-29"
@@ -1456,6 +1459,7 @@ check "references：64 一行写明 prompt 文件不存在" "prompt 文件不存
 check "SKILL.md：自检分层列出 L3.2 模型排名" "模型排名（L3.2" "$(grep -F '异构自检前置' "$HERE/SKILL.md")"
 check "references：doctor 分层表有 L3.2 一行" "| L3.2 |" "$(cat "$HERE/references/cursor-agent-invocation.md")"
 BANNER=$(grep -F 'Implication: 仍有一只异构眼覆盖' "$HERE/phases/02-research.md")
+check "02-research：SKIPPED banner 的原因里有 exit 65 对应的 error" "error（exit 65" "$(cat "$HERE/phases/02-research.md")"
 check "02-research：PARTIAL banner 模板写 Gemini 缺失时 tiebreaker 改用 grok" "tiebreaker 改用 grok" "$BANNER"
 case "$BANNER" in *"tiebreaker 不可用，全部转人类裁决——仅 Gemini 缺失时加这句"*) echo "FAIL  02-research：PARTIAL banner 模板仍写「仅 Gemini 缺失时 tiebreaker 不可用」"; fail=1;; *) echo "PASS  02-research：PARTIAL banner 模板不再与降级表矛盾";; esac
 case "$(cat "$REAL_RANKING")" in *"名字小写"*) echo "FAIL  model-ranking.conf 仍说测试校验「名字小写」（测试先 tolower，不拦大写）"; fail=1;; *) echo "PASS  model-ranking.conf 不再声称校验名字小写";; esac

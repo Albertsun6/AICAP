@@ -385,7 +385,7 @@ EOF
   STALE=$(printf '%s\n' "$DATE_OUT" | sed -n 's/^S//p')
   FUTURE=$(printf '%s\n' "$DATE_OUT" | sed -n 's/^F//p')
   if [ -n "$STALE" ]; then
-    warn "模型排名的核对日期超过 ${RANK_MAX_AGE_DAYS} 天:${STALE}——排名可能已过时"
+    warn "模型排名的核对日期超过 ${RANK_MAX_AGE_DAYS} 天，或缺失、写错:${STALE}——排名可能已过时，日期有误的请补正"
     RANK_WARNS=$((RANK_WARNS + 1))
   fi
   if [ -n "$FUTURE" ]; then
@@ -517,7 +517,11 @@ else
   say "VERDICT: HEALTHY — 两只搜索 lens 可用（gpt + gemini，均经 cursor-agent）$EXTRA"
 fi
 # grok 只影响 Phase 6 的红队与替补链，不参与上面的 verdict 判定——但必须**说出来**
-if [ "$GROK_LENS" = dead ]; then
+if [ "$GROK_LENS" = dead ] && [ "$GPT_LENS" = dead ] && [ "$GEMINI_LENS" = dead ]; then
+  say "  ↳ 替补族 grok 也不可用：三族都用不了，Phase 6 整段跳过"
+elif [ "$GROK_LENS" = dead ] && [ "$GEMINI_LENS" = dead ]; then
+  say "  ↳ 替补族 grok 不可用：Phase 6 红队第二评审取消、主评审没有替补、tiebreaker 无族可用（verdict 不受影响）"
+elif [ "$GROK_LENS" = dead ]; then
   say "  ↳ 替补族 grok 不可用：Phase 6 红队第二评审取消、主评审替补链只剩 gemini、tiebreaker 无法在回避时换族（verdict 不受影响）"
 else
   say "  ↳ 替补族 grok 可用：Phase 6 红队第二评审会跑"
