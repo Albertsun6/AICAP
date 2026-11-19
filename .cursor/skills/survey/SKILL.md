@@ -1,6 +1,6 @@
 ---
 name: survey
-description: '针对任意话题，系统性地调研网上别人的做法、结构化比较方案、评估优劣、给出建议。 比 borrow-open-source 更通用——不限于开源代码，适用于任何选型、方案研究、最佳实践调查。 Use when the user says: "了解一下别人怎么做X" / "调研X方案" / "网上有哪些做X的方式" / "比较X和Y" "X的最佳实践" / "benchmark X" / "别人怎么解决X问题" / "/survey X" Phase 2 用 2 个 Claude agent + 2 个不同族的外部 lens（GPT 族经 codex CLI、Gemini 族经 cursor-agent，两条独立通道/配额池）四路并行异构搜索，发现取并集不投票；综合后 Phase 6 由 GPT 族主评审（codex）与 Grok 族红队第二评审（cursor）**并发**终审（红队 one-shot、条目并集 不投票），最多 3 轮辩论，剩余分歧里的事实争议交 Gemini（回避时 Grok）实查裁决、判断分歧 由人类裁决。族=训练实验室，换 CLI 不构成换族。对抗 Claude 训练数据集体盲区与 Claude↔GPT 回声室。某条通道不可用时自动降级并在报告顶部 banner 提示——但用户不能主动跳过任何阶段。 Phase 1 遇 blocking unknown（研究对象/优先级/关键约束/排除范围拿不准）时先启动 多轮澄清提问（Phase 1.2，AskUserQuestion，≤3 轮）再冷冻 Brief；无 blocking unknown 零打扰。 /survey 的**质量门禁无 flag 可跳**（异构搜索/Reflection/Citation Health/异构终审都是硬约束）； 但**产物按消费者分三档**（A 内部输入=仅 md / B 给人阅读=+HTML+PDF / C 要听=+audio）， Claude 搜索路数按重要度分两档（重大决策 3 路 / 常规 2 路，异构两路任何档都不可省）。'
+description: '针对任意话题，系统性地调研网上别人的做法、结构化比较方案、评估优劣、给出建议。 比 borrow-open-source 更通用——不限于开源代码，适用于任何选型、方案研究、最佳实践调查。 Use when the user says: "了解一下别人怎么做X" / "调研X方案" / "网上有哪些做X的方式" / "比较X和Y" "X的最佳实践" / "benchmark X" / "别人怎么解决X问题" / "/survey X" Phase 2 用 2 个 Claude agent + 2 个不同族的外部 lens（GPT 族与 Gemini 族，都经 cursor-agent 调用）四路并行异构搜索，发现取并集不投票；综合后 Phase 6 由 GPT 族主评审与 Grok 族红队第二评审（均经 cursor-agent）**并发**终审（红队 one-shot、条目并集 不投票），最多 3 轮辩论，剩余分歧里的事实争议交 Gemini（回避时 Grok）实查裁决、判断分歧 由人类裁决。族=训练实验室，换 CLI 不构成换族。对抗 Claude 训练数据集体盲区与 Claude↔GPT 回声室。某一族不可用时自动降级并在报告顶部 banner 提示——但用户不能主动跳过任何阶段。 Phase 1 遇 blocking unknown（研究对象/优先级/关键约束/排除范围拿不准）时先启动 多轮澄清提问（Phase 1.2，AskUserQuestion，≤3 轮）再冷冻 Brief；无 blocking unknown 零打扰。 /survey 的**质量门禁无 flag 可跳**（异构搜索/Reflection/Citation Health/异构终审都是硬约束）； 但**产物按消费者分三档**（A 内部输入=仅 md / B 给人阅读=+HTML+PDF / C 要听=+audio）， Claude 搜索路数按重要度分两档（重大决策 3 路 / 常规 2 路，异构两路任何档都不可省）。'
 ---
 # /survey — 调研·比较·建议
 
@@ -10,12 +10,12 @@ description: '针对任意话题，系统性地调研网上别人的做法、结
 Phase 1 问题界定
   → Phase 1.2 澄清提问（必要时，≤3 轮）      [blocking unknown → AskUserQuestion]
   → Phase 1.5 Brief                        [Read prompts/brief-template.txt]
-  → Phase 2 (2 Claude + X1 codex + X2 cursor [Read prompts/agent-x.txt + agent-x2.txt]
+  → Phase 2 (2 Claude + X1 gpt + X2 gemini   [Read prompts/agent-x.txt + agent-x2.txt]
              四路并行异构搜索，合并取并集)
   → Phase 2.5 Reflection Gate              [前提破裂 → 回问用户，换靶则回 Phase 1 重立 Brief（限 1 次）]
   → Phase 3-5 综合                          [生成报告]
   → Phase 5.5 Citation Health
-  → Phase 6 异构终审：主评审(gpt 族·codex)     [Read prompts/round1.txt]
+  → Phase 6 异构终审：主评审(gpt 族·cursor)    [Read prompts/round1.txt]
              + 红队第二评审(grok 族·cursor, one-shot)  [Read prompts/round1-grok-prefix.txt]
              两个 async job 同回合并发，条目取并集
   → 多轮辩论（最多 3 轮，仅主评审参与）        [Read prompts/round{2,3}-rebuttal.txt]
@@ -30,11 +30,11 @@ Phase 1 问题界定
 
 **为什么默认就走异构 + 终审**：对抗 **Claude 训练数据集体盲区**——Claude 倾向把训练集里熟悉的工具/方法排在前面，可能漏掉训练截点后出现的新选项、非 Anthropic 生态的方案、低星但成熟的工业方案。3 个 Claude agent 并行只对抗"搜索范围偏差"，对抗不了模型层面共享的盲区。默认开启异构 = 默认假设你在用 /survey 调研对你重要的事情。**无 opt-out flag**——/survey 只有一条高质量路径。
 
-**三族两通道（2026-09-09 起）**：搜索眼固定 `codex`(X1，GPT 族) + `gemini`(X2，cursor)；Phase 6 主评审 `codex`、红队第二评审 `grok`(cursor)、事实裁判 `gemini`。**族 = 训练实验室，换 CLI 不构成换族**：codex 的 gpt-6 与（已退役的）cursor gpt-5.6 同族，所以 codex 绝不当红队或 tiebreaker。gpt 族在 cursor 通道退役的原因：OpenAI 因 SpaceX 收购 Cursor 宣布 2026-11-12 切断模型供给。**grok 不做搜索眼**——实测该族基础延迟高（263s 玩具 prompt），放进 Phase 2 会撞同步窗口。完整的替补链与选族规则见 `references/cursor-agent-invocation.md` §通道与族 / §三族分工与替补链。
+**三族都走 Cursor（2026-11-19 起）**：`gpt` / `gemini` / `grok` 都经 `cursor-agent` 调用。搜索眼固定 `gpt`(X1) + `gemini`(X2)；Phase 6 主评审 `gpt`（异步 job）、红队第二评审 `grok`、事实裁判 `gemini`。**族 = 训练实验室，换 CLI 不构成换族**：`codex` CLI 是**可选备用通道**（默认流程、doctor 判定都不依赖它），它与 `gpt` 同族，所以绝不当红队或 tiebreaker。2026-09-09 曾因"OpenAI 将于 11-12 切断 Cursor"把 gpt 族迁去 codex；2026-11-19 实测 Cursor 侧 gpt 仍可用，遂迁回。**grok 不做搜索眼**——实测该族基础延迟高（263s 玩具 prompt），放进 Phase 2 会撞同步窗口。完整的替补链与选族规则见 `references/cursor-agent-invocation.md` §通道与族 / §三族分工与替补链。
 
-**自动降级**：两只异构眼走**两条独立通道**（codex=ChatGPT 订阅、cursor=Cursor 订阅），凭据/额度故障只灭它自己那只眼——一只挂了另一只继续；两只都不可用才退回 3 Claude（详见 `phases/02-research.md` §自动降级矩阵）。Phase 6 主评审按 `codex → grok → gemini` 替补链换族重试；红队挂了**不阻断**（增量意见不是质量门禁）。用户无法主动选择跳过任何阶段。
+**自动降级**：两只异构眼按族各自降级——一只挂了另一只继续；两只都不可用才退回 3 Claude（详见 `phases/02-research.md` §自动降级矩阵）。三族共用 Cursor 一套凭据，Cursor 登录失效时三族同灭；额度见底（68）按族处理。Phase 6 主评审按 `gpt → grok → gemini` 替补链换族重试；红队挂了**不阻断**（增量意见不是质量门禁）。用户无法主动选择跳过任何阶段。
 
-**异构自检前置**：Phase 2 启动 X1/X2 前先跑 `bash doctor.sh`（秒级，不耗配额）——文件/执行位/两条通道各自的安装与登录（cursor 用 `--list-models`、codex 用 `run-codex.sh --auth-check`，都实打服务端，不信 CLI 自述：过期凭据下 `cursor-agent status` 照样自称 Logged in，伪造凭据下 `codex login status` 照样 "Logged in"）/三 lens 模型解析/额度留痕（读真调用留下的痕迹——额度见底时快检全绿，只有真调用会撞）逐层检查，执行位问题当场自动修复，其余给出确切修复命令；非 0 verdict 时**提前**告知用户即将发生的降级，而不是等中途 banner。**grok 族死只报 WARN 不降 verdict**（它只是替补 + 红队，不是搜索眼）。详见 `references/cursor-agent-invocation.md` §自检 + 自修复。
+**异构自检前置**：Phase 2 启动 X1/X2 前先跑 `bash doctor.sh`（秒级，不耗配额）——文件/执行位/cursor-agent 的安装与登录（用 `--list-models` 实打服务端，不信 CLI 自述：过期凭据下 `cursor-agent status` 照样自称 Logged in）/三 lens 模型解析（模型列表临时缩水时会明说"疑似缩水，稍后重试"，不判该族下架）/额度留痕（读真调用留下的痕迹——额度见底时快检全绿，只有真调用会撞）逐层检查，执行位问题当场自动修复，其余给出确切修复命令；非 0 verdict 时**提前**告知用户即将发生的降级，而不是等中途 banner。**grok 族死只报 WARN 不降 verdict**（它只是替补 + 红队，不是搜索眼）；codex 备用通道未装/未登录只打一行 INFO，同样不影响 verdict。详见 `references/cursor-agent-invocation.md` §自检 + 自修复。
 
 ---
 
@@ -72,15 +72,16 @@ Phase 1 问题界定
 | 6 | `phases/06-debate.md` + Round 1 + 红队 prefix + Round 2 + tiebreak prompts | `Read phases/06-debate.md + round prompts; state "Loaded Phase 6"` |
 
 **为什么 SKILL.md 不能太薄**：以下硬性 invariants 必须保留在 SKILL.md 内（不光放 phase 文件）：
-- 异构搜索强制（Phase 2 必须 ≥2 Claude + 2 个**不同族**外部 lens：X1=GPT 族经 codex、X2=Gemini 族经 cursor-agent；一只挂了另一只继续。**异构两路任何档位不可省**）
-- **族 = 训练实验室，换通道不构成换族**：codex 的 gpt-6 与 cursor 的 gpt-5.6 同属 OpenAI；codex 绝不当红队或 tiebreaker（同族自审自签）。任何新通道接进来时必须复用底层实验室已有的族标签，不得因为换了 CLI 就新造一个族
+- 异构搜索强制（Phase 2 必须 ≥2 Claude + 2 个**不同族**外部 lens：X1=GPT 族、X2=Gemini 族，均经 cursor-agent；一只挂了另一只继续。**异构两路任何档位不可省**）
+- **族 = 训练实验室，换通道不构成换族**：codex CLI 的 gpt-6 与 cursor 的 gpt-5.6 同属 OpenAI；主评审、红队、tiebreaker 三个席位必须异族，备用通道 codex 与 gpt 同族，绝不当红队或 tiebreaker（同族自审自签）。任何新通道接进来时必须复用底层实验室已有的族标签，不得因为换了 CLI 就新造一个族
 - **澄清按需、不滥用**（Phase 1.2）：blocking unknown 按**合取门槛**认定（实质分叉可写出 + 推不出 + 无安全默认/条件化覆盖 + 猜错大返工），认定了必须问、不许默默猜；无则零打扰。未知入显式队列，每轮攒齐一次问（AskUserQuestion ≤4 问带选项）、最多 3 轮；**任何终止路径都把剩余未知转显式假设**（进 Brief「初始假设」）；答案冷冻进 Brief 注入下游；非交互/用户不答 → 显式假设 + metadata 披露，不阻塞
 - **Brief 冷冻后改靶必经用户**：任何阶段（Phase 2.5 前提破裂、Phase 6 辩论中 reviewer 的前提类建议）发现研究前提不成立，一律回问用户（按原题继续+标注风险 / 换靶重立 Brief，换靶限 1 次），不许自行改研究问题——两个 AI 一致也不算用户同意
 - **产物分档 ≠ 门禁分档**：产物可按消费者收敛（A/B/C 三档），但 Phase 1-6 的质量门禁一律照跑
 - **全流程不做多数投票**：发现阶段取并集，终审靠辩论，事实争议靠实查，判断归人类。**双评审也不投票**——主评审与红队意见相左时两条都进判断矩阵各自表态，谁也不因"另一位没提"被降权
 - Phase 6 多轮辩论 + 人类裁决强制（高质量 only，无 opt-out）
 - **红队是增量不是门禁**：Round 1 红队（grok，one-shot）挂了不阻断 Phase 6，标 metadata 即可；但**主评审与 tiebreaker 必须异族**这条是硬的，绝不允许同族自审自签
-- 任一通道（codex / cursor-agent）不可用时自动降级 + banner（fallback contract）；两条通道各有各的凭据与配额池，故障不连坐
+- 任一族或 cursor-agent 整体不可用时自动降级 + banner（fallback contract）
+- **模型排名要查证，不许沿用旧排名**：三族选哪个模型由 `model-ranking.conf` 决定（上网查证后的顺序 + 已核实清单 + 依据 URL + 核对日期）。出现 `NEW-MODEL:` 行（实时列表里有清单之外的模型，含选型规则不收的形态：裸 id / 只有 `-max` 或低档 / `-preview` / 认不出的命名）或 `WARN: … 排名文件 …` 行时，主 agent **必须先**查官方模型页和厂商发布说明（有独立评测一并查），更新排名文件的顺序、清单、依据 URL 和核对日期，跑 `bash test-model-selection.sh`，**再继续**；doctor 报核对日期超过 60 天时同样处理。**去哪看**：`doctor.sh` 的 L3.2 一节（**exit 0 / HEALTHY 也要看**，这类提示不改 verdict）；同步调用 runner 的 stderr；异步 job 的 `status` / `wait` 输出里状态行下面缩进的行。**改哪一份**：`.rulesync/skills/survey/model-ranking.conf`（源），改完在仓库根跑 `pnpm run ai:generate` 并给镜像里的 `.sh` 补执行位——直接改 `.claude/skills/survey/` 下的镜像会在下次生成时被覆盖（doctor 的修复建议会给出源文件路径）。通道不通或查不到时不许装作查过：照当前解析结果继续。报告 §metadata 的 `模型排名:` 字段必填：`已核实 <核对日期>` 或 `未核实（<原因>）`。**盲区**：名字里不含族名的新模型（如 OpenAI 的 `o5`）脚本检测不到，靠 60 天复查时对照实时列表全量看一遍
 - 信源排除（不搜中文社区）
 - 每个 phase / prompt 进入前的强制 Read gate
 
@@ -100,23 +101,25 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 │   └── 06-debate.md               # Phase 6 多轮辩论 + 人类裁决
 ├── references/
 │   ├── source-quality.md          # Source Quality Helper（被 Phase 2/2.5/5.5/6 共用）
-│   └── cursor-agent-invocation.md # 两条通道（codex + cursor-agent）的族/通道定义 + 调度 4 硬点 + 模型选择 + exit code（被 Phase 2/6 共用）
+│   └── cursor-agent-invocation.md # 三族经 cursor-agent（+ 可选备用通道 codex）的族/通道定义 + 调度 4 硬点 + 模型选择 + exit code（被 Phase 2/6 共用）
 ├── lib/
 │   └── agent-common.sh            # 两个 runner 的共享底座：watchdog / 进程树屠杀 / 额度留痕 / 段落校验（带版本护栏）
 ├── prompts/
 │   ├── brief-template.txt         # Phase 1.5 Brief 模板
-│   ├── agent-x.txt                # Phase 2 Agent X1 模板（gpt 族经 codex·查 Claude 盲区）
+│   ├── agent-x.txt                # Phase 2 Agent X1 模板（gpt 族经 cursor·查 Claude 盲区）
 │   ├── agent-x2.txt               # Phase 2 Agent X2 模板（gemini 族经 cursor·查 Claude+GPT 共同盲区）
-│   ├── round1.txt                 # Phase 6 Round 1 主评审 prompt（gpt 族经 codex·7 个常规评审角度）
+│   ├── round1.txt                 # Phase 6 Round 1 主评审 prompt（gpt 族经 cursor·7 个常规评审角度）
 │   ├── round1-grok-prefix.txt     # Phase 6 Round 1 红队 prefix（grok 族·4 个红队角度，拼在 round1.txt 前）
 │   ├── round2-rebuttal.txt        # Phase 6 Round 2 rebuttal prompt
 │   └── tiebreak.txt               # Phase 6 事实核查 tiebreaker prompt（gemini 族，回避时 grok）
 ├── check-citations.sh             # Phase 5.5 Layer A 脚本
-├── run-codex.sh                   # codex 通道（GPT 族：X1 + Phase 6 主评审）；--resolve-only / --auth-check 供 doctor 复用
-├── run-cursor-agent.sh            # cursor-agent 通道（gemini / grok；gpt 已退役）；模型运行时自动解析，--resolve-only 供 doctor 复用
+├── run-codex.sh                   # 可选备用通道 codex CLI（与 gpt 同族；默认流程不用）；--auth-check 供 doctor 报备用通道状态
+├── run-cursor-agent.sh            # cursor-agent 通道（gpt / gemini / grok）；模型运行时自动解析，--resolve-only 供 doctor 复用
 ├── run-agent-async.sh             # 重活异步 job（nohup 脱离 600s 窗口；按族路由到上面两个 runner；X1 与 Phase 6 评审必走这里）
-├── doctor.sh                      # 双通道异构链路自检+自修复（Phase 2 前必跑快检；--probe 加端到端探针）
+├── doctor.sh                      # 异构链路自检+自修复（Phase 2 前必跑快检；--probe 加端到端探针）
 ├── test-model-selection.sh        # cursor 侧模型选择逻辑 + runner 契约的可执行断言（Cursor 改命名时先跑这个）
+├── fixtures/                      # test-model-selection.sh 的模型列表夹具（完整列表 + 临时缩水形态）
+├── model-ranking.conf             # 三族的模型排名：系列强弱顺序 + 已核实清单 + 依据 URL + 核对日期（出现 NEW-MODEL 时先查证再改它）
 ├── test-run-codex.sh              # codex runner + lib 的可执行断言（codex CLI 升级时先跑这个）
 ├── generate-audio.sh              # Audio 主脚本 (edge-tts/say；-o OUT；-t 传口语稿=完整音频模式)
 ├── generate-audio-openai.sh       # Audio 可选 fallback (OpenAI TTS，支持 -o OUT)
@@ -161,7 +164,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 
 ## 提速要点（2026-07-31 加：实测 20 分钟 → 目标 ≤12 分钟）
 
-耗时结构（2026-09-10 更新）：四路搜索 5–8min（并行但等最慢——X1 codex high 档实测 302–491s）、写报告 ~5min、Phase 6 Round 1 ~4min 起（主评审 codex xhigh 实测 205s；grok 红队 high 档 + **软 deadline 900s**，主评审回来后最多再等 15 min，不再无上限等它）、每追加一轮辩论 +3–8min（R2/R3 降 high）、中途协调 ~4min。**快路径（Round 1 直接收敛）目标 ≤20min；慢路径不承诺**——旧账"Phase 6 ~5min / 总 12min"写于红队接入前，已作废。
+耗时结构（2026-09-10 更新）：四路搜索 5–8min（并行但等最慢——X1 gpt high 档约 4–8 min）、写报告 ~5min、Phase 6 Round 1 ~4min 起（主评审 gpt xhigh 经 cursor 实测 5–10 min；grok 红队 high 档 + **软 deadline 900s**，主评审回来后最多再等 15 min，不再无上限等它）、每追加一轮辩论 +3–8min（R2/R3 降 high）、中途协调 ~4min。**快路径（Round 1 直接收敛）目标 ≤20min；慢路径不承诺**——旧账"Phase 6 ~5min / 总 12min"写于红队接入前，已作废。
 
 1. **搜索路数按重要度分档**：
    - **重大决策**（会改架构/宪法/对外承诺）：五路（Claude×3 + 异构×2）
@@ -177,22 +180,22 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
    |---|---|---|---|
    | Phase 1 界定 / 澄清 / Brief | 主 agent | 主模型 | 判断 |
    | Phase 2 Agent A / B（/ C） | Agent 工具子 agent | **sonnet** | 检索型 |
-   | Phase 2 X1 | codex | gpt · **high** | 实测 302–491s；xhigh 604s 撞窗口 |
-   | Phase 2 X2 | cursor gemini | 无档 | — |
+   | Phase 2 X1 | cursor gpt（异步） | **high** | 2026-11-19 实测一次联网搜索约 4 min；xhigh 不值 |
+   | Phase 2 X2 | cursor gemini | **high** | 检索型 |
    | Phase 2.5 检查清单 | 主 agent | 主模型 | 判断 |
    | Phase 2.5 追搜 | cursor gemini 同步 / sonnet 子 agent | prompt 限「最多 15 次查询」 | 定向补搜，串行门 |
    | Phase 3–5 综合、写报告 | 主 agent | 主模型 | 核心判断 |
    | Phase 5.5 Citation | 脚本 + 主 agent 抽样 | — | — |
-   | Phase 6 R1 主评审 | codex | **xhigh** | 全管线最难推理；实测 205s |
+   | Phase 6 R1 主评审 | cursor gpt（异步） | **xhigh** | 全管线最难推理；2026-11-19 实测全文评审 5–10 min |
    | Phase 6 R1 红队 | cursor grok | **high** + 软 deadline 900s | 增量意见，联网取证不靠推理深度 |
-   | Phase 6 R2 / R3 rebuttal | codex（复用 R1 id） | **high** | 只看非 accept 条目，范围窄 |
+   | Phase 6 R2 / R3 rebuttal | cursor gpt（与 R1 同版本同系列） | **high** | 只看非 accept 条目，范围窄 |
    | Phase 6 判断矩阵 / 人类裁决 | 主 agent | 主模型 | 判断 |
-   | tiebreaker | cursor gemini | 无档 | 事实核查 |
+   | tiebreaker | cursor gemini | **high** | 事实核查 |
    | HTML（B/C 档） | **sonnet** 子 agent | 按 report-to-html 规范 | 产出型，几十 KB 输出 |
    | PDF / 音频合成 | 脚本 | — | — |
    | 完整音频口语稿（C 档） | **sonnet** 子 agent | 6k–12k 字 | 产出型 |
 
-   codex 与 cursor 的档位由脚本环境变量控制（`SURVEY_CODEX_EFFORT` / `SURVEY_CURSOR_EFFORT`），Claude 子 agent 由 Agent 工具 `model=` 参数控制。**不动的两处**：X1 与 R1 决定召回与评审深度，降档等于降质量。
+   三族的档位都由 `SURVEY_CURSOR_EFFORT=high|xhigh` 控制（逐条命令前缀设置，不要 export），Claude 子 agent 由 Agent 工具 `model=` 参数控制。**不动的两处**：X1 与 R1 决定召回与评审深度，降档等于降质量。
 
 ---
 
@@ -240,6 +243,6 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 
 ## Troubleshooting / FAQ
 
-**为何 GPT 族走 codex CLI、Gemini/Grok 走 cursor-agent，而不是直接调 API**：两者都走用户已有订阅（ChatGPT / Cursor），零 API key、不另计费。2026-09-09 起 OpenAI 切断 Cursor 的模型供给（SpaceX 收购触发控制权变更），gpt 族只能走 codex；这顺带把两只搜索眼拆到两个独立配额池，一条通道见底不再连坐另一条。未来如收到装不了其中一个 CLI 的用户反馈，再考虑加 API fallback。
+**为何三族都走 cursor-agent，而不是直接调 API**：走用户已有的 Cursor 订阅，零 API key、一套登录。代价是三族共用一套凭据，Cursor 登录失效时三族同灭（届时退 3 Claude）；额度是否按族分开未实测，撞 68 按族降级。codex CLI（ChatGPT 订阅）保留为可选备用通道：gpt 族在 Cursor 不可用时可手动用 `run-agent-async.sh start … codex` 顶上，需自行 `codex login`。
 
 **Audio 在非 macOS 上怎么办**：`generate-audio.sh` 自动检测，非 macOS 直接 skipped。若 `OPENAI_API_KEY` 已 export，主 agent 调度 `generate-audio-openai.sh` 作为可选 fallback。

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # /survey — codex 通道调用 helper（与 run-cursor-agent.sh **契约对齐**）
 #
+# ⚠️ 2026-11-19 起本脚本是**可选备用通道**：实测 Cursor 侧 gpt 族仍可用，X1 与 Phase 6 主评审
+#    改回走 run-cursor-agent.sh gpt。默认流程、文档、doctor verdict 都不再依赖 codex；
+#    它与 gpt 同族，不得当红队或 tiebreaker。下面这段是 2026-09-09 的历史背景，代码保留可用。
+#
 # 为什么要有它（2026-09-09）：OpenAI 因 SpaceX 收购 Cursor 触发控制权变更条款，宣布 2026-11-12
 # 切断 Cursor 的 GPT 模型访问且不再供新模型。gpt 族在 cursor 通道整体退役，codex CLI
 # （走用户的 ChatGPT 订阅，配额池与 Cursor **完全独立**）成为 gpt 族唯一通道：
