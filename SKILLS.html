@@ -110,17 +110,13 @@
           {h:'#canvas-design',t:'/canvas-design',sub:true},
           {h:'#project-health',t:'/project-health',sub:true},
           {h:'#learning-loop',t:'/learning-loop',sub:true},
-          {h:'#local',t:'本地专用（9个）',sub:false},
-          {h:'#feature-fullstack',t:'/feature-fullstack',sub:true},
-          {h:'#ios-e2e-test',t:'/ios-e2e-test',sub:true},
-          {h:'#fedex-tracker',t:'/fedex-tracker',sub:true},
-          {h:'#archi-strategy-decode',t:'/archi-strategy-decode',sub:true},
+          {h:'#local',t:'本地专用（5个）',sub:false},
+          {h:'#archify',t:'/archify',sub:true},
           {h:'#deploy-team-webapp',t:'/deploy-team-webapp',sub:true},
           {h:'#browser-handoff',t:'/browser-handoff',sub:true},
           {h:'#report-to-audio',t:'/report-to-audio',sub:true},
           {h:'#demo-video',t:'/demo-video',sub:true},
-          {h:'#short-drama',t:'/short-drama',sub:true},
-          {h:'#project-scoped',t:'按项目分发（3个）',sub:false},
+          {h:'#project-scoped',t:'按项目分发（4个）',sub:false},
           {h:'#known-missing',t:'已知缺失的能力（3个）',sub:false},
           {h:'#external-plugins',t:'外部全局插件（1个）',sub:false},
           {h:'#oh-my-mermaid',t:'oh-my-mermaid',sub:true},
@@ -147,9 +143,9 @@
       <span class="pill pill-muted">AICAP SSOT</span>
     </div>
     <h1 class="text-2xl md:text-3xl text-slate-900 mb-3">Skills 说明文档</h1>
-    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-07-29</div>
+    <div class="text-sm text-slate-500 mb-5">全局发现路径 <code>~/.claude/skills/</code>（Claude Code / Cursor / Codex 均读）· 2026-11-20</div>
     <blockquote class="!my-5">
-      <strong>34 个 Skill，不止一个路径。</strong>24 个经 AICAP SSOT 跨工具同步（其中 <code>aicap-commit</code> 为项目级、不入全局），9 个本地专用（不经 rulesync，换机器不会跟过来），1 个外部全局插件。另有 3 个<a href="#project-scoped">按项目分发</a>的 skill 住在各自仓库里。另有 3 个<a href="#known-missing">已知缺失的能力</a>——被引用但并不存在。
+      <strong>30 个 Skill，不止一个路径。</strong>24 个经 AICAP SSOT 跨工具同步（其中 <code>aicap-commit</code> 为项目级、不入全局），5 个本地专用（不经 rulesync，换机器不会跟过来），1 个外部插件（仅在 AICAP 本地启用）。另有 3 个<a href="#project-scoped">按项目分发</a>的 skill 住在各自仓库里。另有 3 个<a href="#known-missing">已知缺失的能力</a>——被引用但并不存在。
       所有 skill 均可通过 <code>~/.claude/skills/</code> 被 Claude Code、Cursor、Codex 发现，无需额外配置。
     </blockquote>
     <div class="overflow-x-auto">
@@ -180,15 +176,11 @@
           <tr class="bg-emerald-50/40"><td><code><a href="#canvas-design">/canvas-design</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>用设计哲学驱动创作 .png / .pdf 视觉作品（海报/艺术图）</td><td>"做一张海报" / "设计一个 X"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#project-health">/project-health</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>仓库健康度四层评估（治理/静态门禁/hotspots/AI 异构），可执行探针出 JSON</td><td>"评估项目健康度" / "技术债在哪"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#learning-loop">/learning-loop</a></code></td><td><span class="pill pill-ok">SSOT</span> <span class="pill pill-info">新</span></td><td>个人学习闭环：原子笔记 + 主动回忆 + 间隔重复，纯 markdown 无外部 app</td><td>"学一下X" / "考我" / "今天要复习什么"</td></tr>
-          <tr><td><code><a href="#feature-fullstack">/feature-fullstack</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea 全栈特性实施</td><td>"全做" / "ship 这个功能"</td></tr>
-          <tr><td><code><a href="#ios-e2e-test">/ios-e2e-test</a></code></td><td><span class="pill pill-muted">本地</span></td><td>Seaidea iOS 模拟器 E2E 测试</td><td>"跑 e2e 测试"</td></tr>
-          <tr><td><code><a href="#fedex-tracker">/fedex-tracker</a></code></td><td><span class="pill pill-muted">本地</span></td><td>批量查 FedEx 发货日期，输出 CSV</td><td>有 FedEx 追踪号批次时</td></tr>
-          <tr class="bg-emerald-50/40"><td><code><a href="#archi-strategy-decode">/archi-strategy-decode</a></code></td><td><span class="pill pill-muted">本地 · 跨仓库软链</span> <span class="pill pill-info">新</span></td><td>Archi 里双向共建战略，逐层解码到架构级需求</td><td>"战略解码" / "把战略拆成需求"</td></tr>
+          <tr><td><code><a href="#archify">/archify</a></code></td><td><span class="pill pill-muted">本地 · 软链</span></td><td>需求或代码 → 可交互架构/流程/时序/ERD 图，或一页讲解页</td><td>"画架构图" / "做成一页"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#deploy-team-webapp">/deploy-team-webapp</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>静态站 → 私密团队应用（CF Pages + Supabase Auth + RLS）</td><td>"部署上线" / "团队共享"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#browser-handoff">/browser-handoff</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>把浏览器后台操作生成成可粘贴给 Claude for Chrome 的指令</td><td>需要你去后台点东西时</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#report-to-audio">/report-to-audio</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>长报告 → 好听的单文件叙述音频（edge-tts 晓晓优先）</td><td>"做成音频" / "念出来"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#demo-video">/demo-video</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>本地 web 应用 → 带中文旁白的操作演示 mp4</td><td>"录个 demo 视频"</td></tr>
-          <tr class="bg-emerald-50/40"><td><code><a href="#short-drama">/short-drama</a></code></td><td><span class="pill pill-muted">本地</span> <span class="pill pill-info">新</span></td><td>一句话story → 剧本 + 视频 + TTS + 合成短剧</td><td>"帮我生成短剧"</td></tr>
           <tr class="bg-emerald-50/40"><td><code><a href="#oh-my-mermaid">oh-my-mermaid</a></code></td><td><span class="pill pill-info">外部插件</span> <span class="pill pill-info">新</span></td><td>整库扫描 → 多视角嵌套 Mermaid 架构图，可递归钻取 + 本地 viewer</td><td>"omm scan" / "omm view"</td></tr>
         </tbody>
       </table>
@@ -484,38 +476,20 @@ flowchart LR
 
   <!-- 本地专用 -->
   <section id="local" class="section-card">
-    <h2 class="text-xl mb-4">本地专用 Skills（9 个）<a href="#local" class="anchor-link">#</a></h2>
-    <p class="text-slate-700 mb-3">这些 skill 不经 rulesync 同步：多数是 <code>~/.claude/skills/</code> 下的真实目录，<code>archi-strategy-decode</code> 例外——它是指向 <code>Strage/archi-strategy/</code> 的<strong>跨仓库软链</strong>，随那个仓库走。换机器 / 重装时它们不会自动跟过来。</p>
+    <h2 class="text-xl mb-4">本地专用 Skills（5 个）<a href="#local" class="anchor-link">#</a></h2>
+    <p class="text-slate-700 mb-3">这些 skill 不经 rulesync 同步：多数是 <code>~/.claude/skills/</code> 下的真实目录，<code>archify</code> 例外——它是指向 <code>~/.agents/skills/archify</code> 的软链。换机器 / 重装时它们不会自动跟过来。</p>
     <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 text-sm text-slate-700 rounded-r">若将来要跨工具同步，走 AICAP SSOT 路径：加到 <code>.rulesync/skills/</code> → <code>pnpm run ai:generate</code> → 创建 symlink。</div>
   </section>
 
-  <section id="feature-fullstack" class="section-card">
-    <h2 class="text-xl mb-1">/feature-fullstack <a href="#feature-fullstack" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地 · Seaidea</span></h2>
-    <p class="text-slate-500 text-sm mb-4">端到端实施 Seaidea 全栈 feature，一次搞定</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">覆盖 backend + iOS + 验证 + 真机部署。从 M0.5 实施经验蒸馏（~1100 行新代码，4 feature，一次 sitting 验证到位）。</p></div>
-    <div class="mt-3"><span class="trigger-tag">全做</span><span class="trigger-tag">ship 这个功能</span><span class="trigger-tag">实施 M0.X</span><span class="trigger-tag">测完装手机</span></div>
-  </section>
 
-  <section id="ios-e2e-test" class="section-card">
-    <h2 class="text-xl mb-1">/ios-e2e-test <a href="#ios-e2e-test" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地 · Seaidea</span></h2>
-    <p class="text-slate-500 text-sm mb-4">Seaidea iOS 模拟器全链路 E2E 测试</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">验证 backend 健康 → 启动模拟器 → WebSocket 探针确认通知链（backend → ServerChan）→ 截图存档 → 可选真机部署。</p></div>
-    <div class="mt-3"><span class="trigger-tag">在模拟器跑 iOS 测试</span><span class="trigger-tag">跑 e2e 测试</span><span class="trigger-tag">装到手机</span></div>
-  </section>
 
-  <section id="fedex-tracker" class="section-card">
-    <h2 class="text-xl mb-1">/fedex-tracker <a href="#fedex-tracker" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
-    <p class="text-slate-500 text-sm mb-4">批量查 FedEx 发货日期，输出 CSV，绕过 Akamai 反爬</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">真实 Chrome（CDP 驱动）模拟点击，随机延迟 8-15s 绕过 Akamai Bot Manager，批量提取发货日期输出 CSV。</p></div>
-    <div class="mt-3"><span class="trigger-tag">有 FedEx 追踪号批次</span><span class="trigger-tag">批量查 FedEx 发货日期</span></div>
-  </section>
 
-  <section id="archi-strategy-decode" class="section-card">
-    <h2 class="text-xl mb-1">/archi-strategy-decode <a href="#archi-strategy-decode" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地 · 跨仓库软链</span></h2>
-    <p class="text-slate-500 text-sm mb-4">Archi 里双向共建战略 → 解码到架构级需求</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">人在 Archi GUI 画、Claude 经 archi-mcp-server 读写同一活模型；AI 提议进审批队列、人逐条批准才落地。把战略从 Driver/Stakeholder/Vision 逐层解码（KAOS）到 ArchiMate Requirement，沿途记 ADR，触底后导出需求交接包给 <code>/req-discovery</code>。</p></div>
-    <div class="mt-3"><span class="trigger-tag">用 Archi 共建战略</span><span class="trigger-tag">战略解码</span><span class="trigger-tag">把战略拆成需求</span></div>
-    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 mt-3 text-sm text-slate-700 rounded-r">存放位置特殊：<code>~/.claude/skills/archi-strategy-decode</code> → <code>Strage/archi-strategy/skill/</code> 的软链，随那个仓库走。</div>
+
+  <section id="archify" class="section-card">
+    <h2 class="text-xl mb-1">/archify <a href="#archify" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地 · 软链</span></h2>
+    <p class="text-slate-500 text-sm mb-4">需求或代码 → 可交互的架构 / 流程 / 时序 / ERD 等图</p>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">生成单文件 HTML 图（可导出图片）；也能把一个回答做成结论先行的一页讲解页。</p></div>
+    <div class="mt-3"><span class="trigger-tag">画架构图</span><span class="trigger-tag">流程图 / 时序图</span><span class="trigger-tag">做成一页</span><span class="trigger-tag">用页面讲</span></div>
   </section>
 
   <section id="deploy-team-webapp" class="section-card">
@@ -546,13 +520,6 @@ flowchart LR
     <div class="mt-3"><span class="trigger-tag">做个操作演示视频</span><span class="trigger-tag">录个 demo 视频</span><span class="trigger-tag">带旁白的演示</span></div>
   </section>
 
-  <section id="short-drama" class="section-card">
-    <h2 class="text-xl mb-1">/short-drama <a href="#short-drama" class="anchor-link">#</a><span class="pill pill-muted ml-2">本地</span></h2>
-    <p class="text-slate-500 text-sm mb-4">一句话故事 → 完整短剧视频</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">剧本生成 → 视频生成 → TTS 配音 → FFmpeg 合成。MOCK 模式（默认，无需 API）用 FFmpeg 占位视频验证全流程；REAL 模式调 Runway MCP 出真实 AI 视频。</p></div>
-    <div class="mt-3"><span class="trigger-tag">/short-drama</span><span class="trigger-tag">帮我生成短剧</span><span class="trigger-tag">把 X 做成短剧</span></div>
-    <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 mt-3 text-sm text-slate-700 rounded-r">这个 skill 的 <code>SKILL.md</code> <strong>没有 frontmatter</strong>，<code>name</code> / <code>description</code> 全靠 H1 兜底，自动触发面比其余窄。</div>
-  </section>
 
   <!-- 按项目分发 -->
   <section id="project-scoped" class="section-card">
@@ -565,6 +532,7 @@ flowchart LR
           <tr><td><code>/aicap-commit</code></td><td>本仓库 <code>.claude/skills/</code>（generate 产物）</td><td>SSOT frontmatter <code>scope: project</code>；<code>setup:skills</code> 据此跳过并回收全局软链</td></tr>
           <tr><td><code>/zupu-ship</code></td><td><code>族谱/zupu-cloud/.claude/skills/</code></td><td>真实目录已迁入该仓库，随其版本控制走</td></tr>
           <tr><td><code>/zupu-spec-sync</code></td><td>同上</td><td>同上</td></tr>
+          <tr><td><code>/fedex-tracker</code></td><td><code>AIProject/fedex/.claude/skills/</code></td><td>真实目录 2026-11-20 迁入该项目</td></tr>
         </tbody>
       </table>
     </div>
@@ -572,7 +540,7 @@ flowchart LR
       <strong>别用 <code>paths</code> 做仓库隔离。</strong>官方文档与探针实测一致：它匹配的是<strong>会话中正在操作的文件</strong>，不是当前仓库。拿它当仓库作用域会漏触发——你说“帮我提交这次改动”时若还没读过匹配文件，skill 不会出现。它只适合本来就由文件类型驱动的 skill。
     </div>
     <div class="skill-block mt-4"><h3>第三档：<code>skillOverrides</code>（settings，不改 SKILL.md）</h3>
-      <p class="text-sm text-slate-700 mb-2">没有可归属项目的 skill 用它降档，四档可选：<code>on</code> / <code>name-only</code>（只给名字，描述不进上下文）/ <code>user-invocable-only</code>（对模型隐藏，<code>/</code> 菜单还在）/ <code>off</code>。当前 <code>off</code>：<code>ios-e2e-test</code>、<code>feature-fullstack</code>（Seaidea 项目不在本机）；<code>name-only</code>：<code>fedex-tracker</code>；<code>user-invocable-only</code>：<code>sync-aicap</code>、<code>archi-strategy-decode</code>。</p>
+      <p class="text-sm text-slate-700 mb-2">没有可归属项目的 skill 用它降档，四档可选：<code>on</code> / <code>name-only</code>（只给名字，描述不进上下文）/ <code>user-invocable-only</code>（对模型隐藏，<code>/</code> 菜单还在）/ <code>off</code>。当前没有任何 <code>skillOverrides</code> 条目（2026-11-20 全局 skill 精简后清空）。</p>
     </div>
   </section>
 
@@ -597,13 +565,13 @@ flowchart LR
 
   <!-- 外部全局插件 -->
   <section id="external-plugins" class="section-card">
-    <h2 class="text-xl mb-4">外部全局插件（非 SSOT，原生安装）<a href="#external-plugins" class="anchor-link">#</a></h2>
+    <h2 class="text-xl mb-4">外部插件（非 SSOT，原生安装）<a href="#external-plugins" class="anchor-link">#</a></h2>
     <p class="text-slate-700 mb-3">这类工具<strong>不是</strong> prompt skill，而是自带 CLI 的 npm/pip 包，经其自身安装器注册到 Claude Code（插件机制，非 <code>~/.claude/skills/</code> 软链）。不进 SSOT、不经 rulesync 同步。</p>
     <div class="border-l-4 border-amber-400 bg-amber-50 px-4 py-2 text-sm text-slate-700 rounded-r">插件无热加载，新装后需<strong>重启会话</strong>才出现对应斜杠命令。</div>
   </section>
 
   <section id="oh-my-mermaid" class="section-card">
-    <h2 class="text-xl mb-1">oh-my-mermaid <a href="#oh-my-mermaid" class="anchor-link">#</a><span class="pill pill-info ml-2">外部插件 · 非 SSOT</span></h2>
+    <h2 class="text-xl mb-1">oh-my-mermaid <a href="#oh-my-mermaid" class="anchor-link">#</a><span class="pill pill-info ml-2">外部插件 · 非 SSOT · 仅 AICAP 启用</span></h2>
     <p class="text-slate-500 text-sm mb-4">整库扫描 → 多视角嵌套 Mermaid 架构图，可递归钻取（<code>/omm-scan</code>、<code>/omm-view</code>）</p>
     <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">整库扫描 → 多视角嵌套 <strong>Mermaid 架构图</strong>（overall-architecture / data-flow / dependency-map / request-lifecycle…），可递归钻取；<code>/omm-view</code> 起本地交互 viewer 在浏览器里点着看。1277★，多工具支持。</p></div>
     <p class="text-sm text-slate-600 mt-3 mb-2 font-semibold">安装方式：</p>
