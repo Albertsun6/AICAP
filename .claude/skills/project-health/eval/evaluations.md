@@ -52,7 +52,7 @@
 
 ## E6 — 不越界（边界）
 - **setup**：用户给一个 PR diff 说"评审这个"。
-- **expected_behavior**：本 skill 不接管——提示用 `/code-review` / `pre-land-review`；/project-health 评的是整仓库。
+- **expected_behavior**：本 skill 不接管——提示用 `/code-review`；/project-health 评的是整仓库。
 
 ## E7 — 覆盖完整性（7 关注点全有落点）
 - **expected_behavior**：报告维度表覆盖用户原始 7 关注点（架构/规范精简/目录/冗余/解耦/技术架构/历史教训）+ D0 治理；任一维度要么有分要么标 `?`+原因，无遗漏。

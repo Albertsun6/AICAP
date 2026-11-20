@@ -169,7 +169,7 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X1+X2（默认）或降级后�
    - `PDF: pending`（占位，待步骤 4.6 替换）
    - `Audio(概要): pending` 与 `Audio(完整): pending`（占位，待步骤 6 替换）
 4.4. **终稿引用复核（Phase 6 若引入过新 URL）**：辩论 / tiebreaker 期间 incorporate 进正文的**新** URL 没经过 Phase 5.5（它跑在 Phase 6 之前）——终稿前用 `check-citations.sh` 对这些新增 URL 单独跑一遍 Layer A；dead 的按 `02-research.md` §并集的配套闸门处理（Drop + metadata 记录）。Phase 6 没引入新 URL 则跳过本步
-4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，**委派给一个 sonnet 子 agent**（Agent 工具 `model=sonnet`，把 `.md` 路径 + 下列特性清单 + 输出路径交给它——这是产出型任务，几十 KB 的 HTML 让主模型亲手写既慢又贵，2026-09-10 改），按 `report-to-html` skill 的规范生成（**不重新触发 `/report-to-html` skill**）：
+4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，**委派给一个 sonnet 子 agent**（Agent 工具 `model=sonnet`，把 `.md` 路径 + 下列特性清单 + 输出路径交给它——这是产出型任务，几十 KB 的 HTML 让主模型亲手写既慢又贵，2026-09-10 改），按下列特性清单生成：
    - 子 agent 读取步骤 4 写好的 `.md` 文件
    - 生成包含以下特性的单文件 HTML：
      - 顶部 sticky bar（标题 + 置信度 pill + 日期 + 打印按钮）
