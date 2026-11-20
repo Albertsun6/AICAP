@@ -209,7 +209,7 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
    | Phase 6 R2 / R3 rebuttal | cursor gpt（与 R1 同版本同系列） | **high** | 只看非 accept 条目，范围窄 |
    | Phase 6 判断矩阵 / 人类裁决 | 主 agent | 主模型 | 判断 |
    | tiebreaker | cursor gemini | **high** | 事实核查 |
-   | HTML（B/C 档） | **sonnet** 子 agent | 按 report-to-html 规范 | 产出型，几十 KB 输出 |
+   | HTML（B/C 档） | **sonnet** 子 agent | 按 phases/04 第 4.5 步的特性清单 | 产出型，几十 KB 输出 |
    | PDF / 音频合成 | 脚本 | — | — |
    | 完整音频口语稿（C 档） | **sonnet** 子 agent | 6k–12k 字 | 产出型 |
 

@@ -30,7 +30,7 @@
 
 - 用 `report-template/report-template.md` 合成最终 markdown。
 - 文件名：`<repo 名>-健康度报告.md`，落到**被评估仓库的根**（或用户指定目录）。同名冲突累加 `-2`/`-3`，不覆盖。
-- 可选 HTML：按 `report-to-html` skill 规范内联生成单页（粘性目录 + hotspots 表 + 各层 pill + 折叠辩论历史），**不重新触发该 skill**。
+- 可选 HTML：内联生成单文件网页（粘性目录 + hotspots 表 + 各层 pill + 折叠辩论历史）。
 - §metadata 记录：各层覆盖情况（自动/半自动/skip）、异构 verdict、辩论收敛、人类裁决、固化清单。
 
 ## 4. 自验（eval-first 闭环）

@@ -1,20 +1,14 @@
 ---
 name: search-online-skills
-description: 到「线上」搜是否已有现成 agent/Claude skill 满足某个能力——跨多个 skill 市场（官方 + 社区 + 聚合 awesome 列表 + skills.sh 注册表）+ GitHub 代码搜索 + 全网广搜，逐个对抗式 核实「确实存在且真做这件事」，按相关度与质量信号（installs / stars / 官方）排序，输出对比表。 只读不安装（要装交给 /install-skill；查不到给 /skill-creator 自建）。 查找源动态维护：版本化种子注册表 + 每次运行联网发现新市场 + 用户确认后回写。 触发：搜索线上 skill / 网上有没有做 X 的 skill / 去市场找 X 的 skill / 线上找个现成 skill / 有没有现成 skill 能 X / search online for a skill / is there an online skill for X （强调"线上 / 现成 / 市场"，要广搜多源而不只是问某一个 CLI）。
+description: 到「线上」搜是否已有现成 agent/Claude skill 满足某个能力——跨多个 skill 市场（官方 + 社区 + 聚合 awesome 列表 + skills.sh 注册表）+ GitHub 代码搜索 + 全网广搜，逐个对抗式 核实「确实存在且真做这件事」，按相关度与质量信号（installs / stars / 官方）排序，输出对比表。 只读不安装（要装就把对比表里的安装命令交给用户；查不到给 /skill-creator 自建）。 查找源动态维护：版本化种子注册表 + 每次运行联网发现新市场 + 用户确认后回写。 触发：搜索线上 skill / 网上有没有做 X 的 skill / 去市场找 X 的 skill / 线上找个现成 skill / 有没有现成 skill 能 X / search online for a skill / is there an online skill for X （强调"线上 / 现成 / 市场"，要广搜多源而不只是问某一个 CLI）。
 ---
 # search-online-skills
 
 到**线上多个来源**搜「有没有现成的 skill 能做某事」，核实后排序给结论。**只读、不安装**。
 
-## 为什么单独存在（与已有两个 skill 的边界）
+## 定位
 
-| skill | 干什么 | 局限 |
-|---|---|---|
-| `find-skills` | 走 `npx skills find` + skills.sh 排行榜 | **只覆盖 skills.sh 这一个注册表** |
-| `install-skill` | 浏览**固定 4 个**已知市场目录 → 选 → 装进 SSOT | 以**装**为主，源写死、不跨全网 |
-| **本 skill** | **能力驱动**地跨「官方市场 + 社区 + 聚合列表 + 注册表 + GitHub 代码搜索 + 全网」广搜并核实排序 | 只到「给结论」为止，**装**再转 `/install-skill` |
-
-一句话：`find-skills` 问一个注册表、`install-skill` 管安装，本 skill 是**跨源广搜 + 核实 + 排序的发现层**。要装就把选中的 slug 交给 `/install-skill`。
+**能力驱动**地跨「官方市场 + 社区 + 聚合列表 + 注册表 + GitHub 代码搜索 + 全网」广搜并核实排序，只到「给结论」为止。要装就把对比表里的安装命令交给用户执行。
 
 ## 常量
 
@@ -88,13 +82,13 @@ SOURCES="$SKILL_DIR/sources.yaml"          # 源注册表（种子 + 发现探�
 
 ### Step 6 — 收尾（三个出口 + 动态维护 ②）
 
-- **要安装** → 把选中的 `<org/repo@slug>` 交给 `/install-skill`（本 skill 不写本地、不装）。
+- **要安装** → 把选中项的安装命令（对比表「安装命令」列）交给用户执行（本 skill 不写本地、不装）。
 - **没找到** → 提议用 `/skill-creator` 自建一个，并说清自建大概要什么。
 - **发现了值得长期保留的新源**（Step 2 的产物）→ 列给用户，**确认后**追加进 `sources.yaml` 的 `sources:`，再 `cd $SSOT_ROOT && pnpm run ai:generate`。这就是「查找源动态维护」的闭环——源随用随长，且全程在 SSOT 里版本化。
 
 ## 约束
 
-- **只读**：本 skill 不安装、不写除 `sources.yaml` 外的任何文件；装的动作一律转 `/install-skill`。
+- **只读**：本 skill 不安装、不写除 `sources.yaml` 外的任何文件；装的动作一律交给用户。
 - **回写要确认**：动 `sources.yaml` 前把将加的源列出来等用户点头，别静默改 SSOT。
 - **GitHub 认证**：`gh` 调用前若 `gh auth status` 失败，提示 `gh auth login`；被限流就回退 WebFetch。
 - **公平 + 留痕**：核实先 steelman 再挑刺；判 false 要给出"我查了哪、为什么不算"。
