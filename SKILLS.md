@@ -141,7 +141,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 ---
 
 ### `/req-discovery`
-**用途**：需求发掘与 User Story 生成——通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，可选择直接衔接 `/feature-fullstack` 进入实施。
+**用途**：需求发掘与 User Story 生成——通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，最后询问是否进入实施、由用户指定实施方式。
 
 触发："发掘需求" / "需求访谈" / "帮我写 user story" / "整理需求" / "我有个功能想法"
 

@@ -404,7 +404,7 @@ flowchart LR
   <section id="req-discovery" class="section-card">
     <h2 class="text-xl mb-1">/req-discovery <a href="#req-discovery" class="anchor-link">#</a><span class="pill pill-ok ml-2">SSOT</span><span class="pill pill-info ml-1">新</span></h2>
     <p class="text-slate-500 text-sm mb-4">需求发掘与 User Story 生成，多轮结构化访谈将模糊想法变为可实施需求</p>
-    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，可选择直接衔接 <code>/feature-fullstack</code> 进入实施。</p></div>
+    <div class="skill-block"><h3>用途</h3><p class="text-sm text-slate-700">通过多轮结构化访谈（Phase 1 情境锚定 → Phase 2 结构化访谈 + Reflection Gate → Phase 3 提炼），将模糊的产品想法转化为含 Given/When/Then 验收标准和 MoSCoW 优先级的 User Story 列表，最后询问是否进入实施、由用户指定实施方式。</p></div>
     <div class="mt-3"><span class="trigger-tag">发掘需求</span><span class="trigger-tag">需求访谈</span><span class="trigger-tag">帮我写 user story</span><span class="trigger-tag">整理需求</span><span class="trigger-tag">我有个功能想法</span></div>
   </section>
 
@@ -572,7 +572,7 @@ flowchart LR
       <strong>别用 <code>paths</code> 做仓库隔离。</strong>官方文档与探针实测一致：它匹配的是<strong>会话中正在操作的文件</strong>，不是当前仓库。拿它当仓库作用域会漏触发——你说“帮我提交这次改动”时若还没读过匹配文件，skill 不会出现。它只适合本来就由文件类型驱动的 skill。
     </div>
     <div class="skill-block mt-4"><h3>第三档：<code>skillOverrides</code>（settings，不改 SKILL.md）</h3>
-      <p class="text-sm text-slate-700 mb-2">没有可归属项目的 skill 用它降档，四档可选：<code>on</code> / <code>name-only</code>（只给名字，描述不进上下文）/ <code>user-invocable-only</code>（对模型隐藏，<code>/</code> 菜单还在）/ <code>off</code>。当前 <code>name-only</code>：<code>ios-e2e-test</code>、<code>feature-fullstack</code>（Seaidea 项目不在本机）、<code>fedex-tracker</code>。</p>
+      <p class="text-sm text-slate-700 mb-2">没有可归属项目的 skill 用它降档，四档可选：<code>on</code> / <code>name-only</code>（只给名字，描述不进上下文）/ <code>user-invocable-only</code>（对模型隐藏，<code>/</code> 菜单还在）/ <code>off</code>。当前 <code>off</code>：<code>ios-e2e-test</code>、<code>feature-fullstack</code>（Seaidea 项目不在本机）；<code>name-only</code>：<code>fedex-tracker</code>；<code>user-invocable-only</code>：<code>sync-aicap</code>、<code>archi-strategy-decode</code>。</p>
     </div>
   </section>
 
