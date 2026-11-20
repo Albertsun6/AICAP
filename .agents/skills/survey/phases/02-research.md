@@ -20,12 +20,14 @@ Phase 1.5 Brief 完成后，启动 4 个并行 agent——其中 2 个是外部 
 ```
 Agent A（Claude，通用 + 主流）
   任务：搜索通用方案概览、官方文档、权威博客
+  预算：约 10 次查询、最多 15 次，提前停与输出要求见 §搜索预算与停止条件
   禁止：不看 Agent B/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
   模型：Agent 工具 model=sonnet（检索型任务；主模型的档位留给综合与判断——见 SKILL.md §模型/档位路由）
 
 Agent B（Claude，技术 + 实现）
   任务：搜索开源项目实现、技术论文、GitHub 仓库
+  预算：同 Agent A
   禁止：不看 Agent A/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
   模型：Agent 工具 model=sonnet（同上）
@@ -60,6 +62,16 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 - **输出强制二段式**（#5 Context Isolation）：`## Compressed Findings` (~500 字 / 5-8 条 finding 标 confidence + URL) + `## Source Inventory`（URL / 摘要 / 日期 / 标签 / Quality）
 - 最少 5 个 source，最少 1 个近 12 月（按 currentDate 算）
 
+## 搜索预算与停止条件（所有搜索路都适用，2026-11-20 加）
+
+借鉴 Anthropic deep-research（每个研究员约 10 次、最多 15 次工具调用）与 OpenAI deep-research（收益递减就停，并交代为什么停）。原来只有 Phase 2.5 追搜有次数上限，主搜索没有，最慢那路容易越搜越久。
+
+- **预算**：每路约 **10 次查询，最多 15 次**（A / B / C / X1 / X2 一样；打开网页读原文不算查询）。**重大决策档或 Brief 子问题 >5 个时上限放到 25 次**，主 agent 写 prompt 时替换数字。主 agent 给 A/B(/C) 写 prompt 时把这条和下一条原样写进去；X1/X2 模板里已写
+- **提前停**：满足任一就停，不必用满预算——① Brief 的每个子问题都有 ≥2 个独立来源（独立 = 不同出版者的原始证据，互相转载不算两个）；② 饱和：**按子问题判**——某个子问题换过至少 3 种说法（同义词、来源类型、反向搜索如「X problems / X alternatives」）仍只带回已见来源，才算这个子问题饱和；所有未覆盖的子问题都饱和了才能停
+- **交代停止理由**：Source Inventory 表格后加一行 `搜索记录：共 <N> 次查询；停止理由：覆盖完 / 饱和 / 到上限；未覆盖：<子问题或"无">`。主 agent 在 Phase 2.5 Reflection 里读这一行：**只要「未覆盖」不是「无」（不论是到上限还是饱和停的），这些子问题必须进追搜决策**，追搜仍补不到就在报告里标为覆盖缺口
+- **不因预算降标准**：最少 5 个 source、近 12 月来源等要求不变；预算用完还不够，就如实写在「未覆盖」里，交给 Reflection 补，不许凑数
+- **证据带原文引句**（借鉴 199-bio / Firecrawl：返回 claim 时附原文，后面核实不必全部重抓）：搜索记录行之后加一张 **引句表**（不计入 Compressed Findings 的 800 字）：`| finding 序号 | URL | 原文引句 |`，每条 finding 的每个证据 URL 一行。引句从页面**逐字**复制、保留原语言、≤200 字符，**连同限定条件一起摘**（版本、地区、套餐、预览版等），要能单独支撑这条 finding；没读到原文的写「未读原文」。**编造或改写引句等于编造来源**，Phase 5.5 会按路回抓核对
+
 ## 合并规则：并集，不投票（硬约束）
 
 综合 agent 收到四方结果（A+B+X1+X2）后合并，**合并规则是并集**：
@@ -88,7 +100,8 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 - Agent X1、X2 都是异步 job（`run-agent-async.sh start … gpt 900` / `… gemini 900`）——都经 cursor-agent，共用一套 Cursor 凭据（额度是否按族分开未实测）
 - 四者**并发启动**——先在上一条消息里 Write 好 X1/X2 两份 prompt 文件，再在**同一条 message** 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的 `start`；随后后台分别 `wait` X1、X2。墙钟由最慢者决定（X1 gpt high 档 2026-11-19 实测一次约 4 min，上限未实测；X2 的 Gemini 4 Neon high 档未实测）
 - **两个 Bash 调用必须用不同的 prompt / output 文件名**（`survey-x1-*` / `survey-x2-*`），否则互相覆盖
-- 主 Claude 在收到四方返回后再启动综合 agent；不要串行启动 X1/X2，会白白多花 ~5 min
+- 不要串行启动 X1/X2，会白白多花 ~5 min
+- **先到先处理，结论等齐再下（2026-11-20 加，借鉴 199-bio 的 First Finish Search，但收紧了）**：A/B(/C) 通常 1–3 min 就回，X1/X2 要 4–9 min。等外部两路的这段时间，主 agent 只做机械活：对已回来的路跑 Phase 2.5 检查清单第 1–4 项、合并去重 Source Inventory、建好 claim—路—URL—引句的来源账本。**X1/X2 都并入（或按降级矩阵判挂）之前，不许写方案描述、比较维度、§推荐、评分矩阵和分歧点，也不许做追搜决策**——先搭好框架再把异构发现塞进去，正好丢掉异构搜索要抵消的那种 Claude 视角锚定。每到一路，对它的发现增量重跑检查清单第 1–4 项、补进账本
 
 ## Sub-agent 输出格式（强制 #5 Context Isolation）
 
@@ -107,7 +120,15 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 |---|---|---|---|---|
 | https://... | ... | YYYY-MM-DD | primary/secondary/official/blog/paper | High/Medium/Low（见 ../references/source-quality.md） |
 | ... |
+
+搜索记录：共 <N> 次查询；停止理由：覆盖完 / 饱和 / 到上限；未覆盖：<子问题或"无">
+
+| finding 序号 | URL | 原文引句 |
+|---|---|---|
+| 1 | https://... | "<逐字摘录，≤200 字符>" |
 ```
+
+引句与搜索记录的规则见上方 §搜索预算与停止条件。
 
 **综合 agent 读取规则**：
 - 默认只读四方的 Compressed Findings + Source Inventory

@@ -22,11 +22,11 @@
 1. **Round 1（双评审并发）**：主评审（`gpt` 族，cursor-agent 异步 job）+ 红队第二评审（`grok` 族，one-shot）**同一回合各发一个 async job** → 两份 verdict（红队有 **900s 软 deadline**，迟到不阻断，见 §Round 1）
    - 两份都 Concur → 写最小 metadata，结束
    - 任一 Refine / Dissent → 主 agent 对**两份条目的并集**做 4 档判断矩阵
-2. **收敛检查 1**：全 accept → finalize；否则进 Round 2
-3. **Round 2**：主评审 rebuttal 非 accept 条目 → 主 agent 二轮判断（维持原档 OR 让步并改档，必附论据）。**红队条目不进本轮**（one-shot），它的非 accept 条目原样挂着等第 7 步
-4. **收敛检查 2**：双方同档（无分歧）→ finalize；否则进 Round 3
+2. **收敛检查 1**：全 accept → finalize；否则把非 accept 条目分进三个队列（见 §影响结论标记）——**辩论队列**（影响结论=是）进 Round 2；**低影响事实队列**、**低影响判断队列**不辩论，直接挂到第 7 步。辩论队列为空就跳过 Round 2/3。**三个队列都处理完才能 finalize**，收敛检查 2、3 只看辩论队列
+3. **Round 2**：主评审 rebuttal `影响结论: 是` 的非 accept 条目 → 主 agent 二轮判断（维持原档 OR 让步并改档，必附论据）。**红队条目不进本轮**（one-shot），它的非 accept 条目原样挂着等第 7 步
+4. **收敛检查 2**：辩论队列双方同档（无分歧）→ 进第 7 步处理其余队列（都为空才直接 finalize）；否则进 Round 3
 5. **Round 3**：主评审二次 rebuttal → 主 agent 三轮判断（同 Round 2 规则）
-6. **收敛检查 3**：双方同档 → finalize；仍分歧（含红队挂着的非 accept 条目）→ 进第 7 步
+6. **收敛检查 3**：不论辩论队列是否收敛，都进第 7 步——仍分歧的辩论条目、红队挂着的非 accept 条目、两个低影响队列一起处理；全部为空才直接 finalize
 7. **事实核查 tiebreaker**（族按 helper §三族分工 的选族规则定，默认 `gemini`，1 次调用）：把剩余分歧分成**事实性**与**判断性**；事实性的交裁判模型实查裁决，判断性的直接进第 8 步
 8. **人类裁决**：AskUserQuestion 暴露**剩下的**分歧（判断性分歧 + tiebreaker 判 `UNRESOLVED` 的），>4 条分批 ≤4，每条 options = 采纳主 agent / 采纳 reviewer（**注明是主评审还是红队**）/ 独立判断；用户最终立场 → finalize（不再回 cursor-agent）
 
@@ -96,6 +96,16 @@
 
 **核对 reviewer 给的事实**（2026-11-20 加）：需要看原文才能表态的条目，把取原文打包交给**一个** Agent 工具子 agent（`model=haiku`，同 Phase 5.5 Layer B：只摘不判、主 agent 核对条数后自己表态）；主 agent 不自己逐条 WebFetch。这一步只服务于四档表态，**不替代**第 7 步的事实性分歧 tiebreaker。判断矩阵定完后，把要改的地方攒齐一次改稿。
 
+**影响结论标记**（2026-11-20 加，受 OpenAI deep-research「再跑一轮也不会改变答案就停」启发）：每条非 accept 条目（主评审和红队的都算）标一个 `影响结论: 是 / 否`。**两位 reviewer 在 Round 1 就给自己的每条建议标了影响结论**（见 `prompts/round1.txt`、`round1-grok-prefix.txt` 的输出格式）；主 agent 也独立标一次，**任一方标「是」就算「是」**——主 agent 不能单方面把 reviewer 标「是」的条目降成「否」。Round 2/3 只辩「是」的条目，每少开一轮省约 3–8 min。
+
+- **是**：reviewer 这条一旦成立，会改变下列任一项——§推荐 选哪个方案或方案排序；评分矩阵里会让排名变化的分数；§推荐、§方案对比 里 high 置信 claim 的置信度；§推荐 的前提或适用条件
+- **否**：只影响措辞、背景描述、非推荐方案的细节、不改变排名的分数
+- **拿不准就标「是」**（fail-closed，和事实/判断分类同一个原则：宁可多辩一轮，不让真正的分歧绕过辩论）
+- 每条「否」写一句理由，写进 §metadata 的 Round 1 矩阵
+- **「否」条目的去向**：不进 Round 2/3，分进两个队列，到第 7 步处理——**低影响事实队列**照样送 tiebreaker（和其他事实性分歧一次调用批量裁）；**低影响判断队列**照原规则交人类裁决，和第 8 步的其他分歧放进同一批 AskUserQuestion（标明「低影响」）。主 agent 若直接采纳 reviewer 的意见改稿，该条就不再是分歧，不必问
+- 省下的是辩论轮次，不是人类裁决：剩余判断性分歧由人类裁决这条规则不变
+- 红队条目本来就不进 Round 2/3（one-shot）：它标「是」的条目照旧挂到第 7 步分类，标记只用于 metadata 和人类裁决时排序
+
 **禁止**：
 - 不要 refute 仅因"我不同意"——必须给 reason
 - 不要 accept 仅因"权威给的"——必须给独立证据支持
@@ -106,9 +116,9 @@
 
 ## Round 2：主评审 rebuttal + 主 agent 二轮判断
 
-仅当 Round 1 后存在**非 accept** 条目（partial / defer / refute）时触发。
+仅当 Round 1 后存在 `影响结论: 是` 的**非 accept** 条目（partial / defer / refute）时触发。
 
-**调度**：Round 2 调用主评审（`gpt`；**`SURVEY_CURSOR_EFFORT=high`** 自动解析到与 R1 同版本同系列的 high 档，核对 `MODEL:` 行与 R1 只差档位后缀，见 helper §主 Claude 必须做 #2——反驳轮只看矩阵里的非 accept 条目，范围窄，high 够用，R1 才需要 xhigh；同样走 async）；失败时**提前进入人类裁决**（带 metadata banner 标注"AI 辩论未跑满 3 轮"）。注入内容：Round 1 矩阵（仅非 accept 条目）+ 主 agent 论据。
+**调度**：Round 2 调用主评审（`gpt`；**`SURVEY_CURSOR_EFFORT=high`** 自动解析到与 R1 同版本同系列的 high 档，核对 `MODEL:` 行与 R1 只差档位后缀，见 helper §主 Claude 必须做 #2——反驳轮只看矩阵里的非 accept 条目，范围窄，high 够用，R1 才需要 xhigh；同样走 async）；失败时**提前进入人类裁决**（带 metadata banner 标注"AI 辩论未跑满 3 轮"）。注入内容：Round 1 矩阵（仅辩论队列，即 `影响结论: 是` 的非 accept 条目）+ 主 agent 论据。
 
 **Round 2 Rebuttal prompt 模板路径**：`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/prompts/round2-rebuttal.txt`（调度同 Round 1，见 [`../references/cursor-agent-invocation.md`](../references/cursor-agent-invocation.md)）。
 
@@ -129,7 +139,7 @@
 - 不要让步仅因为"对方反驳得更激烈"——必须有新证据触发
 - 不要维持仅因为"我已经写下来了"——必须有未被反驳触及的独立证据
 
-**Round 2 收敛条件**：所有条目双方同档（全部 accept / 全部 partial 同 caveat / 主评审全部撤回 Round 1 建议）→ finalize（Phase 4）。
+**Round 2 收敛条件**：所有条目双方同档（全部 accept / 全部 partial 同 caveat / 主评审全部撤回 Round 1 建议）→ 辩论结束；红队与两个低影响队列还有条目就进第 7 步，都为空才 finalize（Phase 4）。
 
 ## Round 3：主评审二次 rebuttal + 主 agent 三轮判断
 
@@ -148,7 +158,7 @@
 
 **主 agent 三轮判断**：同 Round 2 规则。
 
-**Round 3 收敛条件**：双方同档 → finalize（Phase 4）；仍有分歧 → 进入**事实核查 tiebreaker**（工作流第 7 步），之后剩余分歧才进人类裁决。
+**Round 3 收敛条件**：双方同档 → 辩论结束，其余队列有条目就进第 7 步，都为空才 finalize（Phase 4）；仍有分歧 → 进入**事实核查 tiebreaker**（工作流第 7 步），之后剩余分歧才进人类裁决。
 
 ## 事实核查 tiebreaker（第三个模型，非投票）
 

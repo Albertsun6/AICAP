@@ -200,6 +200,10 @@ ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/
 7. **五路一条消息发出（2026-11-20 加）**：先 Write 好 X1/X2 两份 prompt，再在**同一条消息**里发 Agent A/B（/C）+ X1 `start` + X2 `start`（X2 也走异步 job），然后后台 `wait`。11-19 实跑 X1/X2 比 Claude 路晚发 4 min，白等
 8. **核实交给子 agent，改稿攒齐一次改（2026-11-20 加）**：Phase 5.5 Layer B 与 Phase 6 核对 reviewer 事实，取原文都打包给**一个** haiku 子 agent（只摘不判，判定仍归主 agent）；主 agent 不自己逐条 WebFetch。改初稿时把要改的地方攒齐后一次 Write，不逐条 Edit。11-12 实跑主 agent 自己核对 + 18 次逐条 Edit 用了约 8 min
 9. **子 agent 不为提速而减（2026-11-20 实测）**：各路搜索并行，Claude 路 1–3 min、不在关键路径上，少一路几乎不省时间。三次实跑里每一路都在最终报告里贡献了别人没找到的引用（Claude 每路 2–16 条、X1 1–7 条、X2 1–10 条，各路重叠很小），红队每次贡献 5–7 条被采纳的独有意见。减路数只省 token，代价是丢引用
+10. **每路搜索有预算、会提前停（2026-11-20 加，借鉴 Anthropic / OpenAI deep-research）**：每路约 10 次、最多 15 次查询，覆盖完或饱和就停，并交代停止理由，见 `phases/02-research.md` §搜索预算与停止条件
+11. **搜索结果带原文引句（2026-11-20 加，借鉴 199-bio / Firecrawl）**：Phase 5.5 对非决策关键、带引句的 claim 直接判档，每路抽 1/3 回抓核对；一条不符整路重抓；支撑 §推荐 的 claim 一律回抓，见 `phases/05-citation.md` Layer B
+12. **先到先处理，结论等齐再下（2026-11-20 加）**：等外部两路时只做去重、检查清单、来源账本这类机械活；方案描述、§推荐、评分、追搜决策必须等所有路并入，见 `phases/02-research.md` §并发协调
+13. **终审只辩影响结论的分歧（2026-11-20 加）**：reviewer 与主 agent 各标一次，任一方说「影响」就算；不影响的不进 Round 2/3，但事实性的照送 tiebreaker、判断性的照交人类裁决，见 `phases/06-debate.md` §影响结论标记
 
 ---
 

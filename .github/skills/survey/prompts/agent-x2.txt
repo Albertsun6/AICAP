@@ -26,6 +26,8 @@
 
 **Brief 注入**：上方 Brief 全文是 north star。所有搜索 / 评估必须对照 Brief 的子问题清单 + 成功标准 + 信源约束。
 
+**搜索预算**：约 10 次查询，最多 15 次（打开网页读原文不算查询；主 Claude 可能把上限改大，以这里写的数字为准）。满足任一就提前停：Brief 每个子问题都有 ≥2 个独立来源（不同出版者的原始证据，互相转载不算两个）；或每个还没覆盖的子问题都换过至少 3 种说法（同义词、来源类型、反向搜索如「X problems / X alternatives」）仍只带回已见来源。预算用完还不够，就在「未覆盖」里如实写，不要凑数。
+
 **输出格式（强制二段式 #5 Context Isolation）**：
 
 ## Compressed Findings（~500 字，硬上限 800 字）
@@ -41,6 +43,8 @@
 
 要求：
 - 最少 5 个 source，最少 1 个近 12 个月的源（按 currentDate 算）
+- 搜索记录行之后加一张引句表（不计入 800 字）：`| finding 序号 | URL | 原文引句 |`，每条 finding 的每个证据 URL 一行。引句从页面**逐字**复制、保留原语言、≤200 字符，连同限定条件一起摘（版本、地区、套餐、预览版等）；没读到原文就写「未读原文」。编造或改写引句等于编造来源，会被回抓查出
+- Source Inventory 表格后加一行：`搜索记录：共 <N> 次查询；停止理由：覆盖完 / 饱和 / 到上限；未覆盖：<子问题或"无">`
 - Source 标签：primary / secondary / official / blog / paper / spec / vendor-doc / talk
 - Quality 评分依据：见 `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/survey/references/source-quality.md`
 - Source 备注：属于上面 4 类共同盲区中的哪一类（没有就写"常规"）
