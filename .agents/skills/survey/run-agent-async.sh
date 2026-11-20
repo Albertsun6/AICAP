@@ -3,22 +3,23 @@
 #
 # 为什么要有这个文件：Claude Code Bash 工具单次调用硬上限 600s 且不可调
 # （BASH_MAX_TIMEOUT_MS 有已知 bug 不生效，issue #34138/#25881 均 not planned），
-# 同步 570s watchdog 因此被钉死。但 Phase 6 全文评审（xhigh 常要 4-15 分钟）、
-# Phase 2 X1 搜索（codex high 档实测 302-491s，贴着窗口）这类活同步窗口装不下，
+# 同步 570s watchdog 因此被钉死。但 Phase 6 全文评审（gpt xhigh 经 cursor 2026-11-19 实测 5-10 分钟）、
+# Phase 2 X1 搜索（gpt high 档 2026-11-19 实测一次约 4 分钟，上限未实测，贴着窗口）这类活同步窗口装不下，
 # 超时=白烧配额+整段丢失（实测踩过）。
 # 解法：nohup 把任务脱离 Claude Code 进程树，deadline 想设多长设多长；
 # 主 Claude 用**有界 wait 波次**（每波 <570s，可反复续杯）拿完成通知，期间照常干别的活。
 #
-# 通道路由（2026-09-09 起 gpt 族在 cursor 退役）：
-#   codex          → run-codex.sh          （X1 搜索眼 + Phase 6 主评审 R1/R2/R3）
-#   gemini | grok  → run-cursor-agent.sh   （X2 / 红队 / tiebreaker / 替补）
-#   gpt            → exit 64（已退役，改用 codex）
+# 通道路由（2026-11-19 起三族都走 cursor）：
+#   gpt | gemini | grok → run-cursor-agent.sh  （gpt = X1 搜索眼 + Phase 6 主评审 R1/R2/R3；
+#                                                gemini = X2 / tiebreaker；grok = 红队 / 替补）
+#   codex               → run-codex.sh          （可选备用通道，与 gpt 同族；默认流程不用）
 #
 # 用法：
-#   bash run-agent-async.sh start <prompt-file> <output-file> <codex|gemini|grok> [deadline-sec]
+#   bash run-agent-async.sh start <prompt-file> <output-file> <gpt|gemini|grok|codex> [deadline-sec]
 #       → stdout 打 JOB_DIR 路径后立即返回。deadline 默认 1800s（30 min），上限 7200
 #   bash run-agent-async.sh status <job-dir>
 #       → 一行状态：RUNNING <已跑>s/<deadline>s | DONE | FAILED exit=<N>（附 log 尾部）| DIED
+#         状态行之后缩进回显 job.log 里的模型排名提示（NEW-MODEL: / WARN: … 排名文件 …），没有就不打
 #       exit code：0=DONE  3=RUNNING  4=FAILED/DIED
 #   bash run-agent-async.sh wait <job-dir> [max-wait-sec]
 #       → 阻塞直到 job 结束或 max-wait 到点（默认 540，**必须 <570** 以适配 Bash 工具窗口）。
@@ -45,7 +46,7 @@ SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 CMD="${1:-}"
 case "$CMD" in start|status|wait) ;; *)
-  echo "Usage: $0 start <prompt-file> <output-file> <codex|gemini|grok> [deadline-sec]" >&2
+  echo "Usage: $0 start <prompt-file> <output-file> <gpt|gemini|grok|codex> [deadline-sec]" >&2
   echo "       $0 status <job-dir>" >&2
   echo "       $0 wait <job-dir> [max-wait-sec]" >&2
   exit 64
@@ -56,17 +57,16 @@ now() { date +%s; }
 
 # ── start ────────────────────────────────────────────────────────────────
 if [ "$CMD" = start ]; then
-  if [ $# -lt 3 ] || [ $# -gt 4 ]; then echo "ERROR: start 需要 3-4 个参数（族必须显式给：codex|gemini|grok）" >&2; exit 64; fi
+  if [ $# -lt 3 ] || [ $# -gt 4 ]; then echo "ERROR: start 需要 3-4 个参数（族必须显式给：gpt|gemini|grok|codex）" >&2; exit 64; fi
   PROMPT_FILE="$1"; OUTPUT_FILE="$2"; FAMILY="$3"; DEADLINE="${4:-1800}"
   case "$FAMILY" in
-    codex)       RUNNER="$SKILL_DIR/run-codex.sh" ;;
-    gemini|grok) RUNNER="$SKILL_DIR/run-cursor-agent.sh" ;;
-    gpt) echo "ERROR: gpt 族在 cursor 通道已退役（OpenAI 2026-11-12 起切断 Cursor 模型访问），改用 codex" >&2; exit 64 ;;
-    *)   echo "ERROR: 未知族 '$FAMILY'（可选 codex | gemini | grok）" >&2; exit 64 ;;
+    gpt|gemini|grok) RUNNER="$SKILL_DIR/run-cursor-agent.sh" ;;
+    codex)           RUNNER="$SKILL_DIR/run-codex.sh" ;;   # 可选备用通道（与 gpt 同族）
+    *)   echo "ERROR: 未知族 '$FAMILY'（可选 gpt | gemini | grok；备用通道 codex）" >&2; exit 64 ;;
   esac
   case "$DEADLINE" in *[!0-9]*|"") echo "ERROR: deadline 必须是秒数" >&2; exit 64 ;; esac
   [ "$DEADLINE" -gt 7200 ] && { echo "ERROR: deadline 上限 7200s" >&2; exit 64; }
-  [ -f "$PROMPT_FILE" ] || { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 66; }
+  [ -f "$PROMPT_FILE" ] || { echo "ERROR: prompt file not found: $PROMPT_FILE" >&2; exit 64; }
   [ -f "$RUNNER" ] || { echo "ERROR: runner 缺失: $RUNNER" >&2; exit 65; }
 
   JOB_DIR=$(mktemp -d "${TMPDIR:-/tmp}/survey-job.XXXXXX")
@@ -100,6 +100,13 @@ DEADLINE=$(sed -n 's/^deadline=//p' "$JOB_DIR/job.meta")
 START_EPOCH=$(sed -n 's/^start_epoch=//p' "$JOB_DIR/job.meta")
 OUTPUT_FILE=$(sed -n 's/^output=//p' "$JOB_DIR/job.meta")
 
+# runner 的 stderr 进了 job.log，主 Claude 只看得到这里回显的行——模型排名相关的提示
+# （NEW-MODEL: / WARN: … 排名文件 …）必须跟着状态行一起打出来，否则 SKILL.md「看到 NEW-MODEL
+# 先核实」的硬约束在异步路径上触发不到
+print_rank_notes() {
+  grep -E '^NEW-MODEL: |^WARN: .*排名文件' "$JOB_DIR/job.log" 2>/dev/null | sort -u | sed 's/^/  /'
+}
+
 print_status() { # → exit 0=DONE 3=RUNNING 4=FAILED/DIED
   local pid elapsed
   elapsed=$(( $(now) - START_EPOCH ))
@@ -107,15 +114,18 @@ print_status() { # → exit 0=DONE 3=RUNNING 4=FAILED/DIED
     local code; code=$(cat "$JOB_DIR/job.exit")
     if [ "$code" = "0" ] && [ -s "$OUTPUT_FILE" ]; then
       echo "DONE  耗时 ${elapsed}s  输出 $(wc -c < "$OUTPUT_FILE" | tr -d ' ') bytes → $OUTPUT_FILE  $(grep '^MODEL:' "$JOB_DIR/job.log" 2>/dev/null | head -1)"
+      print_rank_notes
       return 0
     fi
     echo "FAILED exit=$code 耗时 ${elapsed}s（124=超deadline / 65=调用失败 / 66=空输出或缺段 / 67=认证 / 68=配额）—— job.log 尾部："
     tail -5 "$JOB_DIR/job.log" 2>/dev/null | sed 's/^/  /'
+    print_rank_notes
     return 4
   fi
   pid=$(cat "$JOB_DIR/job.pid" 2>/dev/null)
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
     echo "RUNNING ${elapsed}s/${DEADLINE}s  $(sed -n 's/^family=/family=/p' "$JOB_DIR/job.meta")  $(grep '^MODEL:' "$JOB_DIR/job.log" 2>/dev/null | head -1)"
+    print_rank_notes
     return 3
   fi
   echo "DIED  进程消失且无 exit 记录（${elapsed}s）——按失败处理，job.log 尾部："

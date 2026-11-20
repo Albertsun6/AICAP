@@ -1,10 +1,10 @@
 # Phase 2：多源研究
 
-> **强制异构搜索**：Phase 2 始终是 2 Claude + **2 个不同族的外部 lens（X1=GPT 族经 codex，X2=Gemini 族经 cursor-agent）**，无用户可控的 opt-out。两只眼走两条独立通道（各自的凭据与配额池），各自独立降级（见下方 §自动降级矩阵）。
+> **强制异构搜索**：Phase 2 始终是 2 Claude + **2 个不同族的外部 lens（X1=GPT 族，X2=Gemini 族，均经 cursor-agent）**，无用户可控的 opt-out。两只眼按族各自独立降级（见下方 §自动降级矩阵）。
 
 ## 路数分档（2026-07-31 加）
 
-**异构两路（X1 codex-gpt + X2 cursor-gemini）任何档位都不可省**——那是本 skill 的立身之本。可调的只有 Claude 路数：
+**异构两路（X1 gpt + X2 gemini）任何档位都不可省**——那是本 skill 的立身之本。可调的只有 Claude 路数：
 
 | 档 | Claude 路数 | 判据 |
 |---|---|---|
@@ -13,34 +13,38 @@
 
 **轻量事实核实不要用 /survey**（如"某 API 现在还支持吗""某工具最新版本行为"）——直接 WebSearch/WebFetch，几秒就够，用 survey 是杀鸡用牛刀。
 
-## 默认模式（2 Claude + X1 codex + X2 cursor，四路并行）
+## 默认模式（2 Claude + X1 gpt + X2 gemini，四路并行）
 
-Phase 1.5 Brief 完成后，启动 4 个并行 agent——其中 2 个是外部 lens，**分属不同模型家族、走不同通道**（X1=codex/GPT 族、X2=cursor-agent/Gemini 族；模型不钉版本，运行时各自解析，见 `../references/cursor-agent-invocation.md` §模型选择）：
+Phase 1.5 Brief 完成后，启动 4 个并行 agent——其中 2 个是外部 lens，**分属不同模型家族**（X1=GPT 族、X2=Gemini 族，都经 cursor-agent；模型不钉版本，运行时各自解析，见 `../references/cursor-agent-invocation.md` §模型选择）：
 
 ```
 Agent A（Claude，通用 + 主流）
   任务：搜索通用方案概览、官方文档、权威博客
+  预算：约 10 次查询、最多 15 次，提前停与输出要求见 §搜索预算与停止条件
   禁止：不看 Agent B/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
   模型：Agent 工具 model=sonnet（检索型任务；主模型的档位留给综合与判断——见 SKILL.md §模型/档位路由）
 
 Agent B（Claude，技术 + 实现）
   任务：搜索开源项目实现、技术论文、GitHub 仓库
+  预算：同 Agent A
   禁止：不看 Agent A/X1/X2 的搜索结果
   工具：WebSearch, WebFetch
   模型：Agent 工具 model=sonnet（同上）
 
-Agent X1（codex · family=gpt，第一异构 lens）— 替换原 Claude Agent C
-  调用：SURVEY_CODEX_EFFORT=high SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
-          bash run-agent-async.sh start <prompt> <out> codex 900
+Agent X1（cursor-agent · family=gpt，第一异构 lens）— 替换原 Claude Agent C
+  调用：SURVEY_CURSOR_EFFORT=high SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
+          bash run-agent-async.sh start <prompt> <out> gpt 900
         → 拿 JOB_DIR 后 Bash(run_in_background) 跑 `run-agent-async.sh wait <job-dir> 540`
-        （**异步**：high 档实测 302–491s，贴着 570s 同步窗口，不赌；high 档理由见 helper §档位配置）
+        （**异步**：high 档 2026-11-19 实测一次联网搜索约 4 min，贴着 570s 同步窗口，不赌；high 档理由见 helper §档位配置）
   任务：4 类 **Claude 盲区**针对性搜索
   prompt：prompts/agent-x.txt
 
 Agent X2（cursor-agent · family=gemini，第二异构 lens）
-  调用：SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
-          bash run-cursor-agent.sh <prompt> <out> gemini（同步，Bash timeout=600000；gemini 无 effort 档）
+  调用：SURVEY_CURSOR_EFFORT=high SURVEY_REQUIRE_SECTIONS='## Compressed Findings|## Source Inventory' \
+          bash run-agent-async.sh start <prompt> <out> gemini 900
+        → 拿 JOB_DIR 后 Bash(run_in_background) 跑 `run-agent-async.sh wait <job-dir> 540`
+        （**异步**，2026-11-20 改：原来是同步 Bash，会把同一条消息里的 Agent 结果一起卡住最长 10 min，也逼得 X2 晚于 Claude 路发出）
   任务：4 类 **Claude+GPT 共同盲区**针对性搜索（搜索引擎可见性偏差 / 非美系英文文档
         生态 / 学术已解决工业未流行 / 已废弃被取代的方案）
   prompt：prompts/agent-x2.txt
@@ -57,6 +61,16 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 - **信息源排除**：不搜中文社区（CSDN / 掘金 / 思否 / 简书 / 知乎技术专栏 / 微信公号 / gitee / 国产 SaaS）；日文/俄文/欧洲方案如出现英文索引中可保留，不主动用非英文关键词
 - **输出强制二段式**（#5 Context Isolation）：`## Compressed Findings` (~500 字 / 5-8 条 finding 标 confidence + URL) + `## Source Inventory`（URL / 摘要 / 日期 / 标签 / Quality）
 - 最少 5 个 source，最少 1 个近 12 月（按 currentDate 算）
+
+## 搜索预算与停止条件（所有搜索路都适用，2026-11-20 加）
+
+借鉴 Anthropic deep-research（每个研究员约 10 次、最多 15 次工具调用）与 OpenAI deep-research（收益递减就停，并交代为什么停）。原来只有 Phase 2.5 追搜有次数上限，主搜索没有，最慢那路容易越搜越久。
+
+- **预算**：每路约 **10 次查询，最多 15 次**（A / B / C / X1 / X2 一样；打开网页读原文不算查询）。**重大决策档或 Brief 子问题 >5 个时上限放到 25 次**，主 agent 写 prompt 时替换数字。主 agent 给 A/B(/C) 写 prompt 时把这条和下一条原样写进去；X1/X2 模板里已写
+- **提前停**：满足任一就停，不必用满预算——① Brief 的每个子问题都有 ≥2 个独立来源（独立 = 不同出版者的原始证据，互相转载不算两个）；② 饱和：**按子问题判**——某个子问题换过至少 3 种说法（同义词、来源类型、反向搜索如「X problems / X alternatives」）仍只带回已见来源，才算这个子问题饱和；所有未覆盖的子问题都饱和了才能停
+- **交代停止理由**：Source Inventory 表格后加一行 `搜索记录：共 <N> 次查询；停止理由：覆盖完 / 饱和 / 到上限；未覆盖：<子问题或"无">`。主 agent 在 Phase 2.5 Reflection 里读这一行：**只要「未覆盖」不是「无」（不论是到上限还是饱和停的），这些子问题必须进追搜决策**，追搜仍补不到就在报告里标为覆盖缺口
+- **不因预算降标准**：最少 5 个 source、近 12 月来源等要求不变；预算用完还不够，就如实写在「未覆盖」里，交给 Reflection 补，不许凑数
+- **证据带原文引句**（借鉴 199-bio / Firecrawl：返回 claim 时附原文，后面核实不必全部重抓）：搜索记录行之后加一张 **引句表**（不计入 Compressed Findings 的 800 字）：`| finding 序号 | URL | 原文引句 |`，每条 finding 的每个证据 URL 一行。引句从页面**逐字**复制、保留原语言、≤200 字符，**连同限定条件一起摘**（版本、地区、套餐、预览版等），要能单独支撑这条 finding；没读到原文的写「未读原文」。**编造或改写引句等于编造来源**，Phase 5.5 会按路回抓核对
 
 ## 合并规则：并集，不投票（硬约束）
 
@@ -83,10 +97,11 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 
 **并发协调**（主 Claude 必读）：
 - Agent A、B 是 Claude subagent（用 Agent 工具启动，**`model=sonnet`**——不要让它们继承主模型的 xhigh 档去做检索）
-- Agent X1 是 codex 异步 job（`run-agent-async.sh start … codex 900`），X2 是 cursor-agent 同步 Bash（`run-cursor-agent.sh … gemini`）——两条通道、两个配额池
-- 四者**并发启动**——同一回合 message 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的同步 Bash；随后后台 `wait` X1。墙钟由最慢者决定（X1 约 5–8 min）
+- Agent X1、X2 都是异步 job（`run-agent-async.sh start … gpt 900` / `… gemini 900`）——都经 cursor-agent，共用一套 Cursor 凭据（额度是否按族分开未实测）
+- 四者**并发启动**——先在上一条消息里 Write 好 X1/X2 两份 prompt 文件，再在**同一条 message** 内同时发 2 个 Agent 工具调用 + X1 的 `start` + X2 的 `start`；随后后台分别 `wait` X1、X2。墙钟由最慢者决定（X1 gpt high 档 2026-11-19 实测一次约 4 min，上限未实测；X2 的 Gemini 4 Neon high 档未实测）
 - **两个 Bash 调用必须用不同的 prompt / output 文件名**（`survey-x1-*` / `survey-x2-*`），否则互相覆盖
-- 主 Claude 在收到四方返回后再启动综合 agent；不要串行启动 X1/X2，会白白多花 ~5 min
+- 不要串行启动 X1/X2，会白白多花 ~5 min
+- **先到先处理，结论等齐再下（2026-11-20 加，借鉴 199-bio 的 First Finish Search，但收紧了）**：A/B(/C) 通常 1–3 min 就回，X1/X2 要 4–9 min。等外部两路的这段时间，主 agent 只做机械活：对已回来的路跑 Phase 2.5 检查清单第 1–4 项、合并去重 Source Inventory、建好 claim—路—URL—引句的来源账本。**X1/X2 都并入（或按降级矩阵判挂）之前，不许写方案描述、比较维度、§推荐、评分矩阵和分歧点，也不许做追搜决策**——先搭好框架再把异构发现塞进去，正好丢掉异构搜索要抵消的那种 Claude 视角锚定。每到一路，对它的发现增量重跑检查清单第 1–4 项、补进账本
 
 ## Sub-agent 输出格式（强制 #5 Context Isolation）
 
@@ -105,7 +120,15 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 |---|---|---|---|---|
 | https://... | ... | YYYY-MM-DD | primary/secondary/official/blog/paper | High/Medium/Low（见 ../references/source-quality.md） |
 | ... |
+
+搜索记录：共 <N> 次查询；停止理由：覆盖完 / 饱和 / 到上限；未覆盖：<子问题或"无">
+
+| finding 序号 | URL | 原文引句 |
+|---|---|---|
+| 1 | https://... | "<逐字摘录，≤200 字符>" |
 ```
+
+引句与搜索记录的规则见上方 §搜索预算与停止条件。
 
 **综合 agent 读取规则**：
 - 默认只读四方的 Compressed Findings + Source Inventory
@@ -114,22 +137,22 @@ Agent X2（cursor-agent · family=gemini，第二异构 lens）
 
 ## 自动降级矩阵（X1 / X2 各自可能失败）
 
-两只异构眼走**两条独立通道**（X1=codex/ChatGPT 订阅，X2=cursor-agent/Cursor 订阅），**各自独立降级**——一条通道的凭据或额度故障只灭它自己那只眼，这正是 2026-09-09 把 gpt 族迁到 codex 的收益（此前三族共一个 Cursor 池，额度见底=双眼齐灭）：
+两只异构眼都经 cursor-agent（共用 Cursor 的凭据；额度是否按族分开未实测，按族处理），但**按族各自独立降级**——某一族超时/下架/列表里暂时没有/撞 68 额度上限，只灭它自己那只眼；Cursor 登录失效（67）则双眼齐灭：
 
 | 情况 | 行为 | banner |
 |---|---|---|
 | X1、X2 都成功 | 正常四路并集 | 无 |
-| X1(codex) 挂、X2 成功 | 继续（3 路：A+B+X2）；Phase 6 主评审按替补链改用 **grok** 族（grok 也不可用才退 gemini），此时红队取消 | `⚠️ HETEROGENEOUS LENS PARTIAL: GPT lens (codex) 缺失` + 原因 |
-| X2(gemini) 挂、X1 成功 | 继续（3 路：A+B+X1）；Phase 6 主评审仍用 codex，**tiebreaker 改用 grok**（Cursor 整体挂时 grok 也死 → tiebreaker unavailable） | `⚠️ HETEROGENEOUS LENS PARTIAL: Gemini lens 缺失` + 原因 |
+| X1(gpt) 挂、X2 成功 | 继续（3 路：A+B+X2）；Phase 6 主评审按替补链改用 **grok** 族（grok 也不可用才退 gemini），此时红队取消 | `⚠️ HETEROGENEOUS LENS PARTIAL: GPT lens 缺失` + 原因 |
+| X2(gemini) 挂、X1 成功 | 继续（3 路：A+B+X1）；Phase 6 主评审仍用 gpt，**tiebreaker 改用 grok**（grok 也不可用 → tiebreaker unavailable） | `⚠️ HETEROGENEOUS LENS PARTIAL: Gemini lens 缺失` + 原因 |
 | 两只都挂 | 退到 3 Claude 经典并行（见下），**Phase 6 整段跳过** | `⚠️ HETEROGENEOUS REVIEW: SKIPPED` |
 
-**判定依据**：各自的 exit code（见 `../references/cursor-agent-invocation.md` §exit code）；doctor 提前判死的通道按同样规则处理。**绝不**因为一只眼挂了就放弃另一只。
+**判定依据**：各自的 exit code（见 `../references/cursor-agent-invocation.md` §exit code）；doctor 提前判死的族按同样规则处理（doctor 报"模型列表疑似临时缩水"时先等几分钟重跑 doctor，仍缩水再按挂处理）。**绝不**因为一只眼挂了就放弃另一只。
 
 > **grok 族为什么不在这张表里**：grok 不做搜索眼（2026-08-15 实测该族基础延迟高，263s 玩具 prompt，完整搜索任务会撞同步窗口），它只在 Phase 6 出场——红队第二评审 + 主评审/tiebreaker 的替补族。所以 Phase 2 的降级判定仍然只看 X1/X2 两只眼；grok 的可用性由 `doctor.sh` 单独报一行，死了只 WARN 不改 Phase 2 的档位。
 
 ### 两只都不可用时：退回 3 Claude
 
-两条通道都不可用（codex 与 cursor-agent 均未安装/未登录/额度见底）或两次调用都失败 / 超时时，**自动**退回到 3 Claude 经典并行——用户无法主动选择此路径，仅作为 fallback（三路同样用 Agent 工具 `model=sonnet`）：
+cursor-agent 不可用（未安装/未登录）或两次调用都失败（含两族都撞 68 额度上限） / 超时时，**自动**退回到 3 Claude 经典并行——用户无法主动选择此路径，仅作为 fallback（三路同样用 Agent 工具 `model=sonnet`）：
 
 ```
 Agent A（通用 + 主流）
@@ -153,8 +176,8 @@ Agent C（社区 + 经验）
 
 ```markdown
 > ⚠️ **HETEROGENEOUS REVIEW: SKIPPED**
-> Reason: <codex/cursor-agent not found | timeout | auth failure | quota exhausted | empty output>（两条通道各写各的）
-> Implication: 所有 source 来自 Claude lens，训练数据盲区未被独立模型审查；高风险决策建议修复通道后重跑（codex: `npm i -g @openai/codex && codex login`；cursor-agent: cursor.com/cli）
+> Reason: <cursor-agent not found | timeout | auth failure | quota exhausted | empty output | error（exit 65：模型列表缩水、该族下架等调用失败）>（两只眼各写各的）
+> Implication: 所有 source 来自 Claude lens，训练数据盲区未被独立模型审查；高风险决策建议修复通道后重跑（cursor-agent: cursor.com/cli，`cursor-agent login`）
 ```
 
 一只眼挂时用 PARTIAL banner（**别用 SKIPPED**，那会误导成"完全没异构"）：
@@ -162,15 +185,15 @@ Agent C（社区 + 经验）
 ```markdown
 > ⚠️ **HETEROGENEOUS LENS PARTIAL: <GPT | Gemini> lens 缺失**
 > Reason: <exit code 对应原因>
-> Implication: 仍有一只异构眼覆盖，但 <该族> 视角的盲区未被审查<；且事实性分歧 tiebreaker 不可用，全部转人类裁决——仅 Gemini 缺失时加这句>
+> Implication: 仍有一只异构眼覆盖，但 <该族> 视角的盲区未被审查<；且事实性分歧 tiebreaker 改用 grok 族——仅 Gemini 缺失时加这句；grok 也不可用时改写成「事实性分歧 tiebreaker 不可用，全部转人类裁决」>
 ```
 
 **绝不**因异构失败让主流程失败。
 
 ## 异构调度（最小硬约束）
 
-- **启动 X1/X2 前先跑一次自检**：`bash doctor.sh`（秒级快检，不耗配额；exit 0=HEALTHY / 1=DEGRADED / 2=BROKEN）。非 0 时**提前**把即将发生的降级与修复建议告知用户（doctor 已给出确切命令），不要等 Phase 2 跑到一半才用 banner 揭晓；能自动修的（脚本执行位）doctor 会当场修掉。**doctor 结果绝不阻塞主流程**——BROKEN 也照走降级矩阵
-- **必须跑 X1（codex，GPT 族）与 X2（cursor-agent，Gemini 族）两只眼**（异构 lens 是 Phase 2 设计核心）
+- **启动 X1/X2 前先跑一次自检**：`bash doctor.sh`（秒级快检，不耗配额；exit 0=HEALTHY / 1=DEGRADED / 2=BROKEN）。非 0 时**提前**用一句话把即将发生的降级与修复建议告知用户（doctor 已给出确切命令），不要等 Phase 2 跑到一半才用 banner 揭晓——**只告知、不提问**：不发 AskUserQuestion、不等回复，照降级矩阵直接继续（进入 Phase 6 前重跑一次 doctor，用户中途修好就恢复通道，见 SKILL.md）；能自动修的（脚本执行位）doctor 会当场修掉。**exit 0 也要看 L3.2「模型排名」一节**：有 `NEW-MODEL:` 行、`排名文件` 自检 WARN 或核对日期超过 60 天的 WARN 时（它们不改 verdict），**不停下来核实**：记下提示行原文，照当前解析结果启动 X1/X2，报告 §metadata 写 `模型排名: 未核实（检测到 <名字>，交付后单独核实）`，交付后按 SKILL.md 硬约束「模型排名要查证」把核实作为独立任务提给用户。异步 job 的 `status` / `wait` 输出里状态行下面若有缩进的 `NEW-MODEL:` 行，同样处理。除这一条外，**doctor 结果绝不阻塞主流程**——BROKEN 也照走降级矩阵
+- **必须跑 X1（GPT 族）与 X2（Gemini 族）两只眼，均经 cursor-agent**（异构 lens 是 Phase 2 设计核心）
 - **两只眼各自独立降级**；两只都不可用才退到 3 Claude（Agent X 换 Agent C）+ 报告顶部 banner（见上方 §自动降级矩阵）
 - **失败不阻塞主流程**——降级是设计目标，不是异常
 

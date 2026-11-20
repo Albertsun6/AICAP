@@ -2,7 +2,7 @@
 
 > **原则**：Phase 2 四路搜索完成后，主 agent 对照 Brief 跑检查清单——比加辩论轮数更直接对抗 citation hallucination。
 
-**触发**：Phase 2 完成 / Phase 3 综合前。
+**触发**：Phase 2 完成 / Phase 3 综合前。第 1–4 项可以在 A/B(/C) 返回后先跑，X1/X2 每到一路对其发现增量重跑；**追搜决策和第 5 项必须等所有路都并入（或判挂）后才做**（见 `02-research.md` §并发协调「先到先处理」）。各路的 `搜索记录` 行一起看：任一路的「未覆盖」不是「无」（不论到上限还是饱和停），这些子问题必须进追搜决策。
 
 ## 检查清单
 
@@ -39,7 +39,7 @@ Brief 是冷冻的，改靶必须经用户——搜索发现前提错误时**不
 
 ## 追搜决策（主 agent 自决，Yes/No）
 
-- **Yes**：构造定向 prompt（仅针对缺失 / 单源 / vendor-only / 质量不达标的具体点，**写明「最多 15 次查询」**——追搜由问题清单限定范围，不是开放检索，查询上限直接压耗时），启动 1 个异构 agent（默认 `run-cursor-agent.sh … gemini`，同步）或 Claude agent（Agent 工具 `model=sonnet`）补搜。**不用 codex**——搜索路它比 cursor 慢，而追搜是串行门。最多 1 轮追搜。
+- **Yes**：构造定向 prompt（仅针对缺失 / 单源 / vendor-only / 质量不达标的具体点，**写明「最多 15 次查询」**——追搜由问题清单限定范围，不是开放检索，查询上限直接压耗时），启动 1 个异构 agent（默认 `SURVEY_CURSOR_EFFORT=high run-cursor-agent.sh … gemini`，同步）或 Claude agent（Agent 工具 `model=sonnet`）补搜。**不用 gpt 族**——X1 实测约 4 min 起，而追搜是串行门。最多 1 轮追搜。
 - **No**：直接进入 Phase 3-5。
 - 决策必须显式写出（不能默默跳过）。
 
@@ -47,5 +47,6 @@ Brief 是冷冻的，改靶必须经用户——搜索发现前提错误时**不
 
 Reflection 报告（写入综合报告 §调研 metadata 的子段 `Phase 2.5 Reflection`），含：
 - 检查清单 5 项结果（含前提完整性；触发回问的记用户裁决结果）
+- 各路搜索记录：`A: N 次/停止理由；B: …；X1: …；X2: …`（某路漏写这一行就记「未报」）
 - 追搜决策（Yes/No）与理由
 - 若 Yes：追搜 prompt + 追搜结果摘要

@@ -76,7 +76,8 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X1+X2（默认）或降级后�
 
 - **澄清 (Phase 1.2)**: <未触发——无 blocking unknown / 触发 N 轮共 M 问（一句摘要） / 未执行（<原因>），基于假设: <列表>>——降级/3 轮到限时此行是用户看到"靶子怎么立的"的唯一渠道，不许省
 - **前提破裂 (Phase 2.5)**: <未触发 / <证据> + 用户裁决: <按原题继续 / 换靶> / <证据>, 未经用户裁决（非交互）>（未触发时此行可整行省略）
-- **异构模型**: X1=<实际 model id>@codex / X2=<实际 model id>@cursor / R1主评审=<实际 model id>@codex / R1红队=<实际 model id>@cursor（各自降级时写 `无（已降级：<原因>）`；id 抄 runner 的 `MODEL:` 行，不凭记忆）
+- **异构模型**: X1=<实际 model id>@cursor / X2=<实际 model id>@cursor / R1主评审=<实际 model id>@cursor / R1红队=<实际 model id>@cursor（各自降级时写 `无（已降级：<原因>）`；id 抄 runner 的 `MODEL:` 行，不凭记忆）
+- **模型排名**: <已核实 YYYY-MM-DD / 未核实（<原因>）>——必填；出现过 `NEW-MODEL:` 或排名相关 WARN 却没核实成时写「未核实」并说明原因（SKILL.md 硬约束）
 - **X1 增量**: <X1 独有且最终核实通过的发现数 N / X1 独有但被 Drop 的数 M>——X1/X2 两路无论增量高低都不退役（SKILL.md「异构两路任何档位不可省」优先于任何增量数据）；此字段只用于诊断某只眼是否持续零产出
 - **X2 增量**: <X2 独有且最终核实通过的发现数 N / X2 独有但被 Drop 的数 M>——同上，只用于诊断
 - **红队增量**: <红队独有条目数 N / 其中最终 accept 或 partial 的 M / 两方共提的 K>——同理，这是判断"红队值不值配额"的数据；连续几次 N=0 或 M=0 就该考虑撤掉红队（`red-team: unavailable` 时写 `无（红队未跑：<原因>）`）
@@ -162,12 +163,13 @@ Phase 2 结束后启动综合 Agent，读取 A+B+X1+X2（默认）或降级后�
    - `Output: <最终路径>`
    - `澄清 (Phase 1.2): <未触发 / 触发 N 轮共 M 问 / 未执行（<原因>），基于假设: <列表>>`——照 Brief「用户澄清记录」字段抄状态，别凭记忆；有前提破裂事件再加 `前提破裂 (Phase 2.5): <证据 + 用户裁决结果 / 未经用户裁决>`
    - `异构模型: X1=<id> / X2=<id> / R1主评审=<id> / R1红队=<id>`——**逐个抄脚本输出的 `MODEL: <id> (family=<族>)` 实际值**（Phase 6 的两路要等 Round 1 跑完回填），模型是运行时按族解析的（见 `../references/cursor-agent-invocation.md` §模型选择），不许凭记忆写版本号；某一路降级时写 `X1=无（已降级：<原因>）` / `R1红队=无（红队未跑：<原因>）`，两只搜索眼都不可用写 `异构模型: 无（已降级）`
+   - `模型排名: <已核实 YYYY-MM-DD / 未核实（<原因>）>`——必填。本次 doctor L3.2、runner stderr、异步 job 状态输出都没有 `NEW-MODEL:` 与排名相关 WARN → 写 `已核实 <model-ranking.conf 里三族 checked 中最早的日期>`；出现过提示且已按 SKILL.md 硬约束上网核实并更新排名文件 → 写 `已核实 <当天日期>`；出现过提示但没核实成（通道不通 / 查不到）→ 写 `未核实（<原因>）`，不许省略这一行；doctor L3.2 报「本次没有对 <族> 检测新模型」（列表没取到 / 缩水，检测没跑）且之后没有重跑出干净结果 → 同样写 `未核实（新模型检测未运行）`，不许按「没有提示」写已核实
    - `事实 tiebreaker: <裁决 N 条 / 未触发 / unavailable(<原因>)>`——若跑过，把每条 verdict 与依据 URL 写进 §metadata 子段 `Phase 6 辩论历史 > 事实核查`（见 `06-debate.md` §事实核查 tiebreaker）
    - `HTML: pending`（占位，待步骤 4.5 替换）
    - `PDF: pending`（占位，待步骤 4.6 替换）
    - `Audio(概要): pending` 与 `Audio(完整): pending`（占位，待步骤 6 替换）
 4.4. **终稿引用复核（Phase 6 若引入过新 URL）**：辩论 / tiebreaker 期间 incorporate 进正文的**新** URL 没经过 Phase 5.5（它跑在 Phase 6 之前）——终稿前用 `check-citations.sh` 对这些新增 URL 单独跑一遍 Layer A；dead 的按 `02-research.md` §并集的配套闸门处理（Drop + metadata 记录）。Phase 6 没引入新 URL 则跳过本步
-4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，**委派给一个 sonnet 子 agent**（Agent 工具 `model=sonnet`，把 `.md` 路径 + 下列特性清单 + 输出路径交给它——这是产出型任务，几十 KB 的 HTML 让主模型亲手写既慢又贵，2026-09-10 改），按 `report-to-html` skill 的规范生成（**不重新触发 `/report-to-html` skill**）：
+4.5. **生成 HTML 报告**：把刚写好的 markdown 转成单文件交互式 HTML，**委派给一个 sonnet 子 agent**（Agent 工具 `model=sonnet`，把 `.md` 路径 + 下列特性清单 + 输出路径交给它——这是产出型任务，几十 KB 的 HTML 让主模型亲手写既慢又贵，2026-09-10 改），按下列特性清单生成：
    - 子 agent 读取步骤 4 写好的 `.md` 文件
    - 生成包含以下特性的单文件 HTML：
      - 顶部 sticky bar（标题 + 置信度 pill + 日期 + 打印按钮）

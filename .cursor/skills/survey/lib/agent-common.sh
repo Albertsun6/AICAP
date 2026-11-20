@@ -56,6 +56,9 @@ kill_tree() { # $1=信号 $2=根 pid
 # node+rust 主干；自立门户的孙子由递归枚举兜住。
 # 用法：run_with_deadline <秒> <stdout落盘> <stderr落盘> -- <命令...>
 # 返回：124=超时；否则透传子进程退出码
+# 运行期间把后台 pid 放在全局 RUN_WITH_DEADLINE_PID 里（结束即清空），供调用方的 INT / TERM trap
+# 用 kill_tree 收尸；不用它的调用方不受影响
+RUN_WITH_DEADLINE_PID=""
 run_with_deadline() {
   local deadline="$1" outf="$2" errf="$3"; shift 3
   [ "${1:-}" = "--" ] && shift
@@ -63,6 +66,7 @@ run_with_deadline() {
   set -m
   "$@" >"$outf" 2>"$errf" &
   pid=$!
+  RUN_WITH_DEADLINE_PID=$pid
   set +m
   t0=$(date +%s)
   # deadline 按真实时间判断，不按 sleep 次数计数：系统睡眠/调度延迟下计数会失真
@@ -72,20 +76,34 @@ run_with_deadline() {
       sleep 2
       kill_tree KILL "$pid"       # 二次枚举：抓 TERM 宽限期内新生/漏网的进程
       wait "$pid" 2>/dev/null
+      RUN_WITH_DEADLINE_PID=""
       return 124
     fi
     sleep 0.5
   done
   wait "$pid"; rc=$?
+  RUN_WITH_DEADLINE_PID=""
   return $rc
 }
 
 # ── 额度留痕（doctor L3.5 读它）────────────────────────────────────────
 # 为什么需要它：额度耗尽对"不耗配额的快检"完全隐形（cursor `--list-models` 见底时仍 exit 0），
 # 只有真调用才撞墙。撞了就写状态文件，让下一次 doctor 快检读得到。
-# 行格式：<lens>\t<epoch>\t<重置日或->    lens ∈ codex / gemini / grok
+# 行格式：<lens>\t<epoch>\t<重置日或->    lens ∈ gpt / gemini / grok（cursor 通道）/ codex（备用通道）
 SURVEY_STATE_DIR="${SURVEY_STATE_DIR:-$HOME/.cache/survey}"
 QUOTA_STATE="$SURVEY_STATE_DIR/quota-state"
+
+# 状态文件是"读-改-写"：三族共用一个 Cursor 额度池，额度见底时并发的几路几乎同时撞墙，
+# 不加锁后 mv 的那个会把先写的另一族记录抹掉（实测 20 轮丢 15 轮）。macOS 没有 flock，用 mkdir 互斥。
+# 最多等约 2s；还拿不到多半是被杀进程留下的残锁，直接往下走（留痕丢一条好过卡住调用）
+_quota_lock() {
+  local i=0
+  while ! mkdir "$QUOTA_STATE.lock" 2>/dev/null; do
+    i=$((i + 1)); [ "$i" -ge 40 ] && return 0
+    sleep 0.05
+  done
+}
+_quota_unlock() { rmdir "$QUOTA_STATE.lock" 2>/dev/null; return 0; }
 
 record_quota_block() { # $1=lens $2=错误原文
   mkdir -p "$SURVEY_STATE_DIR" 2>/dev/null || return 0
@@ -94,17 +112,21 @@ record_quota_block() { # $1=lens $2=错误原文
   reset=$(printf '%s' "$2" | sed -n 's/.*cycle ends on \([0-9][0-9/]*\).*/\1/p' | head -1)
   [ -n "$reset" ] || reset=$(printf '%s' "$2" | sed -n 's/.*[Rr]esets \(at\|on\|in\) \([^.,"]*\).*/\2/p' | head -1)
   now=$(date +%s); tmp="$QUOTA_STATE.$$"
+  _quota_lock
   grep -v "^$1	" "$QUOTA_STATE" 2>/dev/null > "$tmp"
   printf '%s\t%s\t%s\n' "$1" "$now" "${reset:--}" >> "$tmp"
   mv -f "$tmp" "$QUOTA_STATE" 2>/dev/null || rm -f "$tmp"
+  _quota_unlock
 }
 
 clear_quota_block() { # $1=lens —— 成功调用是"该 lens 此刻可用"的直接证据，正面证据推翻负面留痕
   [ -s "$QUOTA_STATE" ] || return 0
   local tmp="$QUOTA_STATE.ok.$$"
+  _quota_lock
   grep -v "^$1	" "$QUOTA_STATE" 2>/dev/null > "$tmp"
   if [ -s "$tmp" ]; then mv -f "$tmp" "$QUOTA_STATE" 2>/dev/null || rm -f "$tmp"
   else rm -f "$tmp" "$QUOTA_STATE" 2>/dev/null; fi
+  _quota_unlock
 }
 
 # ── 结构校验（缺段按 exit 66 处理，见 references §调用模式第 6 步）──────

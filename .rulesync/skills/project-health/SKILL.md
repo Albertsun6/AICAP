@@ -9,8 +9,8 @@ description: |
   Use when the user says: "评估项目健康度" / "做个 codebase health / repo health" / "审一下这个仓库的架构和质量"
   / "查冗余文件和死代码" / "看看耦合解耦怎么样" / "代码精简度评估" / "/project-health" /
   "这个项目健康吗" / "技术债在哪" / "architecture / code quality audit"。
-  适用对象是一个 git 仓库（默认 cwd）。不是写代码、不是单 PR 评审（那用 /code-review / pre-land-review）。
-recommends: ["debate-review", "pre-land-review"]
+  适用对象是一个 git 仓库（默认 cwd）。不是写代码、不是单 PR 评审（那用 /code-review）。
+recommends: ["debate-review"]
 ---
 
 # /project-health — 仓库健康度评估（分层 · 可执行探针 · 异构兜底）
@@ -140,8 +140,8 @@ project-health/
 **触发**（任意命中）："评估项目健康度" / "repo / codebase health" / "审一下这个仓库" / "查死代码冗余文件" / "解耦/耦合怎么样" / "技术债在哪" / "/project-health"。
 
 **边界（不做）**：
-- **不写业务代码、不重构**——只评估 + 给固化建议；实施交给用户指定的实施流程。
-- **不是单 PR 评审**——那是 `/code-review`、`pre-land-review`、`/security-review` 的活；本 skill 评的是**整仓库**的健康度。
+- **不写业务代码、不重构**——只评估 + 给固化建议；实施交给用户。
+- **不是单 PR 评审**——那是 `/code-review`、`/security-review` 的活；本 skill 评的是**整仓库**的健康度。
 - **不替你定义"什么叫健康"**——阈值在 `rubric/thresholds.md` 可调；跑前用 Phase 0 eval-first 对齐。
 - **不无脑装工具**——探针缺失就给安装指令，是否装由用户决定。
 
@@ -150,7 +150,7 @@ project-health/
 | skill | 适用 |
 |---|---|
 | `/project-health` | 整仓库健康度评估（架构/规范/解耦/死代码/治理/历史教训），分层 + 可执行 + 异构 |
-| `/code-review`·`pre-land-review` | 单个 diff / PR 的逐行评审 |
+| `/code-review` | 单个 diff / PR 的逐行评审 |
 | `/security-review` | 安全专项 |
 | `/survey` | 调研外部最佳实践（本 skill 的设计就来自一次 /survey） |
 | `/debate-review` | 对外部 AI 评审做结构化辩论裁决（本 skill L3 复用其范式） |

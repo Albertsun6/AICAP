@@ -229,39 +229,16 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-## 本地专用 Skills（9 个，非 SSOT，仅本机）
+## 本地专用 Skills（5 个，非 SSOT，仅本机）
 
-> 这些 skill 不经 rulesync 同步：多数是 `~/.claude/skills/` 下的真实目录，`archi-strategy-decode`
-> 例外——它是指向 `Strage/archi-strategy/` 的**跨仓库 symlink**，随那个仓库走。
+> 这些 skill 不经 rulesync 同步：多数是 `~/.claude/skills/` 下的真实目录，`archify`
+> 例外——它是指向 `~/.agents/skills/archify` 的软链。
 > 换机器 / 重装时它们不会自动跟过来，`scripts/check-skills.py` 会报出本机实况与本节的差异。
 
-### `/feature-fullstack`
-**用途**：端到端实施一个 Seaidea/claude-web feature，覆盖 backend + iOS + 验证 + 真机部署，一次完成。从 M0.5 实施经验蒸馏（~1100 行新代码，4 个 feature，一次 sitting 验证到位）。
+### `/archify`
+**用途**：把需求或代码生成可交互的架构 / 流程 / 时序 / ERD 等图（单文件 HTML，可导出图片），也能把一个回答做成一页讲解页。
 
-触发："全做" / "ship 这个功能" / "实施 M0.X" / "feature 全栈" / "测完装手机"
-
----
-
-### `/ios-e2e-test`
-**用途**：全自动 Seaidea iOS app 端到端测试——验证 backend 健康、启动模拟器、WebSocket 探针确认完整通知链（backend → ServerChan），截图存档，测试通过后可选真机部署。
-
-触发："在模拟器跑 iOS 测试" / "验证 iOS 端到端" / "跑 e2e 测试" / "装到手机"
-
----
-
-### `/fedex-tracker`
-**用途**：批量查询 FedEx 追踪号的发货日期，输出 CSV。用真实 Chrome（CDP 驱动）模拟点击绕过 Akamai 反爬，随机延迟 8-15s。
-
-触发：有一批 FedEx 追踪号需要提取发货日期时
-
----
-
-### `/archi-strategy-decode`
-**用途**：在 Archi（开源 ArchiMate 工具）里双向共建战略——人在 GUI 画、Claude 经 archi-mcp-server 读写同一活模型，AI 提议进审批队列、人逐条批准才落地。把战略从 Driver/Stakeholder/Vision 逐层解码（KAOS）到架构级 Requirement，沿途记 ADR，触底后导出需求交接包给 `/req-discovery`。
-
-触发："用 Archi 共建战略" / "战略解码" / "把战略拆成需求"
-
-> 存放位置特殊：`~/.claude/skills/archi-strategy-decode` → `Strage/archi-strategy/skill/` 的软链。
+触发："画架构图 / 流程图 / 时序图" / "做成一页" / "用页面讲"
 
 ---
 
@@ -293,15 +270,6 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 
 ---
 
-### `/short-drama`
-**用途**：把一句话故事想法做成完整短剧视频——剧本生成 → 视频生成 → TTS 配音 → FFmpeg 合成。MOCK 模式（默认，无需 API）用 FFmpeg 占位视频验证全流程；REAL 模式调 Runway MCP 出真实 AI 视频。
-
-触发：`/short-drama [故事想法]` / "帮我生成短剧" / "把 [故事] 做成短剧"
-
-> 这个 skill 的 `SKILL.md` **没有 frontmatter**，`name` / `description` 全靠 H1 兜底，自动触发面比其余窄。
-
----
-
 ## 按项目分发的 Skills（不在全局发现面）
 
 > 这些 skill 只在**它服务的那个仓库里**可见——因为 Claude Code 按 skill 文件所在位置
@@ -315,6 +283,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 | `/aicap-commit` | 本仓库 `.claude/skills/`（generate 产物） | SSOT frontmatter `scope: project`，`setup:skills` 据此跳过全局软链 |
 | `/zupu-ship` | `族谱/zupu-cloud/.claude/skills/` | 真实目录已迁入该仓库，随仓库走 |
 | `/zupu-spec-sync` | 同上 | 同上 |
+| `/fedex-tracker` | `AIProject/fedex/.claude/skills/` | 真实目录 2026-11-20 迁入该项目 |
 
 **新增一个项目级 skill**：在 SSOT 的 `SKILL.md` frontmatter 写 `scope: project`，然后
 `pnpm run setup:skills`——脚本会跳过它，并回收本仓库先前建过的那条全局软链。
@@ -332,9 +301,7 @@ SSOT 管理路径：`AICAP/.rulesync/skills/` → `pnpm run ai:generate` → `AI
 | `user-invocable-only` | 隐藏 | 有 |
 | `off` | 隐藏 | 隐藏 |
 
-当前设为 `off` 的：`ios-e2e-test`、`feature-fullstack`（Seaidea / claude-web 项目全盘未搜到，
-已对模型和 `/` 菜单双向隐藏）；`name-only`：`fedex-tracker`（低频个人工具）；
-`user-invocable-only`：`sync-aicap`（有副作用，会开 PR）、`archi-strategy-decode`。
+当前没有任何 `skillOverrides` 条目（2026-11-20 全局 skill 精简后清空）。
 
 > `skillOverrides` 比 frontmatter 的 `disable-model-invocation` 更合适做这件事：
 > 不用改 SKILL.md（不污染 SSOT）、可按项目在 `.claude/settings.local.json` 里单独覆盖、
