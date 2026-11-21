@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: holds-back-full-prototype
+expected_outcome: |
+  不直接产出一整套页面原型。自己查看项目现状，说明为什么不一次出整套，
+  给出逐阶段标明做 / 沿用 / 不做的裁剪表并请用户确认；确认前不产出任何别的设计交付物或页面代码。
+context:
+  scaffold_script: place-files.sh
